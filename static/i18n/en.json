@@ -1,0 +1,257 @@
+{
+  "common": {
+    "next": "Next",
+    "previous": "Previous",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info",
+    "required": "*",
+    "optional": "(optional)",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "close": "Close",
+    "confirm": "Confirm",
+    "retry": "Retry"
+  },
+  
+  "setup": {
+    "title": "🚀 Baklab Setup",
+    "subtitle": "Configure your Baklab application for production deployment",
+    
+    "steps": {
+      "initialize": "Initialize",
+      "database": "Database", 
+      "redis": "Redis",
+      "application": "Application",
+      "admin_user": "Admin User",
+      "review": "Review",
+      "complete": "Complete"
+    },
+    
+    "init": {
+      "welcome_title": "Welcome to Baklab Setup",
+      "welcome_description": "This setup wizard will help you configure your Baklab application for production deployment. Click the button below to generate a secure setup token and begin the configuration process.",
+      "existing_deployment_warning": "⚠️ Existing Deployment Detected",
+      "existing_deployment_details": "Configuration files already exist in the config/ directory. Proceeding will overwrite the existing deployment configuration.",
+      "existing_deployment_effects": "This will:",
+      "existing_deployment_list": [
+        "Replace all configuration files (.env, docker-compose.yml, etc.)",
+        "Generate new security keys and tokens", 
+        "Not affect running services (you'll need to restart them manually)"
+      ],
+      "backup_reminder": "Make sure to backup your current configuration if needed.",
+      "initialize_button": "Initialize Setup",
+      "proceed_override": "Proceed with Override"
+    },
+    
+    "database": {
+      "title": "Database Configuration",
+      "description": "Configure your PostgreSQL database connection settings. Connection will be tested after Docker deployment.",
+      
+      "host_label": "Host",
+      "host_placeholder": "localhost", 
+      "host_help": "Hostname or IP address (e.g., localhost, db.example.com, 192.168.1.10)",
+      "host_error": "Please enter a valid hostname or IP address",
+      
+      "port_label": "Port",
+      "port_placeholder": "5432",
+      "port_help": "PostgreSQL port number (default: 5432, range: 1-65535)",
+      "port_error": "Port must be between 1 and 65535",
+      
+      "name_label": "Database Name",
+      "name_placeholder": "baklab",
+      "name_help": "Start with letter, only letters/numbers/underscores (e.g., baklab, my_app_db)",
+      "name_error": "Database name must start with a letter and contain only letters, numbers, and underscores (max 63 characters)",
+      
+      "username_label": "Username",
+      "username_placeholder": "baklab",
+      "username_help": "PostgreSQL username, start with letter (e.g., baklab, admin_user)",
+      "username_error": "Username must start with a letter and contain only letters, numbers, and underscores (max 63 characters)",
+      
+      "password_label": "Password",
+      "password_placeholder": "Enter database password",
+      "password_help": "Minimum 8 characters (database authentication password)",
+      "password_error": "Database password must be at least 8 characters long"
+    },
+    
+    "redis": {
+      "title": "Redis Configuration",
+      "description": "Configure your Redis cache server settings. Connection will be tested after Docker deployment.",
+      
+      "host_label": "Host",
+      "host_placeholder": "localhost",
+      "host_help": "Redis server hostname or IP (e.g., localhost, redis.example.com, 192.168.1.20)",
+      "host_error": "Please enter a valid hostname or IP address",
+      
+      "port_label": "Port", 
+      "port_placeholder": "6379",
+      "port_help": "Redis port number (default: 6379, range: 1-65535)",
+      "port_error": "Port must be between 1 and 65535",
+      
+      "password_label": "Password",
+      "password_placeholder": "Enter Redis password",
+      "password_help": "Redis authentication password (required)",
+      "password_error": "Redis password is required"
+    },
+    
+    "app": {
+      "title": "Application Configuration",
+      "description": "Configure your application's basic settings and security options.",
+      
+      "domain_label": "Domain Name",
+      "domain_placeholder": "example.com",
+      "domain_help": "Your production domain name",
+      "domain_error": "Please enter a valid domain name (e.g., example.com) or localhost",
+      
+      "brand_label": "Brand Name",
+      "brand_placeholder": "Baklab",
+      "brand_error": "Brand name must be 2-50 characters and contain only letters, numbers, spaces, hyphens, and underscores",
+      
+      "version_label": "Application Version",
+      "version_help": "Select BakLab application version",
+      
+      "email_label": "Admin Email",
+      "email_placeholder": "admin@example.com",
+      "email_help": "System administrator email (used for TLS certificates and system notifications)",
+      "email_error": "Please enter a valid email address",
+      
+      "cors_label": "CORS Allow Origins",
+      "cors_placeholder": "https://app.example.com\nhttps://admin.example.com",
+      "cors_help": "Frontend URLs allowed to access your API. One per line. Format: https://domain.com or http://localhost:3000",
+      "cors_error": "Each line should be a valid HTTP/HTTPS URL",
+      
+      "language_label": "Default Language",
+      "language_help": "Primary language for the application interface",
+      "language_error": "Please select a default language",
+      
+      "debug_label": "Enable Debug Mode",
+      "debug_help": "Only enable for development environments"
+    },
+    
+    "admin": {
+      "title": "Administrator User",
+      "description": "Create the initial administrator account for your application. The email defaults to the system admin email, but you can change it if needed.",
+      
+      "username_label": "Username",
+      "username_placeholder": "admin",
+      "username_help": "4-20 characters, start/end with letters/numbers, can contain dots, underscores, hyphens",
+      "username_error": "Username must be 4-20 characters, start and end with alphanumeric characters",
+      
+      "email_label": "Email",
+      "email_help": "Admin user login email (defaults to system admin email, can be different)",
+      "email_error": "Please enter a valid email address",
+      
+      "password_label": "Password",
+      "password_placeholder": "Enter secure password",
+      "password_help": "12-64 characters with lowercase, uppercase, numbers, and special characters (!@#$%^&*)",
+      "password_error": "Password must be 12-64 characters with lowercase, uppercase, numbers, and special characters (!@#$%^&*)",
+      
+      "password_confirm_label": "Confirm Password",
+      "password_confirm_placeholder": "Confirm your password",
+      "password_confirm_error": "Passwords must match"
+    },
+    
+    "review": {
+      "title": "Review Configuration",
+      "description": "Please review your configuration before generating the deployment files.",
+      "generate_button": "Generate Config",
+      
+      "sections": {
+        "database": "Database",
+        "redis": "Redis", 
+        "application": "Application",
+        "administrator": "Administrator"
+      },
+      
+      "fields": {
+        "host": "Host",
+        "database": "Database",
+        "user": "User",
+        "password": "Password",
+        "domain": "Domain",
+        "brand": "Brand",
+        "version": "Version",
+        "language": "Language",
+        "cors_origins": "CORS Origins",
+        "username": "Username",
+        "email": "Email"
+      },
+      
+      "cors_configured": {
+        "zero": "No CORS origins configured",
+        "one": "{{count}} CORS origin configured", 
+        "other": "{{count}} CORS origins configured"
+      }
+    },
+    
+    "complete": {
+      "title": "Setup Complete!",
+      "emoji": "🎉",
+      "description": "Your Baklab application has been successfully configured. The configuration files have been generated and are ready for deployment.",
+      "ready_notice": "Ready for Deployment!",
+      "ready_description": "Your configuration has been generated and validated. Click \"Deploy Application\" to automatically start your Baklab services.",
+      "deploy_button": "🚀 Deploy Application",
+      "skip_button": "Skip Deployment"
+    },
+    
+    "deployment": {
+      "title": "🚀 Deploying Application",
+      "deployment_id": "Deployment ID: {{id}}",
+      "initializing": "Initializing deployment...",
+      "logs_title": "Deployment Logs",
+      "scroll_button": "📜 Scroll to Bottom",
+      "test_button": "🔍 Test Services",
+      "complete_button": "✅ Complete Setup",
+      "success": "🎉 Deployment completed successfully!",
+      "timeout": "⏰ Deployment timed out, but services may still be starting..."
+    },
+    
+    "completed": {
+      "title": "✅ Setup Complete!",
+      "description": "Your Baklab application has been successfully configured and deployed.",
+      "congratulations": "Congratulations! Your Baklab instance is now ready for use. The setup service remains available for future configuration updates.",
+      
+      "next_steps": "Next Steps",
+      "steps_list": [
+        "Access your application: Visit your domain to start using Baklab",
+        "Configuration updates: You can re-run setup anytime to update your configuration", 
+        "Backups: Set up regular backups of your data and configuration",
+        "Monitoring: Monitor your services with docker-compose ps",
+        "Logs: Check logs with docker-compose logs -f"
+      ],
+      
+      "run_again_button": "Run Setup Again"
+    }
+  },
+  
+  "messages": {
+    "setup_initialized": "Setup initialized successfully",
+    "config_saved": "Configuration saved successfully",
+    "config_generated": "Configuration files generated successfully",
+    "setup_completed": "Setup completed successfully! You can now start the main application.",
+    "deployment_started": "Deployment started",
+    "connection_connected": "Connected to deployment log stream",
+    "connection_lost": "Connection to deployment logs lost",
+    "testing_services": "Testing deployed services...",
+    "services_ok": "✅ All services are responding correctly",
+    "validation_failed": "Configuration validation failed",
+    "fix_errors": "Please fix the validation errors below and try again.",
+    
+    "errors": {
+      "method_not_allowed": "Method not allowed",
+      "invalid_json": "Invalid JSON format",
+      "failed_check_status": "Failed to check setup status",
+      "failed_get_config": "Failed to get configuration",
+      "failed_test_connections": "Connection test failed: {{error}}",
+      "failed_tests": "Connection tests failed: {{error}}",
+      "failed_generate": "Failed to generate configuration: {{error}}",
+      "failed_deploy": "Failed to start deployment: {{error}}",
+      "failed_complete": "Failed to complete setup: {{error}}"
+    }
+  }
+}

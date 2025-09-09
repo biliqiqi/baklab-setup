@@ -51,13 +51,13 @@ class SetupApp {
         };
         
         this.steps = [
-            { key: 'init', title: 'Initialize', handler: this.renderInitStep },
-            { key: 'database', title: 'Database', handler: this.renderDatabaseStep },
-            { key: 'redis', title: 'Redis', handler: this.renderRedisStep },
-            { key: 'app', title: 'Application', handler: this.renderAppStep },
-            { key: 'admin', title: 'Admin User', handler: this.renderAdminStep },
-            { key: 'review', title: 'Review', handler: this.renderReviewStep },
-            { key: 'complete', title: 'Complete', handler: this.renderCompleteStep }
+            { key: 'init', titleKey: 'setup.steps.initialize', handler: this.renderInitStep },
+            { key: 'database', titleKey: 'setup.steps.database', handler: this.renderDatabaseStep },
+            { key: 'redis', titleKey: 'setup.steps.redis', handler: this.renderRedisStep },
+            { key: 'app', titleKey: 'setup.steps.application', handler: this.renderAppStep },
+            { key: 'admin', titleKey: 'setup.steps.admin_user', handler: this.renderAdminStep },
+            { key: 'review', titleKey: 'setup.steps.review', handler: this.renderReviewStep },
+            { key: 'complete', titleKey: 'setup.steps.complete', handler: this.renderCompleteStep }
         ];
         
         this.init();
@@ -119,8 +119,11 @@ class SetupApp {
         app.innerHTML = `
             <div class="container">
                 <div class="header">
-                    <h1>🚀 Baklab Setup</h1>
-                    <p>Configure your Baklab application for production deployment</p>
+                    <div class="header-top">
+                        <h1 data-i18n="setup.title"></h1>
+                        <div class="language-switcher-container" id="language-switcher"></div>
+                    </div>
+                    <p data-i18n="setup.subtitle"></p>
                 </div>
                 
                 ${this.renderProgress()}
@@ -134,6 +137,16 @@ class SetupApp {
         // 渲染当前步骤内容
         const stepContent = document.getElementById('step-content');
         step.handler.call(this, stepContent);
+        
+        // 应用翻译和生成语言选择器
+        if (window.i18n) {
+            window.i18n.applyTranslations();
+            window.i18n.generateLanguageSelector('language-switcher', {
+                showLabel: false,
+                className: 'language-selector',
+                style: 'dropdown'
+            });
+        }
     }
     
     renderProgress() {
@@ -145,7 +158,7 @@ class SetupApp {
                             <div class="progress-step-circle">
                                 ${index < this.currentStep ? '✓' : index + 1}
                             </div>
-                            <div class="progress-step-label">${step.title}</div>
+                            <div class="progress-step-label" data-i18n="${step.titleKey}"></div>
                         </div>
                     `).join('')}
                 </div>
@@ -156,33 +169,30 @@ class SetupApp {
     renderInitStep(container) {
         const existingWarning = this.showExistingDeploymentWarning ? `
             <div class="alert alert-warning">
-                <strong>⚠️ Existing Deployment Detected</strong><br>
-                Configuration files already exist in the config/ directory. Proceeding will overwrite the existing deployment configuration.
+                <strong data-i18n="setup.init.existing_deployment_warning"></strong><br>
+                <span data-i18n="setup.init.existing_deployment_details"></span>
                 <br><br>
-                <strong>This will:</strong>
+                <strong data-i18n="setup.init.existing_deployment_effects"></strong>
                 <ul style="margin: 0.5rem 0 0 1.5rem;">
-                    <li>Replace all configuration files (.env, docker-compose.yml, etc.)</li>
-                    <li>Generate new security keys and tokens</li>
-                    <li>Not affect running services (you'll need to restart them manually)</li>
+                    <li data-i18n="setup.init.existing_deployment_list.0"></li>
+                    <li data-i18n="setup.init.existing_deployment_list.1"></li>
+                    <li data-i18n="setup.init.existing_deployment_list.2"></li>
                 </ul>
                 <br>
-                <strong>Make sure to backup your current configuration if needed.</strong>
+                <strong data-i18n="setup.init.backup_reminder"></strong>
             </div>
         ` : '';
         
         container.innerHTML = `
             <div class="form-section">
-                <h3>Welcome to Baklab Setup</h3>
-                <p style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;">
-                    This setup wizard will help you configure your Baklab application for production deployment.
-                    Click the button below to generate a secure setup token and begin the configuration process.
-                </p>
+                <h3 data-i18n="setup.init.welcome_title"></h3>
+                <p style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;" data-i18n="setup.init.welcome_description"></p>
                 
                 ${existingWarning}
                 
                 <div class="btn-group">
                     <button class="btn btn-primary" onclick="app.initializeSetup()">
-                        ${this.showExistingDeploymentWarning ? 'Proceed with Override' : 'Initialize Setup'}
+                        <span data-i18n="${this.showExistingDeploymentWarning ? 'setup.init.proceed_override' : 'setup.init.initialize_button'}"></span>
                     </button>
                 </div>
             </div>
@@ -192,101 +202,99 @@ class SetupApp {
     renderDatabaseStep(container) {
         container.innerHTML = `
             <form id="database-form" class="form-section" novalidate>
-                <h3>Database Configuration</h3>
-                <p style="margin-bottom: 1.5rem; color: var(--gray-600);">
-                    Configure your PostgreSQL database connection settings. Connection will be tested after Docker deployment.
-                </p>
+                <h3 data-i18n="setup.database.title"></h3>
+                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.database.description"></p>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="db-host">Host *</label>
+                        <label for="db-host"><span data-i18n="setup.database.host_label"></span> <span data-i18n="common.required"></span></label>
                         <input 
                             type="text" 
                             id="db-host" 
                             name="host"
                             value="${this.config.database.host}" 
-                            placeholder="localhost"
+                            data-i18n-placeholder="setup.database.host_placeholder"
                             required
                             pattern="^[a-zA-Z0-9.\\-]+$"
-                            title="Please enter a valid hostname or IP address"
+                            data-i18n-title="setup.database.host_error"
                         >
-                        <div class="form-help">Hostname or IP address (e.g., localhost, db.example.com, 192.168.1.10)</div>
-                        <div class="invalid-feedback">Please enter a valid hostname or IP address</div>
+                        <div class="form-help" data-i18n="setup.database.host_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.database.host_error"></div>
                     </div>
                     <div class="form-group">
-                        <label for="db-port">Port *</label>
+                        <label for="db-port"><span data-i18n="setup.database.port_label"></span> <span data-i18n="common.required"></span></label>
                         <input 
                             type="number" 
                             id="db-port" 
                             name="port"
                             value="${this.config.database.port}" 
-                            placeholder="5432"
+                            data-i18n-placeholder="setup.database.port_placeholder"
                             required
                             min="1"
                             max="65535"
-                            title="Port must be between 1 and 65535"
+                            data-i18n-title="setup.database.port_error"
                         >
-                        <div class="form-help">PostgreSQL port number (default: 5432, range: 1-65535)</div>
-                        <div class="invalid-feedback">Port must be between 1 and 65535</div>
+                        <div class="form-help" data-i18n="setup.database.port_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.database.port_error"></div>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="db-name">Database Name *</label>
+                    <label for="db-name"><span data-i18n="setup.database.name_label"></span> <span data-i18n="common.required"></span></label>
                     <input 
                         type="text" 
                         id="db-name" 
                         name="database"
                         value="${this.config.database.name}" 
-                        placeholder="baklab"
+                        data-i18n-placeholder="setup.database.name_placeholder"
                         required
                         pattern="^[a-zA-Z][a-zA-Z0-9_]*$"
                         minlength="1"
                         maxlength="63"
-                        title="Database name must start with a letter and contain only letters, numbers, and underscores (max 63 characters)"
+                        data-i18n-title="setup.database.name_error"
                     >
-                    <div class="form-help">Start with letter, only letters/numbers/underscores (e.g., baklab, my_app_db)</div>
-                    <div class="invalid-feedback">Database name must start with a letter and contain only letters, numbers, and underscores (max 63 characters)</div>
+                    <div class="form-help" data-i18n="setup.database.name_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.database.name_error"></div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="db-user">Username *</label>
+                        <label for="db-user"><span data-i18n="setup.database.username_label"></span> <span data-i18n="common.required"></span></label>
                         <input 
                             type="text" 
                             id="db-user" 
                             name="username"
                             value="${this.config.database.user}" 
-                            placeholder="baklab"
+                            data-i18n-placeholder="setup.database.username_placeholder"
                             required
                             pattern="^[a-zA-Z][a-zA-Z0-9_]*$"
                             minlength="1"
                             maxlength="63"
-                            title="Username must start with a letter and contain only letters, numbers, and underscores (max 63 characters)"
+                            data-i18n-title="setup.database.username_error"
                         >
-                        <div class="form-help">PostgreSQL username, start with letter (e.g., baklab, admin_user)</div>
-                        <div class="invalid-feedback">Username must start with a letter and contain only letters, numbers, and underscores (max 63 characters)</div>
+                        <div class="form-help" data-i18n="setup.database.username_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.database.username_error"></div>
                     </div>
                     <div class="form-group">
-                        <label for="db-password">Password *</label>
+                        <label for="db-password"><span data-i18n="setup.database.password_label"></span> <span data-i18n="common.required"></span></label>
                         <input 
                             type="password" 
                             id="db-password" 
                             name="password"
                             value="${this.config.database.password}" 
-                            placeholder="Enter database password"
+                            data-i18n-placeholder="setup.database.password_placeholder"
                             required
                             minlength="8"
-                            title="Database password must be at least 8 characters long"
+                            data-i18n-title="setup.database.password_error"
                         >
-                        <div class="form-help">Minimum 8 characters (database authentication password)</div>
-                        <div class="invalid-feedback">Database password must be at least 8 characters long</div>
+                        <div class="form-help" data-i18n="setup.database.password_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.database.password_error"></div>
                     </div>
                 </div>
                 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()">Previous</button>
-                    <button type="submit" class="btn btn-primary">Next</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
                 </div>
             </form>
         `;
@@ -305,64 +313,62 @@ class SetupApp {
     renderRedisStep(container) {
         container.innerHTML = `
             <form id="redis-form" class="form-section" novalidate>
-                <h3>Redis Configuration</h3>
-                <p style="margin-bottom: 1.5rem; color: var(--gray-600);">
-                    Configure your Redis cache server settings. Connection will be tested after Docker deployment.
-                </p>
+                <h3 data-i18n="setup.redis.title"></h3>
+                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.redis.description"></p>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="redis-host">Host *</label>
+                        <label for="redis-host"><span data-i18n="setup.redis.host_label"></span> <span data-i18n="common.required"></span></label>
                         <input 
                             type="text" 
                             id="redis-host" 
                             name="host"
                             value="${this.config.redis.host}" 
-                            placeholder="localhost"
+                            data-i18n-placeholder="setup.redis.host_placeholder"
                             required
                             pattern="^[a-zA-Z0-9.\\-]+$"
-                            title="Please enter a valid hostname or IP address"
+                            data-i18n-title="setup.redis.host_error"
                         >
-                        <div class="form-help">Redis server hostname or IP (e.g., localhost, redis.example.com, 192.168.1.20)</div>
-                        <div class="invalid-feedback">Please enter a valid hostname or IP address</div>
+                        <div class="form-help" data-i18n="setup.redis.host_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.redis.host_error"></div>
                     </div>
                     <div class="form-group">
-                        <label for="redis-port">Port *</label>
+                        <label for="redis-port"><span data-i18n="setup.redis.port_label"></span> <span data-i18n="common.required"></span></label>
                         <input 
                             type="number" 
                             id="redis-port" 
                             name="port"
                             value="${this.config.redis.port}" 
-                            placeholder="6379"
+                            data-i18n-placeholder="setup.redis.port_placeholder"
                             required
                             min="1"
                             max="65535"
-                            title="Port must be between 1 and 65535"
+                            data-i18n-title="setup.redis.port_error"
                         >
-                        <div class="form-help">Redis port number (default: 6379, range: 1-65535)</div>
-                        <div class="invalid-feedback">Port must be between 1 and 65535</div>
+                        <div class="form-help" data-i18n="setup.redis.port_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.redis.port_error"></div>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="redis-password">Password *</label>
+                    <label for="redis-password"><span data-i18n="setup.redis.password_label"></span> <span data-i18n="common.required"></span></label>
                     <input 
                         type="password" 
                         id="redis-password" 
                         name="password"
                         value="${this.config.redis.password}" 
-                        placeholder="Enter Redis password"
+                        data-i18n-placeholder="setup.redis.password_placeholder"
                         required
                         minlength="1"
-                        title="Redis password is required"
+                        data-i18n-title="setup.redis.password_error"
                     >
-                    <div class="form-help">Redis authentication password (required)</div>
-                    <div class="invalid-feedback">Redis password is required</div>
+                    <div class="form-help" data-i18n="setup.redis.password_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.redis.password_error"></div>
                 </div>
                 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()">Previous</button>
-                    <button type="submit" class="btn btn-primary">Next</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
                 </div>
             </form>
         `;
@@ -381,45 +387,43 @@ class SetupApp {
     renderAppStep(container) {
         container.innerHTML = `
             <form id="app-form" class="form-section" novalidate>
-                <h3>Application Configuration</h3>
-                <p style="margin-bottom: 1.5rem; color: var(--gray-600);">
-                    Configure your application's basic settings and security options.
-                </p>
+                <h3 data-i18n="setup.app.title"></h3>
+                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.app.description"></p>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="app-domain">Domain Name *</label>
+                        <label for="app-domain"><span data-i18n="setup.app.domain_label"></span> <span data-i18n="common.required"></span></label>
                         <input 
                             type="text" 
                             id="app-domain" 
                             name="domain"
                             value="${this.config.app.domain_name}" 
-                            placeholder="example.com"
+                            data-i18n-placeholder="setup.app.domain_placeholder"
                             required
                             pattern="^[a-zA-Z0-9][a-zA-Z0-9\\-]{1,61}[a-zA-Z0-9]\\.[a-zA-Z]{2,}$|^localhost$"
-                            title="Please enter a valid domain name (e.g., example.com) or localhost"
+                            data-i18n-title="setup.app.domain_error"
                         >
-                        <div class="form-help">Your production domain name</div>
-                        <div class="invalid-feedback">Please enter a valid domain name (e.g., example.com) or localhost</div>
+                        <div class="form-help" data-i18n="setup.app.domain_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.app.domain_error"></div>
                     </div>
                     <div class="form-group">
-                        <label for="app-brand">Brand Name *</label>
+                        <label for="app-brand"><span data-i18n="setup.app.brand_label"></span> <span data-i18n="common.required"></span></label>
                         <input 
                             type="text" 
                             id="app-brand" 
                             name="brand"
                             value="${this.config.app.brand_name}" 
-                            placeholder="Baklab"
+                            data-i18n-placeholder="setup.app.brand_placeholder"
                             required
                             minlength="2"
                             maxlength="50"
                             pattern="^[a-zA-Z0-9\\s\\-_]+$"
-                            title="Brand name must be 2-50 characters and contain only letters, numbers, spaces, hyphens, and underscores"
+                            data-i18n-title="setup.app.brand_error"
                         >
-                        <div class="invalid-feedback">Brand name must be 2-50 characters and contain only letters, numbers, spaces, hyphens, and underscores</div>
+                        <div class="invalid-feedback" data-i18n="setup.app.brand_error"></div>
                     </div>
                     <div class="form-group">
-                        <label for="app-version">Application Version</label>
+                        <label for="app-version" data-i18n="setup.app.version_label"></label>
                         <select 
                             id="app-version" 
                             name="version"
@@ -429,68 +433,66 @@ class SetupApp {
                             <option value="v1.9.0" ${this.config.app.version === 'v1.9.0' ? 'selected' : ''}>v1.9.0</option>
                             <option value="v1.8.0" ${this.config.app.version === 'v1.8.0' ? 'selected' : ''}>v1.8.0</option>
                         </select>
-                        <div class="form-help">选择 BakLab 应用版本</div>
+                        <div class="form-help" data-i18n="setup.app.version_help"></div>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="app-email">Admin Email *</label>
+                    <label for="app-email"><span data-i18n="setup.app.email_label"></span> <span data-i18n="common.required"></span></label>
                     <input 
                         type="email" 
                         id="app-email" 
                         name="email"
                         value="${this.config.app.admin_email}" 
-                        placeholder="admin@example.com"
+                        data-i18n-placeholder="setup.app.email_placeholder"
                         required
-                        title="Please enter a valid email address"
+                        data-i18n-title="setup.app.email_error"
                     >
-                    <div class="form-help">System administrator email (used for TLS certificates and system notifications)</div>
-                    <div class="invalid-feedback">Please enter a valid email address</div>
+                    <div class="form-help" data-i18n="setup.app.email_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.app.email_error"></div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="app-cors">CORS Allow Origins</label>
+                    <label for="app-cors" data-i18n="setup.app.cors_label"></label>
                     <textarea 
                         id="app-cors" 
                         name="cors"
                         rows="3" 
-                        placeholder="https://app.example.com&#10;https://admin.example.com"
+                        data-i18n-placeholder="setup.app.cors_placeholder"
                         pattern="^(https?:\\/\\/[a-zA-Z0-9.\\-]+(?:\\:[0-9]+)?(?:\\/.*)?\\s*)*$"
-                        title="Each line should be a valid HTTP/HTTPS URL"
+                        data-i18n-title="setup.app.cors_error"
                     >${this.config.app.cors_allow_origins.join('\\n')}</textarea>
-                    <div class="form-help">Frontend URLs allowed to access your API. One per line. Format: https://domain.com or http://localhost:3000</div>
-                    <div class="invalid-feedback">Each line should be a valid HTTP/HTTPS URL</div>
+                    <div class="form-help" data-i18n="setup.app.cors_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.app.cors_error"></div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="app-lang">Default Language *</label>
+                        <label for="app-lang"><span data-i18n="setup.app.language_label"></span> <span data-i18n="common.required"></span></label>
                         <select 
                             id="app-lang" 
                             name="language"
                             required
-                            title="Please select a default language"
+                            data-i18n-title="setup.app.language_error"
                         >
                             <option value="en" ${this.config.app.default_lang === 'en' ? 'selected' : ''}>English</option>
                             <option value="zh-Hans" ${this.config.app.default_lang === 'zh-Hans' ? 'selected' : ''}>中文 (简体)</option>
-                            <option value="zh-Hant" ${this.config.app.default_lang === 'zh-Hant' ? 'selected' : ''}>中文 (繁體)</option>
-                            <option value="ja" ${this.config.app.default_lang === 'ja' ? 'selected' : ''}>日本語</option>
                         </select>
-                        <div class="form-help">Primary language for the application interface</div>
-                        <div class="invalid-feedback">Please select a default language</div>
+                        <div class="form-help" data-i18n="setup.app.language_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.app.language_error"></div>
                     </div>
                     <div class="form-group">
                         <label for="app-debug">
                             <input type="checkbox" id="app-debug" name="debug" ${this.config.app.debug ? 'checked' : ''}>
-                            Enable Debug Mode
+                            <span data-i18n="setup.app.debug_label"></span>
                         </label>
-                        <div class="form-help">Only enable for development environments</div>
+                        <div class="form-help" data-i18n="setup.app.debug_help"></div>
                     </div>
                 </div>
                 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()">Previous</button>
-                    <button type="submit" class="btn btn-primary">Next</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
                 </div>
             </form>
         `;
@@ -509,31 +511,29 @@ class SetupApp {
     renderAdminStep(container) {
         container.innerHTML = `
             <form id="admin-form" class="form-section" novalidate>
-                <h3>Administrator User</h3>
-                <p style="margin-bottom: 1.5rem; color: var(--gray-600);">
-                    Create the initial administrator account for your application. The email defaults to the system admin email, but you can change it if needed.
-                </p>
+                <h3 data-i18n="setup.admin.title"></h3>
+                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.admin.description"></p>
                 
                 <div class="form-group">
-                    <label for="admin-username">Username *</label>
+                    <label for="admin-username"><span data-i18n="setup.admin.username_label"></span> <span data-i18n="common.required"></span></label>
                     <input 
                         type="text" 
                         id="admin-username" 
                         name="username"
                         value="${this.config.admin_user.username}" 
-                        placeholder="admin"
+                        data-i18n-placeholder="setup.admin.username_placeholder"
                         required
                         minlength="4"
                         maxlength="20"
                         pattern="^[a-zA-Z0-9][a-zA-Z0-9._\\-]+[a-zA-Z0-9]$"
-                        title="Username must be 4-20 characters, start and end with alphanumeric characters"
+                        data-i18n-title="setup.admin.username_error"
                     >
-                    <div class="form-help">4-20 characters, start/end with letters/numbers, can contain dots, underscores, hyphens</div>
-                    <div class="invalid-feedback">Username must be 4-20 characters, start and end with alphanumeric characters</div>
+                    <div class="form-help" data-i18n="setup.admin.username_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.admin.username_error"></div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="admin-email">Email *</label>
+                    <label for="admin-email"><span data-i18n="setup.admin.email_label"></span> <span data-i18n="common.required"></span></label>
                     <input 
                         type="email" 
                         id="admin-email" 
@@ -541,47 +541,47 @@ class SetupApp {
                         value="${this.config.admin_user.email || this.config.app.admin_email}" 
                         placeholder="${this.config.app.admin_email || 'admin@example.com'}"
                         required
-                        title="Please enter a valid email address"
+                        data-i18n-title="setup.admin.email_error"
                     >
-                    <div class="form-help">Admin user login email (defaults to system admin email, can be different)</div>
-                    <div class="invalid-feedback">Please enter a valid email address</div>
+                    <div class="form-help" data-i18n="setup.admin.email_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.admin.email_error"></div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="admin-password">Password *</label>
+                    <label for="admin-password"><span data-i18n="setup.admin.password_label"></span> <span data-i18n="common.required"></span></label>
                     <input 
                         type="password" 
                         id="admin-password" 
                         name="password"
                         value="${this.config.admin_user.password}" 
-                        placeholder="Enter secure password"
+                        data-i18n-placeholder="setup.admin.password_placeholder"
                         required
                         minlength="12"
                         maxlength="64"
                         pattern="^[A-Za-z\\d!@#$%^&*]{12,64}$"
-                        title="Password must be 12-64 characters with letters, numbers, and special characters (!@#$%^&*)"
+                        data-i18n-title="setup.admin.password_error"
                     >
-                    <div class="form-help">12-64 characters with lowercase, uppercase, numbers, and special characters (!@#$%^&*)</div>
-                    <div class="invalid-feedback">Password must be 12-64 characters with lowercase, uppercase, numbers, and special characters (!@#$%^&*)</div>
+                    <div class="form-help" data-i18n="setup.admin.password_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.admin.password_error"></div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="admin-password-confirm">Confirm Password *</label>
+                    <label for="admin-password-confirm"><span data-i18n="setup.admin.password_confirm_label"></span> <span data-i18n="common.required"></span></label>
                     <input 
                         type="password" 
                         id="admin-password-confirm" 
                         name="passwordConfirm"
                         value="${this.config.admin_user.password}" 
-                        placeholder="Confirm your password"
+                        data-i18n-placeholder="setup.admin.password_confirm_placeholder"
                         required
-                        title="Please confirm your password"
+                        data-i18n-title="setup.admin.password_confirm_error"
                     >
-                    <div class="invalid-feedback">Passwords must match</div>
+                    <div class="invalid-feedback" data-i18n="setup.admin.password_confirm_error"></div>
                 </div>
                 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()">Previous</button>
-                    <button type="submit" class="btn btn-primary">Next</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
                 </div>
             </form>
         `;
@@ -632,10 +632,8 @@ class SetupApp {
     renderReviewStep(container) {
         container.innerHTML = `
             <div class="form-section">
-                <h3>Review Configuration</h3>
-                <p style="margin-bottom: 1.5rem; color: var(--gray-600);">
-                    Please review your configuration before generating the deployment files.
-                </p>
+                <h3 data-i18n="setup.review.title"></h3>
+                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.review.description"></p>
                 
                 <div id="config-review">
                     <div class="loading">
@@ -644,8 +642,8 @@ class SetupApp {
                 </div>
                 
                 <div class="btn-group">
-                    <button class="btn btn-secondary" onclick="app.previousStep()">Previous</button>
-                    <button class="btn btn-success" onclick="app.generateConfig()">Generate Config</button>
+                    <button class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button class="btn btn-success" onclick="app.generateConfig()" data-i18n="setup.review.generate_button"></button>
                 </div>
             </div>
         `;
@@ -656,24 +654,19 @@ class SetupApp {
     renderCompleteStep(container) {
         container.innerHTML = `
             <div class="form-section" style="text-align: center;">
-                <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
-                <h3>Setup Complete!</h3>
-                <p style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;">
-                    Your Baklab application has been successfully configured. 
-                    The configuration files have been generated and are ready for deployment.
-                </p>
+                <div style="font-size: 4rem; margin-bottom: 1rem;" data-i18n="setup.complete.emoji"></div>
+                <h3 data-i18n="setup.complete.title"></h3>
+                <p style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;" data-i18n="setup.complete.description"></p>
                 
                 <div class="alert alert-info">
-                    <strong>Ready for Deployment!</strong><br>
-                    Your configuration has been generated and validated. Click "Deploy Application" to automatically start your Baklab services.
+                    <strong data-i18n="setup.complete.ready_notice"></strong><br>
+                    <span data-i18n="setup.complete.ready_description"></span>
                 </div>
                 
                 <div class="btn-group">
-                    <button class="btn btn-success btn-lg" onclick="app.startDeployment()">
-                        🚀 Deploy Application
+                    <button class="btn btn-success btn-lg" onclick="app.startDeployment()" data-i18n="setup.complete.deploy_button">
                     </button>
-                    <button class="btn btn-secondary" onclick="app.completeSetup()">
-                        Skip Deployment
+                    <button class="btn btn-secondary" onclick="app.completeSetup()" data-i18n="setup.complete.skip_button">
                     </button>
                 </div>
             </div>
@@ -835,7 +828,7 @@ class SetupApp {
         try {
             await this.api('POST', '/api/config', this.config);
         } catch (error) {
-            this.showAlert('error', 'Failed to save configuration: ' + error.message);
+            this.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_generate', {error: error.message}) : 'Failed to save configuration: ' + error.message);
             throw error;
         }
     }
@@ -845,33 +838,42 @@ class SetupApp {
             // 从本地缓存读取配置显示
             const config = this.config;
             
+            // 使用i18n渲染配置审查
+            const corsText = window.i18n ? window.i18n.t('setup.review.cors_configured', { count: config.app.cors_allow_origins.length }) : 
+                            `${config.app.cors_allow_origins.length} configured`;
+            
             document.getElementById('config-review').innerHTML = `
                 <div style="text-align: left;">
-                    <h4>Database</h4>
-                    <p><strong>Host:</strong> ${config.database.host}:${config.database.port}</p>
-                    <p><strong>Database:</strong> ${config.database.name}</p>
-                    <p><strong>User:</strong> ${config.database.user}</p>
+                    <h4 data-i18n="setup.review.sections.database"></h4>
+                    <p><strong data-i18n="setup.review.fields.host"></strong>: ${config.database.host}:${config.database.port}</p>
+                    <p><strong data-i18n="setup.review.fields.database"></strong>: ${config.database.name}</p>
+                    <p><strong data-i18n="setup.review.fields.user"></strong>: ${config.database.user}</p>
                     
-                    <h4 style="margin-top: 1.5rem;">Redis</h4>
-                    <p><strong>Host:</strong> ${config.redis.host}:${config.redis.port}</p>
-                    <p><strong>Password:</strong> ••••••••</p>
+                    <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.redis"></h4>
+                    <p><strong data-i18n="setup.review.fields.host"></strong>: ${config.redis.host}:${config.redis.port}</p>
+                    <p><strong data-i18n="setup.review.fields.password"></strong>: ••••••••</p>
                     
-                    <h4 style="margin-top: 1.5rem;">Application</h4>
-                    <p><strong>Domain:</strong> ${config.app.domain_name}</p>
-                    <p><strong>Brand:</strong> ${config.app.brand_name}</p>
-                    <p><strong>Version:</strong> ${config.app.version || 'latest'}</p>
-                    <p><strong>Language:</strong> ${config.app.default_lang}</p>
-                    <p><strong>CORS Origins:</strong> ${config.app.cors_allow_origins.length} configured</p>
+                    <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.application"></h4>
+                    <p><strong data-i18n="setup.review.fields.domain"></strong>: ${config.app.domain_name}</p>
+                    <p><strong data-i18n="setup.review.fields.brand"></strong>: ${config.app.brand_name}</p>
+                    <p><strong data-i18n="setup.review.fields.version"></strong>: ${config.app.version || 'latest'}</p>
+                    <p><strong data-i18n="setup.review.fields.language"></strong>: ${config.app.default_lang}</p>
+                    <p><strong data-i18n="setup.review.fields.cors_origins"></strong>: ${corsText}</p>
                     
-                    <h4 style="margin-top: 1.5rem;">Administrator</h4>
-                    <p><strong>Username:</strong> ${config.admin_user.username}</p>
-                    <p><strong>Email:</strong> ${config.admin_user.email}</p>
-                    <p><strong>Password:</strong> ••••••••</p>
+                    <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.administrator"></h4>
+                    <p><strong data-i18n="setup.review.fields.username"></strong>: ${config.admin_user.username}</p>
+                    <p><strong data-i18n="setup.review.fields.email"></strong>: ${config.admin_user.email}</p>
+                    <p><strong data-i18n="setup.review.fields.password"></strong>: ••••••••</p>
                 </div>
             `;
+            
+            // 应用翻译到新生成的内容
+            if (window.i18n) {
+                window.i18n.applyTranslations();
+            }
         } catch (error) {
             document.getElementById('config-review').innerHTML = `
-                <div class="alert alert-error">Failed to load configuration: ${error.message}</div>
+                <div class="alert alert-error">${window.i18n ? window.i18n.t('messages.failed_get_config') : 'Failed to load configuration'}: ${error.message}</div>
             `;
         }
     }
@@ -907,7 +909,7 @@ class SetupApp {
             const result = await this.api('POST', '/api/test-connections', testConfig);
             this.displayConnectionResults(result.data);
         } catch (error) {
-            this.showAlert('error', 'Connection test failed: ' + error.message);
+            this.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
         }
     }
     
@@ -1284,7 +1286,7 @@ class SetupApp {
             // 清除本地缓存（设置已完成）
             this.clearLocalCache();
             
-            this.showAlert('success', 'Setup completed successfully! Your Baklab application is ready to use.');
+            this.showAlert('success', window.i18n ? window.i18n.t('messages.setup_completed') : 'Setup completed successfully! Your Baklab application is ready to use.');
             
             // 延迟跳转到完成页面
             setTimeout(() => {
@@ -1314,7 +1316,8 @@ class SetupApp {
     showAlert(type, message) {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type}`;
-        alertDiv.textContent = message;
+        // 如果消息是翻译键，尝试翻译
+        alertDiv.textContent = window.i18n && message.includes('.') ? window.i18n.t(message) : message;
         
         document.querySelector('.setup-card').insertBefore(alertDiv, document.getElementById('step-content'));
         
@@ -1328,7 +1331,6 @@ class SetupApp {
 }
 
 // Initialize the app when the page loads
-let app;
 document.addEventListener('DOMContentLoaded', () => {
-    app = new SetupApp();
+    window.app = new SetupApp();
 });
