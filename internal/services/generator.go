@@ -111,7 +111,7 @@ ADMIN_EMAIL={{ .App.AdminEmail }}
 ADMIN_PASSWORD={{ .Database.Password }}
 DEBUG={{ .App.Debug }}
 TEST=false
-APP_VERSION=latest
+APP_VERSION={{ if .App.Version }}{{ .App.Version }}{{ else }}latest{{ end }}
 
 # Security Configuration
 SESSION_SECRET={{ .App.SessionSecret }}
@@ -171,7 +171,7 @@ APP_LOCAL_HOST=172.17.0.1
 # APP_TLS_KEY=./certs/server.key
 
 # Version
-APP_VERSION=1.0.0
+APP_VERSION={{ if .App.Version }}{{ .App.Version }}{{ else }}latest{{ end }}
 
 # Setup Status
 SETUP_COMPLETED=true
@@ -232,7 +232,7 @@ func (g *GeneratorService) GenerateDockerConfig(cfg *config.SetupConfig) error {
 
 services:
   webapp:
-    image: kholinchen/dproject:$APP_VERSION
+    image: ghcr.io/biliqiqi/baklab:$APP_VERSION
     container_name: "webapp-app-1"
     restart: always
     environment:

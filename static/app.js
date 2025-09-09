@@ -30,6 +30,7 @@ class SetupApp {
                 brand_name: 'Baklab',
                 admin_email: '',
                 default_lang: 'en',
+                version: 'latest',
                 debug: false,
                 cors_allow_origins: [],
                 session_secret: '',
@@ -417,6 +418,19 @@ class SetupApp {
                         >
                         <div class="invalid-feedback">Brand name must be 2-50 characters and contain only letters, numbers, spaces, hyphens, and underscores</div>
                     </div>
+                    <div class="form-group">
+                        <label for="app-version">Application Version</label>
+                        <select 
+                            id="app-version" 
+                            name="version"
+                        >
+                            <option value="latest" ${this.config.app.version === 'latest' ? 'selected' : ''}>latest</option>
+                            <option value="v2.0.0" ${this.config.app.version === 'v2.0.0' ? 'selected' : ''}>v2.0.0</option>
+                            <option value="v1.9.0" ${this.config.app.version === 'v1.9.0' ? 'selected' : ''}>v1.9.0</option>
+                            <option value="v1.8.0" ${this.config.app.version === 'v1.8.0' ? 'selected' : ''}>v1.8.0</option>
+                        </select>
+                        <div class="form-help">选择 BakLab 应用版本</div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -745,6 +759,7 @@ class SetupApp {
             domain_name: document.getElementById('app-domain').value,
             brand_name: document.getElementById('app-brand').value,
             admin_email: document.getElementById('app-email').value,
+            version: document.getElementById('app-version').value,
             cors_allow_origins: corsOrigins,
             default_lang: document.getElementById('app-lang').value,
             debug: document.getElementById('app-debug').checked
@@ -844,6 +859,7 @@ class SetupApp {
                     <h4 style="margin-top: 1.5rem;">Application</h4>
                     <p><strong>Domain:</strong> ${config.app.domain_name}</p>
                     <p><strong>Brand:</strong> ${config.app.brand_name}</p>
+                    <p><strong>Version:</strong> ${config.app.version || 'latest'}</p>
                     <p><strong>Language:</strong> ${config.app.default_lang}</p>
                     <p><strong>CORS Origins:</strong> ${config.app.cors_allow_origins.length} configured</p>
                     
@@ -1199,6 +1215,7 @@ class SetupApp {
                 'app.domain_name': 'app-domain',
                 'app.brand_name': 'app-brand',
                 'app.admin_email': 'app-email',
+                'app.version': 'app-version',
                 'app.default_lang': 'app-lang',
                 'admin_user.username': 'admin-username',
                 'admin_user.email': 'admin-email',
