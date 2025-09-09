@@ -1,0 +1,257 @@
+{
+  "common": {
+    "next": "下一步",
+    "previous": "上一步", 
+    "save": "保存",
+    "cancel": "取消",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "warning": "警告",
+    "info": "信息",
+    "required": "*",
+    "optional": "（可选）",
+    "yes": "是",
+    "no": "否", 
+    "ok": "确定",
+    "close": "关闭",
+    "confirm": "确认",
+    "retry": "重试"
+  },
+  
+  "setup": {
+    "title": "🚀 Baklab 设置",
+    "subtitle": "配置您的 Baklab 应用程序用于生产部署",
+    
+    "steps": {
+      "initialize": "初始化",
+      "database": "数据库",
+      "redis": "Redis缓存",
+      "application": "应用程序",
+      "admin_user": "管理员用户", 
+      "review": "检查配置",
+      "complete": "完成"
+    },
+    
+    "init": {
+      "welcome_title": "欢迎使用 Baklab 设置向导",
+      "welcome_description": "此设置向导将帮助您配置 Baklab 应用程序用于生产部署。点击下面的按钮生成安全设置令牌并开始配置过程。",
+      "existing_deployment_warning": "⚠️ 检测到现有部署",
+      "existing_deployment_details": "配置文件已存在于 config/ 目录中。继续操作将覆盖现有的部署配置。",
+      "existing_deployment_effects": "这将会：",
+      "existing_deployment_list": [
+        "替换所有配置文件（.env、docker-compose.yml 等）",
+        "生成新的安全密钥和令牌",
+        "不会影响正在运行的服务（需要手动重启）"
+      ],
+      "backup_reminder": "如有需要，请确保备份当前配置。",
+      "initialize_button": "初始化设置",
+      "proceed_override": "继续并覆盖"
+    },
+    
+    "database": {
+      "title": "数据库配置",
+      "description": "配置您的 PostgreSQL 数据库连接设置。连接将在 Docker 部署后进行测试。",
+      
+      "host_label": "主机地址",
+      "host_placeholder": "localhost",
+      "host_help": "主机名或IP地址（例如：localhost、db.example.com、192.168.1.10）",
+      "host_error": "请输入有效的主机名或IP地址",
+      
+      "port_label": "端口",
+      "port_placeholder": "5432",
+      "port_help": "PostgreSQL 端口号（默认：5432，范围：1-65535）", 
+      "port_error": "端口必须在 1 到 65535 之间",
+      
+      "name_label": "数据库名称",
+      "name_placeholder": "baklab",
+      "name_help": "以字母开头，只能包含字母/数字/下划线（例如：baklab、my_app_db）",
+      "name_error": "数据库名称必须以字母开头，只能包含字母、数字和下划线（最大63个字符）",
+      
+      "username_label": "用户名",
+      "username_placeholder": "baklab",
+      "username_help": "PostgreSQL 用户名，以字母开头（例如：baklab、admin_user）",
+      "username_error": "用户名必须以字母开头，只能包含字母、数字和下划线（最大63个字符）",
+      
+      "password_label": "密码",
+      "password_placeholder": "输入数据库密码",
+      "password_help": "最少8个字符（数据库身份验证密码）",
+      "password_error": "数据库密码必须至少8个字符"
+    },
+    
+    "redis": {
+      "title": "Redis 配置",
+      "description": "配置您的 Redis 缓存服务器设置。连接将在 Docker 部署后进行测试。",
+      
+      "host_label": "主机地址",
+      "host_placeholder": "localhost",
+      "host_help": "Redis 服务器主机名或IP（例如：localhost、redis.example.com、192.168.1.20）",
+      "host_error": "请输入有效的主机名或IP地址",
+      
+      "port_label": "端口",
+      "port_placeholder": "6379", 
+      "port_help": "Redis 端口号（默认：6379，范围：1-65535）",
+      "port_error": "端口必须在 1 到 65535 之间",
+      
+      "password_label": "密码",
+      "password_placeholder": "输入 Redis 密码",
+      "password_help": "Redis 身份验证密码（必填）",
+      "password_error": "Redis 密码是必填的"
+    },
+    
+    "app": {
+      "title": "应用程序配置",
+      "description": "配置您的应用程序基本设置和安全选项。",
+      
+      "domain_label": "域名",
+      "domain_placeholder": "example.com",
+      "domain_help": "您的生产域名",
+      "domain_error": "请输入有效的域名（例如：example.com）或 localhost",
+      
+      "brand_label": "品牌名称",
+      "brand_placeholder": "Baklab",
+      "brand_error": "品牌名称必须是2-50个字符，只能包含字母、数字、空格、连字符和下划线",
+      
+      "version_label": "应用程序版本",
+      "version_help": "选择 BakLab 应用版本",
+      
+      "email_label": "管理员邮箱",
+      "email_placeholder": "admin@example.com",
+      "email_help": "系统管理员邮箱（用于TLS证书和系统通知）",
+      "email_error": "请输入有效的邮箱地址",
+      
+      "cors_label": "CORS 允许来源",
+      "cors_placeholder": "https://app.example.com\nhttps://admin.example.com", 
+      "cors_help": "允许访问您API的前端URL。每行一个。格式：https://domain.com 或 http://localhost:3000",
+      "cors_error": "每行都应该是有效的 HTTP/HTTPS URL",
+      
+      "language_label": "默认语言",
+      "language_help": "应用程序界面的主要语言",
+      "language_error": "请选择默认语言",
+      
+      "debug_label": "启用调试模式",
+      "debug_help": "仅在开发环境中启用"
+    },
+    
+    "admin": {
+      "title": "管理员用户",
+      "description": "创建应用程序的初始管理员账户。邮箱默认为系统管理员邮箱，但您可以根据需要更改。",
+      
+      "username_label": "用户名",
+      "username_placeholder": "admin",
+      "username_help": "4-20个字符，以字母/数字开头和结尾，可包含点、下划线、连字符",
+      "username_error": "用户名必须是4-20个字符，以字母数字字符开头和结尾",
+      
+      "email_label": "邮箱",
+      "email_help": "管理员用户登录邮箱（默认为系统管理员邮箱，可以不同）",
+      "email_error": "请输入有效的邮箱地址",
+      
+      "password_label": "密码", 
+      "password_placeholder": "输入安全密码",
+      "password_help": "12-64个字符，包含小写、大写、数字和特殊字符（!@#$%^&*）",
+      "password_error": "密码必须是12-64个字符，包含小写、大写、数字和特殊字符（!@#$%^&*）",
+      
+      "password_confirm_label": "确认密码",
+      "password_confirm_placeholder": "确认您的密码", 
+      "password_confirm_error": "密码必须匹配"
+    },
+    
+    "review": {
+      "title": "检查配置",
+      "description": "请在生成部署文件之前检查您的配置。",
+      "generate_button": "生成配置",
+      
+      "sections": {
+        "database": "数据库",
+        "redis": "Redis缓存",
+        "application": "应用程序", 
+        "administrator": "管理员"
+      },
+      
+      "fields": {
+        "host": "主机",
+        "database": "数据库",
+        "user": "用户",
+        "password": "密码",
+        "domain": "域名",
+        "brand": "品牌",
+        "version": "版本",
+        "language": "语言",
+        "cors_origins": "CORS 来源",
+        "username": "用户名",
+        "email": "邮箱"
+      },
+      
+      "cors_configured": {
+        "zero": "未配置 CORS 来源",
+        "one": "已配置 {{count}} 个 CORS 来源",
+        "other": "已配置 {{count}} 个 CORS 来源"
+      }
+    },
+    
+    "complete": {
+      "title": "设置完成！",
+      "emoji": "🎉",
+      "description": "您的 Baklab 应用程序已成功配置。配置文件已生成并准备好部署。",
+      "ready_notice": "准备部署！",
+      "ready_description": "您的配置已生成并验证。点击\"部署应用程序\"自动启动您的 Baklab 服务。",
+      "deploy_button": "🚀 部署应用程序",
+      "skip_button": "跳过部署"
+    },
+    
+    "deployment": {
+      "title": "🚀 正在部署应用程序",
+      "deployment_id": "部署ID：{{id}}",
+      "initializing": "正在初始化部署...",
+      "logs_title": "部署日志",
+      "scroll_button": "📜 滚动到底部",
+      "test_button": "🔍 测试服务",
+      "complete_button": "✅ 完成设置",
+      "success": "🎉 部署成功完成！",
+      "timeout": "⏰ 部署超时，但服务可能仍在启动中..."
+    },
+    
+    "completed": {
+      "title": "✅ 设置完成！",
+      "description": "您的 Baklab 应用程序已成功配置和部署。",
+      "congratulations": "恭喜！您的 Baklab 实例现在已准备就绪。设置服务仍可用于未来的配置更新。",
+      
+      "next_steps": "下一步",
+      "steps_list": [
+        "访问您的应用程序：访问您的域名开始使用 Baklab",
+        "配置更新：您可以随时重新运行设置来更新配置",
+        "备份：设置数据和配置的定期备份",
+        "监控：使用 docker-compose ps 监控您的服务",
+        "日志：使用 docker-compose logs -f 查看日志"
+      ],
+      
+      "run_again_button": "重新运行设置"
+    }
+  },
+  
+  "messages": {
+    "setup_initialized": "设置初始化成功",
+    "config_saved": "配置保存成功",
+    "config_generated": "配置文件生成成功",
+    "setup_completed": "设置完成成功！现在可以启动主应用程序。",
+    "deployment_started": "部署已启动", 
+    "connection_connected": "已连接到部署日志流",
+    "connection_lost": "与部署日志的连接丢失",
+    "testing_services": "正在测试已部署的服务...",
+    "services_ok": "✅ 所有服务都正常响应",
+    "validation_failed": "配置验证失败",
+    "fix_errors": "请修复下面的验证错误，然后重试。",
+    
+    "errors": {
+      "method_not_allowed": "不允许的方法",
+      "invalid_json": "无效的JSON格式",
+      "failed_check_status": "检查设置状态失败",
+      "failed_get_config": "获取配置失败",
+      "failed_test_connections": "连接测试失败：{{error}}",
+      "failed_tests": "连接测试失败：{{error}}",
+      "failed_generate": "生成配置失败：{{error}}",
+      "failed_deploy": "启动部署失败：{{error}}",
+      "failed_complete": "完成设置失败：{{error}}"
+    }
+  }
+}

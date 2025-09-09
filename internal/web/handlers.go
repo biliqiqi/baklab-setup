@@ -62,6 +62,7 @@ func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
         <h1>Baklab Setup</h1>
         <p>Loading setup interface...</p>
     </div>
+    <script src="/static/i18n.js?v=1.0"></script>
     <script src="/static/app.js?v=1.2"></script>
 </body>
 </html>`)
