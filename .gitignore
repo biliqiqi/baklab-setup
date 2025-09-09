@@ -28,5 +28,28 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Setup 项目特有文件
+# 编译后的二进制文件
+setup
+
+# 生成的配置文件目录（每次运行都会重新生成）
+config/
+
+# 运行时数据和状态文件
+data/*.json
+data/logs/
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+tmp/
+temp/
