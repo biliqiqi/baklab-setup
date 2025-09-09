@@ -1,40 +1,23 @@
-# Baklab Setup Tool
+# BakLab Setup Tool
 
-独立的 setup 工具，用于生成 Baklab 应用的生产环境配置。此工具会根据主项目的实际配置结构生成完全兼容的生产环境部署文件。
-
-## 项目结构
-
-```
-setup/
-├── main.go                     # 主程序入口
-├── Dockerfile.pg               # PostgreSQL 自定义 Dockerfile
-├── internal/                   # 内部包
-│   ├── config/                 # 配置模型
-│   ├── services/               # 业务逻辑服务
-│   ├── storage/                # 数据存储
-│   └── web/                    # Web 处理器
-├── templates/                  # 配置模板（不会被清理）
-│   ├── db/                     # 数据库相关模板
-│   │   ├── initdb/             # 数据库初始化脚本
-│   │   └── postgresql.conf     # PostgreSQL 配置
-│   ├── nginx/                  # Nginx 配置模板
-│   │   ├── nginx.conf
-│   │   └── webapp.conf.template
-│   └── redis/                  # Redis/Valkey 配置模板
-│       ├── redis.conf
-│       └── users.acl.tpl
-├── config/                     # 生成的配置文件（会被清理重建）
-└── static/                     # 静态前端文件
-```
+独立的 setup 工具，用于生成 BakLab 应用的生产环境配置。此工具会根据主项目的实际配置结构生成完全兼容的生产环境部署文件。
 
 ## 快速开始
 
-### 1. 运行 setup 工具
+### 1. 获取工具
 
 ```bash
-# 进入 setup 目录
-cd setup
+# 克隆仓库
+git clone https://github.com/biliqiqi/baklab-setup.git
+cd baklab-setup
 
+# 安装 Go 依赖
+go mod download
+```
+
+### 2. 运行 setup 工具
+
+```bash
 # 方式1: 直接运行 Go 代码
 go run .
 
@@ -43,11 +26,11 @@ go build -o setup .
 ./setup
 ```
 
-### 2. 访问配置界面
+### 3. 访问配置界面
 
 打开浏览器访问：**http://localhost:8080**
 
-### 3. 配置步骤
+### 4. 配置步骤
 
 按界面指引完成配置：
 
@@ -63,7 +46,7 @@ go build -o setup .
 6. **Review** - 检查配置并测试连接
 7. **Complete** - 生成配置文件并完成
 
-### 4. 自动完成
+### 5. 自动完成
 
 配置完成后 setup 会：
 - ✅ 生成生产环境配置文件
@@ -74,7 +57,7 @@ go build -o setup .
 ## 生成的配置文件
 
 ```
-setup/config/
+config/
 ├── .env.production              # 环境变量配置
 ├── docker-compose.production.yml # Docker Compose 配置
 ├── Dockerfile.pg                # PostgreSQL 自定义镜像
@@ -120,22 +103,23 @@ setup/config/
 ### 1. 构建应用镜像
 
 ```bash
-# 在 baklab 主项目根目录
-docker build -t kholinchen/dproject:latest .
+# BakLab 主项目以预构建镜像形式提供
+# 镜像地址：ghcr.io/biliqiqi/baklab:latest
+# 无需手动构建，setup 工具会自动使用该镜像
 ```
 
 ### 2. 准备部署环境
 
 ```bash
 # 复制整个 config 目录到部署服务器
-scp -r setup/config/ server:/opt/baklab/
+scp -r config/ server:/opt/baklab/
 
 # 或者单独复制必要文件
-scp setup/config/.env.production server:/opt/baklab/
-scp setup/config/docker-compose.production.yml server:/opt/baklab/
-scp -r setup/config/db/ server:/opt/baklab/config/
-scp -r setup/config/nginx/ server:/opt/baklab/config/
-scp -r setup/config/redis/ server:/opt/baklab/config/
+scp config/.env.production server:/opt/baklab/
+scp config/docker-compose.production.yml server:/opt/baklab/
+scp -r config/db/ server:/opt/baklab/config/
+scp -r config/nginx/ server:/opt/baklab/config/
+scp -r config/redis/ server:/opt/baklab/config/
 ```
 
 ### 3. 启动生产环境
@@ -198,12 +182,17 @@ curl -I http://your-domain.com
 
 ## 安全提醒
 
-⚠️ **重要**: setup 完成后请立即删除 setup 目录和二进制文件，避免安全风险！
+⚠️ **重要**: setup 完成后建议采取以下安全措施：
 
 ```bash
-# 保存配置后删除 setup
-cp -r setup/config/ /safe/location/
-rm -rf setup/
+# 1. 备份生成的配置文件
+cp -r config/ /safe/backup/location/
+
+# 2. 删除敏感的运行时数据
+rm -rf data/
+
+# 3. 如果在生产服务器上运行，考虑删除整个 setup 工具
+# rm -rf /path/to/baklab-setup/
 ```
 
 ## 故障排除
