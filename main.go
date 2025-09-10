@@ -17,9 +17,9 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
-	"github.com/oodzchen/baklab/setup/internal/services"
-	"github.com/oodzchen/baklab/setup/internal/storage"
-	"github.com/oodzchen/baklab/setup/internal/web"
+	"github.com/biliqiqi/baklab-setup/internal/services"
+	"github.com/biliqiqi/baklab-setup/internal/storage"
+	"github.com/biliqiqi/baklab-setup/internal/web"
 )
 
 var (
@@ -89,6 +89,9 @@ func main() {
 		r.Post("/validate", handlers.ValidateConfigHandler)
 		r.Post("/test-connections", handlers.TestConnectionsHandler)
 		r.Post("/generate", handlers.GenerateConfigHandler)
+		
+		// 文件上传路由
+		r.Post("/upload/geo-file", handlers.UploadGeoFileHandler)
 		
 		// 部署相关路由
 		r.Post("/deploy", handlers.StartDeploymentHandler)

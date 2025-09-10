@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/oodzchen/baklab/setup/internal/model"
-	"github.com/oodzchen/baklab/setup/internal/services"
+	"github.com/biliqiqi/baklab-setup/internal/model"
+	"github.com/biliqiqi/baklab-setup/internal/services"
 )
 
 // SetupMiddleware setup中间件

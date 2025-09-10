@@ -1,4 +1,4 @@
-module github.com/oodzchen/baklab/setup
+module github.com/biliqiqi/baklab-setup
 
 go 1.21
 

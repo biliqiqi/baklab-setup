@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/oodzchen/baklab/setup/internal/model"
+	"github.com/biliqiqi/baklab-setup/internal/model"
 )
 
 // JSONStorage JSON文件存储实现
