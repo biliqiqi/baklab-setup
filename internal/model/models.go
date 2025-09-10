@@ -49,12 +49,20 @@ type SMTPConfig struct {
 	Sender   string `json:"sender" validate:"required,email"`
 }
 
+// GoAccessConfig GoAccess配置
+type GoAccessConfig struct {
+	Enabled    bool   `json:"enabled"`
+	GeoDBPath  string `json:"geo_db_path"`
+	HasGeoFile bool   `json:"has_geo_file"`
+}
+
 // AppConfig 应用配置
 type AppConfig struct {
 	DomainName        string   `json:"domain_name" validate:"required"`
 	BrandName         string   `json:"brand_name" validate:"required"`
 	AdminEmail        string   `json:"admin_email" validate:"required,email"`
 	DefaultLang       string   `json:"default_lang" validate:"required"`
+	Version           string   `json:"version"`
 	Debug             bool     `json:"debug"`
 	CORSAllowOrigins  []string `json:"cors_allow_origins"`
 	SessionSecret     string   `json:"session_secret"`
@@ -82,6 +90,7 @@ type SetupConfig struct {
 	SMTP      SMTPConfig      `json:"smtp"`
 	App       AppConfig       `json:"app"`
 	AdminUser AdminUserConfig `json:"admin_user"`
+	GoAccess  GoAccessConfig  `json:"goaccess"`
 }
 
 // SetupToken 访问令牌

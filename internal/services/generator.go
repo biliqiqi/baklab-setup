@@ -12,7 +12,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/oodzchen/baklab/setup/internal/model"
+	"github.com/biliqiqi/baklab-setup/internal/model"
 )
 
 // GeneratorService 配置文件生成服务
@@ -40,9 +40,57 @@ func (g *GeneratorService) ClearOutputDir() error {
 		return nil
 	}
 	
-	// 删除整个目录及其内容
-	if err := os.RemoveAll(g.outputDir); err != nil {
-		return fmt.Errorf("failed to clear output directory: %w", err)
+	// 遍历输出目录，跳过特定目录
+	entries, err := os.ReadDir(g.outputDir)
+	if err != nil {
+		return fmt.Errorf("failed to read output directory: %w", err)
+	}
+	
+	for _, entry := range entries {
+		entryPath := filepath.Join(g.outputDir, entry.Name())
+		
+		// 跳过 nginx/logs 目录以避免权限问题
+		if entry.Name() == "nginx" {
+			// 处理 nginx 目录：保留 logs 子目录，删除其他内容
+			if err := g.clearNginxDir(entryPath); err != nil {
+				return fmt.Errorf("failed to clear nginx directory: %w", err)
+			}
+			continue
+		}
+		
+		// 删除其他文件和目录
+		if err := os.RemoveAll(entryPath); err != nil {
+			return fmt.Errorf("failed to remove %s: %w", entryPath, err)
+		}
+	}
+	
+	return nil
+}
+
+// clearNginxDir 清理 nginx 目录但保留 logs 子目录
+func (g *GeneratorService) clearNginxDir(nginxPath string) error {
+	entries, err := os.ReadDir(nginxPath)
+	if err != nil {
+		// 如果 nginx 目录不存在，直接返回
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	
+	for _, entry := range entries {
+		entryPath := filepath.Join(nginxPath, entry.Name())
+		
+		// 跳过 logs 目录
+		if entry.Name() == "logs" {
+			log.Printf("Skipping nginx/logs directory to avoid permission issues")
+			continue
+		}
+		
+		// 删除其他文件和目录
+		if err := os.RemoveAll(entryPath); err != nil {
+			return fmt.Errorf("failed to remove %s: %w", entryPath, err)
+		}
 	}
 	
 	return nil
@@ -104,7 +152,7 @@ REDISCLI_AUTH={{ .Redis.Password }}
 
 # Application Configuration
 DOMAIN_NAME={{ .App.DomainName }}
-SECOND_LEVEL_DOMAIN_NAME={{ .App.DomainName }}
+BASE_DOMAIN_NAME={{ .App.DomainName }}
 BRAND_NAME={{ .App.BrandName }}
 BRAND_DOMAIN_NAME={{ .App.DomainName }}
 ADMIN_EMAIL={{ .App.AdminEmail }}
@@ -240,9 +288,9 @@ services:
       DB_HOST: "db"
       DB_PORT: 5432
       DOMAIN_NAME: $DOMAIN_NAME
-      DB_NAME: $APP_DB_NAME
-      DB_USER: $APP_DB_USER
-      ADMIN_PASSWORD: $ADMIN_PASSWORD
+      APP_DB_NAME: $APP_DB_NAME
+      APP_DB_USER: $APP_DB_USER
+      APP_DB_PASSWORD: $APP_DB_PASSWORD
       ADMIN_EMAIL: $ADMIN_EMAIL
       APP_PORT: $APP_PORT
       APP_OUTER_PORT: $APP_OUTER_PORT
@@ -267,8 +315,26 @@ services:
       APP_VERSION: $APP_VERSION
       CLOUDFLARE_SITE_KEY: $CLOUDFLARE_SITE_KEY
       CLOUDFLARE_SECRET: $CLOUDFLARE_SECRET
+      JWT_KEY_FILE: $JWT_KEY_FILE
+      SERVICE_URL: $SERVICE_URL
+      STATIC_HOST_NAME: $STATIC_HOST_NAME
+      CORS_ALLOW_ORIGINS: $CORS_ALLOW_ORIGINS
+      FRONTEND_ROOT_ID: $FRONTEND_ROOT_ID
+      FRONTEND_SCRIPTS: $FRONTEND_SCRIPTS
+      FRONTEND_STYLES: $FRONTEND_STYLES
+      GEOIP_ENABLED: $GEOIP_ENABLED
+      GEOIP_FILE: $GEOIP_FILE
+      I18N_FILE_DIR: $I18N_FILE_DIR
+      MIGRATION_FILE_DIR: $MIGRATION_FILE_DIR
+      DEFAULT_DATA_DIR: $DEFAULT_DATA_DIR
+      DEFAULT_LANG: $DEFAULT_LANG
+      BRAND_NAME: $BRAND_NAME
+      BRAND_DOMAIN_NAME: $BRAND_DOMAIN_NAME
+      DEBUG: $DEBUG
+      TEST: $TEST
     volumes:
       - ./manage_static:/app/manage_static
+      - ./keys:/app/keys
     depends_on:
       db:
         condition: service_healthy
@@ -281,7 +347,7 @@ services:
   db:
     build:
       context: .
-      dockerfile: ./config/Dockerfile.pg
+      dockerfile: ./Dockerfile.pg
       args:
         - HTTP_PROXY=${HOST_PROXY}
         - HTTPS_PROXY=${HOST_PROXY}
@@ -290,8 +356,8 @@ services:
     restart: always
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./config/db/initdb:/docker-entrypoint-initdb.d/
-      - ./config/db/postgresql.conf:/etc/postgresql/custom/postgresql.conf
+      - ./db/initdb:/docker-entrypoint-initdb.d/
+      - ./db/postgresql.conf:/etc/postgresql/custom/postgresql.conf
     command:
       - postgres
       - -c
@@ -328,7 +394,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDISCLI_AUTH=${REDISCLI_AUTH}
     volumes:
-      - ./templates/redis:/src:ro
+      - ./redis:/src:ro
       - redis-config:/config
     command: |
       sh -c '
@@ -351,7 +417,7 @@ services:
       - REDISCLI_AUTH=${REDISCLI_AUTH}
     volumes:
       - redis-data:/data
-      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
       - redis-config:/usr/local/etc/redis
     command: valkey-server /usr/local/etc/redis/redis.conf
     ports:
@@ -369,7 +435,7 @@ services:
     environment:
       - APP_LOCAL_HOST=webapp
       - APP_PORT=$APP_PORT
-      - SECOND_LEVEL_DOMAIN_NAME=$SECOND_LEVEL_DOMAIN_NAME
+      - BASE_DOMAIN_NAME=$BASE_DOMAIN_NAME
     volumes:
       - ./static:/data/static
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -380,7 +446,7 @@ services:
       - $NGINX_SSL_PORT:443
       - $NGINX_PORT:80
     depends_on:
-      - webapp
+      - webapp{{ if .GoAccess.Enabled }}
   goaccess:
     image: allinurl/goaccess:1.7.2
     container_name: "local-goaccess"
@@ -388,17 +454,17 @@ services:
     entrypoint: 'sh -c "/bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880 --ssl-cert=$$SSL_CERT --ssl-key=$$SSL_KEY"'
     environment:
       - TZ="China/Shanghai"
-      - SSL_CERT=/etc/letsencrypt/live/${SECOND_LEVEL_DOMAIN_NAME}/fullchain.pem
-      - SSL_KEY=/etc/letsencrypt/live/${SECOND_LEVEL_DOMAIN_NAME}/privkey.pem
+      - SSL_CERT=/etc/letsencrypt/live/${BASE_DOMAIN_NAME}/fullchain.pem
+      - SSL_KEY=/etc/letsencrypt/live/${BASE_DOMAIN_NAME}/privkey.pem
     volumes:
-      - /var/www/goaccess:/var/www/goaccess:rw
-      - ./geoip/GeoLite2-City.mmdb:/data/GeoLite2-City.mmdb
+      - /var/www/goaccess:/var/www/goaccess:rw{{ if .GoAccess.HasGeoFile }}
+      - ./geoip:/data/geoip:ro{{ end }}
       - /etc/letsencrypt:/etc/letsencrypt
       - ./goaccess.conf:/etc/goaccess/goaccess.conf
       - ./nginx/logs:/data/logs
       - ./manage_static:/data/static
     ports:
-      - "9880:9880"
+      - "9880:9880"{{ end }}
 
 volumes:
   db-data:
@@ -690,9 +756,11 @@ func (g *GeneratorService) StartDockerCompose(onLog func(model.DeploymentLogEntr
 
 // generateAdditionalConfigs 生成其他必要的配置文件
 func (g *GeneratorService) generateAdditionalConfigs(cfg *model.SetupConfig) error {
-	// 生成 GoAccess 配置文件
-	if err := g.generateGoAccessConfig(); err != nil {
-		return fmt.Errorf("failed to generate goaccess config: %w", err)
+	// 生成 GoAccess 配置文件（仅在启用时）
+	if cfg.GoAccess.Enabled {
+		if err := g.generateGoAccessConfig(); err != nil {
+			return fmt.Errorf("failed to generate goaccess config: %w", err)
+		}
 	}
 	
 	// 复制静态资源文件
@@ -706,7 +774,7 @@ func (g *GeneratorService) generateAdditionalConfigs(cfg *model.SetupConfig) err
 	}
 	
 	// 创建其他必要目录
-	if err := g.createRequiredDirectories(); err != nil {
+	if err := g.createRequiredDirectories(cfg); err != nil {
 		return fmt.Errorf("failed to create required directories: %w", err)
 	}
 	
@@ -718,7 +786,7 @@ func (g *GeneratorService) generateGoAccessConfig() error {
 	goAccessConfig := `time-format %T
 date-format %d/%b/%Y
 log_format %h - %^ [%d:%t %^]  %s "%r" %b "%R" "%u" "%^"
-geoip-database /data/GeoLite2-City.mmdb`
+geoip-database /data/geoip/GeoLite2-City.mmdb`
 	
 	filePath := filepath.Join(g.outputDir, "goaccess.conf")
 	if err := os.WriteFile(filePath, []byte(goAccessConfig), 0644); err != nil {
@@ -808,7 +876,7 @@ This directory contains JWT signing keys for the application.
 }
 
 // createRequiredDirectories 创建其他必要目录
-func (g *GeneratorService) createRequiredDirectories() error {
+func (g *GeneratorService) createRequiredDirectories(cfg *model.SetupConfig) error {
 	// 创建 manage_static 目录
 	manageStaticDir := filepath.Join(g.outputDir, "manage_static")
 	if err := os.MkdirAll(manageStaticDir, 0755); err != nil {
@@ -827,15 +895,45 @@ func (g *GeneratorService) createRequiredDirectories() error {
 		return fmt.Errorf("failed to create geoip directory: %w", err)
 	}
 	
-	// 检查源 geoip 文件是否存在
-	srcGeoipFile := "./geoip/Country.mmdb"
-	destGeoipFile := filepath.Join(geoipDir, "Country.mmdb")
-	if _, err := os.Stat(srcGeoipFile); err == nil {
-		// 复制 GeoIP 数据库文件
-		if err := g.copyFile(srcGeoipFile, destGeoipFile); err != nil {
-			return fmt.Errorf("failed to copy GeoIP database: %w", err)
+	// 如果启用了 GoAccess 且有上传的 GeoIP 文件，从临时目录复制到输出目录
+	if cfg.GoAccess.Enabled && cfg.GoAccess.HasGeoFile {
+		tempGeoipFile := filepath.Join("./data", "temp", "GeoLite2-City.mmdb")
+		destGeoipFile := filepath.Join(geoipDir, "GeoLite2-City.mmdb")
+		
+		if _, err := os.Stat(tempGeoipFile); err == nil {
+			// 从临时目录复制 GeoIP 数据库文件
+			if err := g.copyFile(tempGeoipFile, destGeoipFile); err != nil {
+				return fmt.Errorf("failed to copy GeoIP database from temp: %w", err)
+			}
+			log.Printf("Copied GeoIP file from temp directory to output: %s", destGeoipFile)
+		} else {
+			log.Printf("Warning: GoAccess enabled but GeoIP file not found in temp directory: %s", tempGeoipFile)
 		}
-	} else {
+	}
+	
+	// 检查是否存在传统的源 geoip 文件（向后兼容）
+	srcGeoipFile := "./geoip/Country.mmdb"
+	destCountryFile := filepath.Join(geoipDir, "Country.mmdb")
+	if _, err := os.Stat(srcGeoipFile); err == nil {
+		// 复制传统的 Country.mmdb 文件
+		if err := g.copyFile(srcGeoipFile, destCountryFile); err != nil {
+			return fmt.Errorf("failed to copy traditional GeoIP database: %w", err)
+		}
+	}
+	
+	// 如果没有任何 GeoIP 文件，创建占位文件
+	hasAnyGeoFile := false
+	cityFile := filepath.Join(geoipDir, "GeoLite2-City.mmdb")
+	countryFile := filepath.Join(geoipDir, "Country.mmdb")
+	
+	if _, err := os.Stat(cityFile); err == nil {
+		hasAnyGeoFile = true
+	}
+	if _, err := os.Stat(countryFile); err == nil {
+		hasAnyGeoFile = true
+	}
+	
+	if !hasAnyGeoFile {
 		// 创建占位文件
 		gitkeepGeoipPath := filepath.Join(geoipDir, ".gitkeep")
 		if err := os.WriteFile(gitkeepGeoipPath, []byte{}, 0644); err != nil {

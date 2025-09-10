@@ -7,8 +7,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/oodzchen/baklab/setup/internal/model"
-	"github.com/oodzchen/baklab/setup/internal/storage"
+	"github.com/biliqiqi/baklab-setup/internal/model"
+	"github.com/biliqiqi/baklab-setup/internal/storage"
 )
 
 // SetupService setup核心服务

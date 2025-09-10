@@ -5,14 +5,17 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/oodzchen/baklab/setup/internal/model"
-	"github.com/oodzchen/baklab/setup/internal/services"
+	"github.com/biliqiqi/baklab-setup/internal/model"
+	"github.com/biliqiqi/baklab-setup/internal/services"
 )
 
 // SetupHandlers Web处理程序
@@ -530,6 +533,102 @@ func (h *SetupHandlers) DeploymentLogsHandler(w http.ResponseWriter, r *http.Req
 			return
 		}
 	}
+}
+
+// UploadGeoFileHandler 处理 GeoIP 数据库文件上传
+func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Request) {
+	// 限制请求体大小为100MB
+	maxSize := int64(100 * 1024 * 1024) // 100MB
+	r.Body = http.MaxBytesReader(w, r.Body, maxSize)
+	
+	if err := r.ParseMultipartForm(maxSize); err != nil {
+		log.Printf("Failed to parse multipart form: %v", err)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "File too large or invalid form data",
+		}, http.StatusBadRequest)
+		return
+	}
+
+	file, handler, err := r.FormFile("geo_file")
+	if err != nil {
+		log.Printf("Failed to get form file: %v", err)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "No file uploaded or invalid file field",
+		}, http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// 验证文件扩展名
+	if !strings.HasSuffix(strings.ToLower(handler.Filename), ".mmdb") {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Invalid file type. Only .mmdb files are allowed",
+		}, http.StatusBadRequest)
+		return
+	}
+
+	// 验证文件大小
+	if handler.Size > maxSize {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "File too large. Maximum size is 100MB",
+		}, http.StatusBadRequest)
+		return
+	}
+
+	// 使用临时目录存储上传的文件，避免配置生成时被清空
+	tempDir := filepath.Join("./data", "temp")
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		log.Printf("Failed to create temp directory: %v", err)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Failed to create upload directory",
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	// 保存文件为 GeoLite2-City.mmdb 在临时目录
+	destPath := filepath.Join(tempDir, "GeoLite2-City.mmdb")
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		log.Printf("Failed to create destination file: %v", err)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Failed to create destination file",
+		}, http.StatusInternalServerError)
+		return
+	}
+	defer destFile.Close()
+
+	// 复制文件内容
+	bytesWritten, err := io.Copy(destFile, file)
+	if err != nil {
+		log.Printf("Failed to copy file: %v", err)
+		// 删除不完整的文件
+		os.Remove(destPath)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Failed to save file",
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("GeoIP file uploaded to temp directory: %s (%d bytes)", destPath, bytesWritten)
+	
+	// 返回成功响应
+	h.writeJSONResponse(w, model.SetupResponse{
+		Success: true,
+		Message: "GeoIP file uploaded successfully",
+		Data: map[string]interface{}{
+			"filename":      "GeoLite2-City.mmdb",
+			"size":          bytesWritten,
+			"original_name": handler.Filename,
+			"temp_path":     destPath,
+		},
+	}, http.StatusOK)
 }
 
 // generateDeploymentID 生成部署ID

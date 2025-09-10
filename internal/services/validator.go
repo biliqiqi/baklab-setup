@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/oodzchen/baklab/setup/internal/model"
+	"github.com/biliqiqi/baklab-setup/internal/model"
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
 

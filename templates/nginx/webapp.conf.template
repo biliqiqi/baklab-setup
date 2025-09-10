@@ -6,9 +6,9 @@ upstream backend{
 
 # base on https://ssl-config.mozilla.org/#server=nginx&version=1.25.2&config=intermediate&openssl=3.0.9&guideline=5.7
 
-map $host $redirect_to_second_level {
+map $host $redirect_to_base_domain {
     default 0;
-    www.${SECOND_LEVEL_DOMAIN_NAME} 1;
+    www.${BASE_DOMAIN_NAME} 1;
     "~^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$" 1;
     "~^[0-9a-fA-F:]+$" 1;
 }
@@ -17,10 +17,10 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
     
-    server_name dev.${SECOND_LEVEL_DOMAIN_NAME} cf.${SECOND_LEVEL_DOMAIN_NAME} ${SECOND_LEVEL_DOMAIN_NAME} www.${SECOND_LEVEL_DOMAIN_NAME};
+    server_name dev.${BASE_DOMAIN_NAME} cf.${BASE_DOMAIN_NAME} ${BASE_DOMAIN_NAME} www.${BASE_DOMAIN_NAME};
 
-    if ($host = $redirect_to_second_level) {
-        return 301 https://${SECOND_LEVEL_DOMAIN_NAME}$request_uri;
+    if ($host = $redirect_to_base_domain) {
+        return 301 https://${BASE_DOMAIN_NAME}$request_uri;
     }
 
     location / {
@@ -38,10 +38,10 @@ server {
     listen [::]:443 ssl;
     http2 on;
     
-    server_name dev.${SECOND_LEVEL_DOMAIN_NAME} cf.${SECOND_LEVEL_DOMAIN_NAME} ${SECOND_LEVEL_DOMAIN_NAME} www.${SECOND_LEVEL_DOMAIN_NAME};
+    server_name dev.${BASE_DOMAIN_NAME} cf.${BASE_DOMAIN_NAME} ${BASE_DOMAIN_NAME} www.${BASE_DOMAIN_NAME};
 
-    ssl_certificate /etc/letsencrypt/live/${SECOND_LEVEL_DOMAIN_NAME}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${SECOND_LEVEL_DOMAIN_NAME}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/${BASE_DOMAIN_NAME}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${BASE_DOMAIN_NAME}/privkey.pem;
 
     # include /etc/letsencrypt/options-ssl-nginx.conf;
     
@@ -53,10 +53,11 @@ server {
     # HSTS (ngx_http_headers_module is required) (63072000 seconds)
     add_header Strict-Transport-Security "max-age=63072000" always;
     
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    # DH parameters for production (uncomment when using Let's Encrypt)
+    # ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
-    if ($host = $redirect_to_second_level) {
-        return 301 https://${SECOND_LEVEL_DOMAIN_NAME}$request_uri;
+    if ($host = $redirect_to_base_domain) {
+        return 301 https://${BASE_DOMAIN_NAME}$request_uri;
     }
 
     location / {

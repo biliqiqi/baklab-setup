@@ -8,14 +8,14 @@ class SetupApp {
         this.config = {
             database: {
                 host: 'localhost',
-                port: 5432,
+                port: 5433,
                 name: 'baklab',
                 user: 'baklab',
                 password: ''
             },
             redis: {
                 host: 'localhost',
-                port: 6379,
+                port: 6377,
                 password: ''
             },
             smtp: {
@@ -47,6 +47,11 @@ class SetupApp {
                 username: 'admin',
                 email: '',
                 password: ''
+            },
+            goaccess: {
+                enabled: false,
+                geo_db_path: './geoip/GeoLite2-City.mmdb',
+                has_geo_file: false
             }
         };
         
@@ -55,6 +60,7 @@ class SetupApp {
             { key: 'database', titleKey: 'setup.steps.database', handler: this.renderDatabaseStep },
             { key: 'redis', titleKey: 'setup.steps.redis', handler: this.renderRedisStep },
             { key: 'app', titleKey: 'setup.steps.application', handler: this.renderAppStep },
+            { key: 'goaccess', titleKey: 'setup.steps.goaccess', handler: this.renderGoAccessStep },
             { key: 'admin', titleKey: 'setup.steps.admin_user', handler: this.renderAdminStep },
             { key: 'review', titleKey: 'setup.steps.review', handler: this.renderReviewStep },
             { key: 'complete', titleKey: 'setup.steps.complete', handler: this.renderCompleteStep }
@@ -118,18 +124,22 @@ class SetupApp {
         
         app.innerHTML = `
             <div class="container">
-                <div class="header">
-                    <div class="header-top">
-                        <h1 data-i18n="setup.title"></h1>
-                        <div class="language-switcher-container" id="language-switcher"></div>
+                <div class="sidebar">
+                    <div class="sidebar-header">
+                        <h1 class="sidebar-title" data-i18n="setup.title"></h1>
+                        <p class="sidebar-subtitle" data-i18n="setup.subtitle"></p>
                     </div>
-                    <p data-i18n="setup.subtitle"></p>
+                    ${this.renderSidebarSteps()}
                 </div>
                 
-                ${this.renderProgress()}
-                
-                <div class="setup-card">
-                    <div id="step-content"></div>
+                <div class="main-content">
+                    <div class="header">
+                        <h1 data-i18n="${step.titleKey}"></h1>
+                    </div>
+                    
+                    <div class="setup-card">
+                        <div id="step-content"></div>
+                    </div>
                 </div>
             </div>
         `;
@@ -149,19 +159,18 @@ class SetupApp {
         }
     }
     
-    renderProgress() {
+    renderSidebarSteps() {
         return `
-            <div class="progress-container">
-                <div class="progress-steps">
-                    ${this.steps.map((step, index) => `
-                        <div class="progress-step ${index < this.currentStep ? 'completed' : index === this.currentStep ? 'active' : ''}">
-                            <div class="progress-step-circle">
-                                ${index < this.currentStep ? '✓' : index + 1}
-                            </div>
-                            <div class="progress-step-label" data-i18n="${step.titleKey}"></div>
+            <div class="sidebar-steps">
+                ${this.steps.map((step, index) => `
+                    <div class="sidebar-step ${index < this.currentStep ? 'completed' : index === this.currentStep ? 'active' : ''}" 
+                         ${index < this.currentStep ? `onclick="app.currentStep = ${index}; app.render();"` : ''}>
+                        <div class="sidebar-step-circle">
+                            ${index < this.currentStep ? '✓' : index + 1}
                         </div>
-                    `).join('')}
-                </div>
+                        <div class="sidebar-step-label" data-i18n="${step.titleKey}"></div>
+                    </div>
+                `).join('')}
             </div>
         `;
     }
@@ -190,7 +199,8 @@ class SetupApp {
                 
                 ${existingWarning}
                 
-                <div class="btn-group">
+                <div class="btn-group init-actions">
+                    <div class="language-switcher-container" id="language-switcher"></div>
                     <button class="btn btn-primary" onclick="app.initializeSetup()">
                         <span data-i18n="${this.showExistingDeploymentWarning ? 'setup.init.proceed_override' : 'setup.init.initialize_button'}"></span>
                     </button>
@@ -506,6 +516,232 @@ class SetupApp {
                 app.showFormErrors(e.target);
             }
         });
+    }
+    
+    renderGoAccessStep(container) {
+        container.innerHTML = `
+            <form id="goaccess-form" class="form-section" novalidate>
+                <h3 data-i18n="setup.goaccess.title"></h3>
+                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.goaccess.description"></p>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="goaccess-enabled" name="enabled" ${this.config.goaccess.enabled ? 'checked' : ''}>
+                        <span data-i18n="setup.goaccess.enable_label"></span>
+                    </label>
+                    <div class="form-help" data-i18n="setup.goaccess.enable_help"></div>
+                </div>
+                
+                <div id="goaccess-config" style="display: ${this.config.goaccess.enabled ? 'block' : 'none'};">
+                    <div class="form-group">
+                        <label for="goaccess-geo-file"><span data-i18n="setup.goaccess.geo_file_label"></span></label>
+                        <div class="file-upload-area" id="geo-upload-area">
+                            <input type="file" id="goaccess-geo-file" name="geo_file" accept=".mmdb" style="display: none;">
+                            <div class="file-upload-content">
+                                <div class="file-upload-icon">📁</div>
+                                <p data-i18n="setup.goaccess.geo_file_help"></p>
+                                <button type="button" class="btn-secondary" onclick="document.getElementById('goaccess-geo-file').click()">
+                                    <span data-i18n="setup.goaccess.select_file"></span>
+                                </button>
+                            </div>
+                            <div id="file-info" style="display: none;">
+                                <p><strong data-i18n="setup.goaccess.selected_file"></strong>: <span id="file-name"></span></p>
+                                <p><strong data-i18n="setup.goaccess.file_size"></strong>: <span id="file-size"></span></p>
+                            </div>
+                        </div>
+                        <div class="invalid-feedback" style="display: none;"></div>
+                        <div class="form-help">
+                            <span data-i18n="setup.goaccess.geo_file_note"></span>
+                            <a href="https://dev.maxmind.com/geoip/geolite2-free-geolocation-data" target="_blank" data-i18n="setup.goaccess.download_link"></a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()">
+                        <span data-i18n="common.previous"></span>
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <span data-i18n="common.next"></span>
+                    </button>
+                </div>
+            </form>
+        `;
+
+        // 绑定事件监听器
+        const enabledCheckbox = container.querySelector('#goaccess-enabled');
+        const configDiv = container.querySelector('#goaccess-config');
+        const fileInput = container.querySelector('#goaccess-geo-file');
+        const uploadArea = container.querySelector('#geo-upload-area');
+        const fileInfo = container.querySelector('#file-info');
+
+        enabledCheckbox.addEventListener('change', (e) => {
+            configDiv.style.display = e.target.checked ? 'block' : 'none';
+            this.config.goaccess.enabled = e.target.checked;
+            
+            // 如果禁用 GoAccess，清除文件上传错误状态
+            if (!e.target.checked) {
+                const formGroup = uploadArea.closest('.form-group');
+                if (formGroup) {
+                    formGroup.classList.remove('error');
+                    const errorMessage = formGroup.querySelector('.invalid-feedback');
+                    if (errorMessage) {
+                        errorMessage.style.display = 'none';
+                        errorMessage.textContent = '';
+                    }
+                }
+            }
+        });
+
+        // 文件拖拽支持
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                this.handleGeoFileSelect(files[0], fileInfo);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.handleGeoFileSelect(e.target.files[0], fileInfo);
+            }
+        });
+
+        // 表单提交
+        const self = this;
+        container.querySelector('#goaccess-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (self.validateGoAccessForm(e.target)) {
+                self.saveGoAccessConfig();
+                self.nextStep();
+            } else {
+                self.showFormErrors(e.target);
+            }
+        });
+    }
+
+    async handleGeoFileSelect(file, fileInfoDiv) {
+        if (!file.name.endsWith('.mmdb')) {
+            const errorMsg = window.i18n ? window.i18n.t('setup.goaccess.invalid_file_type') : 
+                           'Please select a valid .mmdb file';
+            alert(errorMsg);
+            return;
+        }
+
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        if (file.size > maxSize) {
+            const errorMsg = window.i18n ? window.i18n.t('setup.goaccess.file_too_large') : 
+                           'File size too large. Maximum allowed size is 100MB';
+            alert(errorMsg);
+            return;
+        }
+
+        // 清除文件上传错误状态
+        const uploadArea = document.getElementById('geo-upload-area');
+        const formGroup = uploadArea.closest('.form-group');
+        if (formGroup) {
+            formGroup.classList.remove('error');
+            const errorMessage = formGroup.querySelector('.invalid-feedback');
+            if (errorMessage) {
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+            }
+        }
+
+        // 显示上传进度
+        fileInfoDiv.style.display = 'block';
+        fileInfoDiv.querySelector('#file-name').textContent = file.name;
+        fileInfoDiv.querySelector('#file-size').textContent = this.formatFileSize(file.size);
+        fileInfoDiv.innerHTML += '<p id="upload-progress">Uploading...</p>';
+
+        try {
+            // 上传文件到服务器
+            const formData = new FormData();
+            formData.append('geo_file', file);
+
+            const response = await fetch('/api/upload/geo-file', {
+                method: 'POST',
+                headers: {
+                    'Setup-Token': this.token
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // 更新UI显示上传成功
+                const progressEl = fileInfoDiv.querySelector('#upload-progress');
+                if (progressEl) {
+                    progressEl.textContent = 'Upload successful!';
+                    progressEl.style.color = 'var(--success-color)';
+                }
+
+                // 保存文件信息到配置中
+                this.config.goaccess.has_geo_file = true;
+                this.config.goaccess.geo_file_uploaded = true;
+                this.config.goaccess.geo_file_temp_path = result.data.temp_path;
+                
+                console.log('GeoIP file uploaded successfully:', result.data);
+            } else {
+                throw new Error(result.message || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('File upload error:', error);
+            const progressEl = fileInfoDiv.querySelector('#upload-progress');
+            if (progressEl) {
+                progressEl.textContent = 'Upload failed: ' + error.message;
+                progressEl.style.color = 'var(--error-color)';
+            }
+            
+            // 重置文件选择状态
+            this.config.goaccess.has_geo_file = false;
+            this.config.goaccess.geo_file_uploaded = false;
+            alert('File upload failed: ' + error.message);
+        }
+    }
+
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    validateGoAccessForm(form) {
+        let valid = true;
+        this.clearFormErrors(form);
+        
+        const goAccessEnabled = form.querySelector('#goaccess-enabled').checked;
+        
+        if (goAccessEnabled && !this.config.goaccess.has_geo_file) {
+            valid = false;
+            const uploadArea = form.querySelector('#geo-upload-area');
+            const errorMessage = window.i18n ? window.i18n.t('setup.goaccess.geo_file_required') : 
+                                'GeoIP database file is required when GoAccess is enabled';
+            this.showFieldError(uploadArea, errorMessage);
+        }
+
+        return valid;
+    }
+
+    saveGoAccessConfig() {
+        const form = document.getElementById('goaccess-form');
+        this.config.goaccess.enabled = form.querySelector('#goaccess-enabled').checked;
+        this.saveToLocalCache();
     }
     
     renderAdminStep(container) {
@@ -1189,6 +1425,33 @@ class SetupApp {
         if (invalidFields.length > 0) {
             invalidFields[0].focus();
             invalidFields[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    
+    clearFormErrors(form) {
+        // 清除所有错误状态
+        const errorGroups = form.querySelectorAll('.form-group.error');
+        errorGroups.forEach(group => {
+            group.classList.remove('error');
+            const errorMessage = group.querySelector('.invalid-feedback');
+            if (errorMessage) {
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+            }
+        });
+    }
+    
+    showFieldError(element, message) {
+        const formGroup = element.closest('.form-group');
+        if (formGroup) {
+            formGroup.classList.add('error');
+            const errorMessage = formGroup.querySelector('.invalid-feedback');
+            if (errorMessage) {
+                setTimeout(() => {
+                    errorMessage.textContent = message;
+                    errorMessage.style.display = 'block';
+                }, 0);
+            }
         }
     }
     
