@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/oodzchen/baklab/setup/internal/config"
+	"github.com/oodzchen/baklab/setup/internal/model"
 	"github.com/oodzchen/baklab/setup/internal/storage"
 )
 
@@ -28,7 +28,7 @@ func NewSetupService(storage *storage.JSONStorage) *SetupService {
 }
 
 // InitializeSetup 初始化setup（允许重复执行）
-func (s *SetupService) InitializeSetup(ipAddress string) (*config.SetupToken, error) {
+func (s *SetupService) InitializeSetup(ipAddress string) (*model.SetupToken, error) {
 	// 注释：移除完成状态检查，允许重复初始化
 	// completed, err := s.storage.IsSetupCompleted()
 	// if err != nil {
@@ -51,8 +51,8 @@ func (s *SetupService) InitializeSetup(ipAddress string) (*config.SetupToken, er
 	}
 	
 	// 初始化setup状态
-	state := &config.SetupState{
-		Status:      config.StatusPending,
+	state := &model.SetupState{
+		Status:      model.StatusPending,
 		CurrentStep: "initialization",
 		Progress:    0,
 		Message:     "Setup initialized successfully",
@@ -68,7 +68,7 @@ func (s *SetupService) InitializeSetup(ipAddress string) (*config.SetupToken, er
 }
 
 // GetSetupStatus 获取setup状态
-func (s *SetupService) GetSetupStatus() (*config.SetupState, error) {
+func (s *SetupService) GetSetupStatus() (*model.SetupState, error) {
 	return s.storage.GetSetupState()
 }
 
@@ -103,7 +103,7 @@ func (s *SetupService) ValidateSetupToken(tokenStr string, ipAddress string) err
 }
 
 // SaveConfiguration 保存配置
-func (s *SetupService) SaveConfiguration(cfg *config.SetupConfig) error {
+func (s *SetupService) SaveConfiguration(cfg *model.SetupConfig) error {
 	// 验证配置
 	if errors := s.validator.ValidateConfig(cfg); len(errors) > 0 {
 		return fmt.Errorf("configuration validation failed: %d errors", len(errors))
@@ -119,7 +119,7 @@ func (s *SetupService) SaveConfiguration(cfg *config.SetupConfig) error {
 }
 
 // TestConnections 测试连接
-func (s *SetupService) TestConnections(cfg *config.SetupConfig) ([]config.ConnectionTestResult, error) {
+func (s *SetupService) TestConnections(cfg *model.SetupConfig) ([]model.ConnectionTestResult, error) {
 	// 更新状态
 	if err := s.updateSetupProgress("connection-test", 50, "Testing connections..."); err != nil {
 		return nil, err
@@ -151,7 +151,7 @@ func (s *SetupService) TestConnections(cfg *config.SetupConfig) ([]config.Connec
 }
 
 // GenerateConfigFiles 生成配置文件
-func (s *SetupService) GenerateConfigFiles(cfg *config.SetupConfig) error {
+func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 	// 清空配置目录，避免旧文件残留
 	if err := s.generator.ClearOutputDir(); err != nil {
 		return fmt.Errorf("failed to clear output directory: %w", err)
@@ -178,12 +178,12 @@ func (s *SetupService) GenerateConfigFiles(cfg *config.SetupConfig) error {
 // StartDeployment 启动部署流程（带实时日志）
 func (s *SetupService) StartDeployment(deploymentID string) error {
 	// 创建部署状态
-	status := &config.DeploymentStatus{
+	status := &model.DeploymentStatus{
 		ID:      deploymentID,
 		Status:  "preparing",
 		Progress: 0,
 		Message: "Initializing deployment...",
-		Logs:    []config.DeploymentLogEntry{},
+		Logs:    []model.DeploymentLogEntry{},
 		StartAt: time.Now(),
 	}
 	
@@ -192,7 +192,7 @@ func (s *SetupService) StartDeployment(deploymentID string) error {
 	}
 	
 	// 添加初始日志
-	s.addDeploymentLog(config.DeploymentLogEntry{
+	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "Deployment started",
@@ -207,7 +207,7 @@ func (s *SetupService) StartDeployment(deploymentID string) error {
 	}
 	
 	// 执行Docker Compose部署
-	err := s.generator.StartDockerCompose(func(entry config.DeploymentLogEntry) {
+	err := s.generator.StartDockerCompose(func(entry model.DeploymentLogEntry) {
 		s.addDeploymentLog(entry)
 		
 		// 根据日志更新进度
@@ -234,7 +234,7 @@ func (s *SetupService) StartDeployment(deploymentID string) error {
 }
 
 // addDeploymentLog 添加部署日志
-func (s *SetupService) addDeploymentLog(entry config.DeploymentLogEntry) {
+func (s *SetupService) addDeploymentLog(entry model.DeploymentLogEntry) {
 	if err := s.storage.AppendDeploymentLog(entry); err != nil {
 		log.Printf("Warning: failed to append deployment log: %v", err)
 	}
@@ -250,7 +250,7 @@ func (s *SetupService) performHealthCheck(deploymentID string) {
 	startTime := time.Now()
 	attempt := 0
 	
-	s.addDeploymentLog(config.DeploymentLogEntry{
+	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "Starting health check (timeout: 2 minutes)...",
@@ -266,7 +266,7 @@ func (s *SetupService) performHealthCheck(deploymentID string) {
 			return
 		}
 		
-		s.addDeploymentLog(config.DeploymentLogEntry{
+		s.addDeploymentLog(model.DeploymentLogEntry{
 			Timestamp: time.Now(),
 			Level:     "info",
 			Message:   fmt.Sprintf("Health check attempt %d (elapsed: %.0fs/120s)...", attempt, elapsed.Seconds()),
@@ -290,7 +290,7 @@ func (s *SetupService) performHealthCheck(deploymentID string) {
 // performSingleHealthCheck 执行单次健康检查
 func (s *SetupService) performSingleHealthCheck() bool {
 	// 检查容器状态
-	s.addDeploymentLog(config.DeploymentLogEntry{
+	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "Checking container status...",
@@ -301,7 +301,7 @@ func (s *SetupService) performSingleHealthCheck() bool {
 	}
 	
 	// 检查服务连通性
-	s.addDeploymentLog(config.DeploymentLogEntry{
+	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "Testing service connectivity...",
@@ -318,7 +318,7 @@ func (s *SetupService) performSingleHealthCheck() bool {
 func (s *SetupService) checkContainerStatus() bool {
 	// TODO: 实现 docker-compose ps 检查
 	// 这里先简化返回 true
-	s.addDeploymentLog(config.DeploymentLogEntry{
+	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "Container status: All containers are running",
@@ -330,7 +330,7 @@ func (s *SetupService) checkContainerStatus() bool {
 func (s *SetupService) checkServiceConnectivity() bool {
 	cfg, err := s.storage.GetSetupConfig()
 	if err != nil {
-		s.addDeploymentLog(config.DeploymentLogEntry{
+		s.addDeploymentLog(model.DeploymentLogEntry{
 			Timestamp: time.Now(),
 			Level:     "error",
 			Message:   "Failed to get configuration for connectivity test",
@@ -343,14 +343,14 @@ func (s *SetupService) checkServiceConnectivity() bool {
 	
 	for _, result := range results {
 		if !result.Success {
-			s.addDeploymentLog(config.DeploymentLogEntry{
+			s.addDeploymentLog(model.DeploymentLogEntry{
 				Timestamp: time.Now(),
 				Level:     "error",
 				Message:   fmt.Sprintf("%s connectivity failed: %s", result.Service, result.Message),
 			})
 			return false
 		} else {
-			s.addDeploymentLog(config.DeploymentLogEntry{
+			s.addDeploymentLog(model.DeploymentLogEntry{
 				Timestamp: time.Now(),
 				Level:     "success",
 				Message:   fmt.Sprintf("%s connectivity: OK", result.Service),
@@ -363,7 +363,7 @@ func (s *SetupService) checkServiceConnectivity() bool {
 
 // completeDeployment 完成部署
 func (s *SetupService) completeDeployment() {
-	s.addDeploymentLog(config.DeploymentLogEntry{
+	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "success",
 		Message:   "All health checks passed! Deployment completed successfully.",
@@ -382,31 +382,31 @@ func (s *SetupService) completeDeployment() {
 
 // failDeploymentWithTimeout 超时失败处理
 func (s *SetupService) failDeploymentWithTimeout() {
-	s.addDeploymentLog(config.DeploymentLogEntry{
+	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "error",
 		Message:   "Health check timeout after 2 minutes",
 	})
 	
-	s.addDeploymentLog(config.DeploymentLogEntry{
+	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "💡 Services may still be starting. You can:",
 	})
 	
-	s.addDeploymentLog(config.DeploymentLogEntry{
+	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "   1. Check logs: docker-compose -f docker-compose.production.yml logs",
 	})
 	
-	s.addDeploymentLog(config.DeploymentLogEntry{
+	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "   2. Check status: docker-compose -f docker-compose.production.yml ps",
 	})
 	
-	s.addDeploymentLog(config.DeploymentLogEntry{
+	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "   3. Wait a bit longer - some services need more time to initialize",
@@ -436,7 +436,7 @@ func (s *SetupService) updateDeploymentProgress(progress int, message string) {
 }
 
 // HealthCheckServices 健康检查已部署的服务
-func (s *SetupService) HealthCheckServices() ([]config.ConnectionTestResult, error) {
+func (s *SetupService) HealthCheckServices() ([]model.ConnectionTestResult, error) {
 	// 更新状态
 	if err := s.updateSetupProgress("health-check", 98, "Performing post-deployment health checks..."); err != nil {
 		return nil, err
@@ -495,7 +495,7 @@ func (s *SetupService) CompleteSetup() error {
 }
 
 // GetDeploymentStatus 获取部署状态
-func (s *SetupService) GetDeploymentStatus() (*config.DeploymentStatus, error) {
+func (s *SetupService) GetDeploymentStatus() (*model.DeploymentStatus, error) {
 	return s.storage.GetDeploymentStatus()
 }
 
@@ -505,14 +505,14 @@ func (s *SetupService) IsSetupCompleted() (bool, error) {
 }
 
 // generateSetupToken 生成setup令牌
-func (s *SetupService) generateSetupToken(ipAddress string) (*config.SetupToken, error) {
+func (s *SetupService) generateSetupToken(ipAddress string) (*model.SetupToken, error) {
 	// 生成32字节随机令牌
 	bytes := make([]byte, 32)
 	if _, err := rand.Read(bytes); err != nil {
 		return nil, fmt.Errorf("failed to generate random token: %w", err)
 	}
 	
-	token := &config.SetupToken{
+	token := &model.SetupToken{
 		Token:     hex.EncodeToString(bytes),
 		ExpiresAt: time.Now().Add(2 * time.Hour), // 2小时过期
 		IPAddress: ipAddress,                      // 绑定IP地址
@@ -530,7 +530,7 @@ func (s *SetupService) updateSetupProgress(step string, progress int, message st
 		return err
 	}
 	
-	state.Status = config.StatusInProgress
+	state.Status = model.StatusInProgress
 	state.CurrentStep = step
 	state.Progress = progress
 	state.Message = message
@@ -555,7 +555,7 @@ func (s *SetupService) invalidateAllTokens() error {
 }
 
 // GetSetupConfig 获取保存的配置
-func (s *SetupService) GetSetupConfig() (*config.SetupConfig, error) {
+func (s *SetupService) GetSetupConfig() (*model.SetupConfig, error) {
 	return s.storage.GetSetupConfig()
 }
 

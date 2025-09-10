@@ -12,7 +12,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/oodzchen/baklab/setup/internal/config"
+	"github.com/oodzchen/baklab/setup/internal/model"
 )
 
 // GeneratorService 配置文件生成服务
@@ -23,7 +23,7 @@ type GeneratorService struct {
 // NewGeneratorService 创建生成器服务实例
 func NewGeneratorService() *GeneratorService {
 	return &GeneratorService{
-		outputDir: "./config", // 输出到setup目录下的config子目录
+		outputDir: "./output", // 输出到setup目录下的output子目录
 	}
 }
 
@@ -49,7 +49,7 @@ func (g *GeneratorService) ClearOutputDir() error {
 }
 
 // GenerateEnvFile 生成.env文件
-func (g *GeneratorService) GenerateEnvFile(cfg *config.SetupConfig) error {
+func (g *GeneratorService) GenerateEnvFile(cfg *model.SetupConfig) error {
 	// 确保输出目录和子目录存在
 	if err := os.MkdirAll(g.outputDir, 0755); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
@@ -192,7 +192,7 @@ SETUP_COMPLETED_AT={{ .Timestamp }}
 	
 	// 准备模板数据
 	data := struct {
-		*config.SetupConfig
+		*model.SetupConfig
 		Timestamp   string
 		CORSOrigins string
 	}{
@@ -222,7 +222,7 @@ SETUP_COMPLETED_AT={{ .Timestamp }}
 }
 
 // GenerateDockerConfig 生成Docker配置文件
-func (g *GeneratorService) GenerateDockerConfig(cfg *config.SetupConfig) error {
+func (g *GeneratorService) GenerateDockerConfig(cfg *model.SetupConfig) error {
 	// 首先复制必要的模板文件到config目录
 	if err := g.copyTemplateFiles(); err != nil {
 		return fmt.Errorf("failed to copy template files: %w", err)
@@ -532,7 +532,7 @@ func (g *GeneratorService) copyDir(src, dest string) error {
 }
 
 // generateRedisConfig 生成Redis配置文件和ACL文件
-func (g *GeneratorService) generateRedisConfig(cfg *config.SetupConfig) error {
+func (g *GeneratorService) generateRedisConfig(cfg *model.SetupConfig) error {
 	// 创建Redis目录
 	redisDir := filepath.Join(g.outputDir, "redis")
 	if err := os.MkdirAll(redisDir, 0755); err != nil {
@@ -568,7 +568,7 @@ func (g *GeneratorService) generateRedisConfig(cfg *config.SetupConfig) error {
 }
 
 // GenerateNginxConfig 生成Nginx配置（使用templates模式）
-func (g *GeneratorService) GenerateNginxConfig(cfg *config.SetupConfig) error {
+func (g *GeneratorService) GenerateNginxConfig(cfg *model.SetupConfig) error {
 	// 创建nginx目录结构
 	nginxDir := filepath.Join(g.outputDir, "nginx")
 	templatesDir := filepath.Join(nginxDir, "templates")
@@ -619,13 +619,13 @@ func (g *GeneratorService) generateSecretKey(length int) string {
 // LogWriter 实时日志写入器
 type LogWriter struct {
 	level   string
-	onWrite func(config.DeploymentLogEntry)
+	onWrite func(model.DeploymentLogEntry)
 }
 
 func (w *LogWriter) Write(p []byte) (n int, err error) {
 	message := strings.TrimSpace(string(p))
 	if message != "" {
-		entry := config.DeploymentLogEntry{
+		entry := model.DeploymentLogEntry{
 			Timestamp: time.Now(),
 			Level:     w.level,
 			Message:   message,
@@ -636,14 +636,14 @@ func (w *LogWriter) Write(p []byte) (n int, err error) {
 }
 
 // StartDockerCompose 启动 Docker Compose（带实时日志）
-func (g *GeneratorService) StartDockerCompose(onLog func(config.DeploymentLogEntry)) error {
+func (g *GeneratorService) StartDockerCompose(onLog func(model.DeploymentLogEntry)) error {
 	composeFile := filepath.Join(g.outputDir, "docker-compose.production.yml")
 	if _, err := os.Stat(composeFile); os.IsNotExist(err) {
 		return fmt.Errorf("docker-compose.production.yml not found in %s, please generate configuration first", g.outputDir)
 	}
 	
 	// 记录命令开始
-	onLog(config.DeploymentLogEntry{
+	onLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "Starting Docker Compose deployment...",
@@ -651,7 +651,7 @@ func (g *GeneratorService) StartDockerCompose(onLog func(config.DeploymentLogEnt
 	
 	// 构建命令
 	cmdArgs := []string{"-f", composeFile, "up", "-d"}
-	onLog(config.DeploymentLogEntry{
+	onLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "cmd",
 		Message:   fmt.Sprintf("docker-compose %s", strings.Join(cmdArgs, " ")),
@@ -671,7 +671,7 @@ func (g *GeneratorService) StartDockerCompose(onLog func(config.DeploymentLogEnt
 	
 	// 执行命令
 	if err := cmd.Run(); err != nil {
-		onLog(config.DeploymentLogEntry{
+		onLog(model.DeploymentLogEntry{
 			Timestamp: time.Now(),
 			Level:     "error",
 			Message:   fmt.Sprintf("docker-compose failed: %v", err),
@@ -679,7 +679,7 @@ func (g *GeneratorService) StartDockerCompose(onLog func(config.DeploymentLogEnt
 		return fmt.Errorf("docker-compose failed: %w", err)
 	}
 	
-	onLog(config.DeploymentLogEntry{
+	onLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "success",
 		Message:   "Docker Compose started successfully",
@@ -689,7 +689,7 @@ func (g *GeneratorService) StartDockerCompose(onLog func(config.DeploymentLogEnt
 }
 
 // generateAdditionalConfigs 生成其他必要的配置文件
-func (g *GeneratorService) generateAdditionalConfigs(cfg *config.SetupConfig) error {
+func (g *GeneratorService) generateAdditionalConfigs(cfg *model.SetupConfig) error {
 	// 生成 GoAccess 配置文件
 	if err := g.generateGoAccessConfig(); err != nil {
 		return fmt.Errorf("failed to generate goaccess config: %w", err)

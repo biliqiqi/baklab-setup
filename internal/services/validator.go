@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/oodzchen/baklab/setup/internal/config"
+	"github.com/oodzchen/baklab/setup/internal/model"
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
@@ -78,8 +78,8 @@ func validatePassword(pwd string) bool {
 }
 
 // TestDatabaseConnection 验证数据库配置格式
-func (v *ValidatorService) TestDatabaseConnection(cfg config.DatabaseConfig) config.ConnectionTestResult {
-	result := config.ConnectionTestResult{
+func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) model.ConnectionTestResult {
+	result := model.ConnectionTestResult{
 		Service:  "database",
 		TestedAt: time.Now(),
 	}
@@ -133,8 +133,8 @@ func (v *ValidatorService) TestDatabaseConnection(cfg config.DatabaseConfig) con
 }
 
 // TestRedisConnection 验证Redis配置格式
-func (v *ValidatorService) TestRedisConnection(cfg config.RedisConfig) config.ConnectionTestResult {
-	result := config.ConnectionTestResult{
+func (v *ValidatorService) TestRedisConnection(cfg model.RedisConfig) model.ConnectionTestResult {
+	result := model.ConnectionTestResult{
 		Service:  "redis",
 		TestedAt: time.Now(),
 	}
@@ -166,8 +166,8 @@ func (v *ValidatorService) TestRedisConnection(cfg config.RedisConfig) config.Co
 }
 
 // TestSMTPConnection 测试SMTP连接
-func (v *ValidatorService) TestSMTPConnection(cfg config.SMTPConfig) config.ConnectionTestResult {
-	result := config.ConnectionTestResult{
+func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.ConnectionTestResult {
+	result := model.ConnectionTestResult{
 		Service:  "smtp",
 		TestedAt: time.Now(),
 	}
@@ -204,8 +204,8 @@ func (v *ValidatorService) TestSMTPConnection(cfg config.SMTPConfig) config.Conn
 }
 
 // ValidateConfig 验证完整配置
-func (v *ValidatorService) ValidateConfig(cfg *config.SetupConfig) []config.ValidationError {
-	var errors []config.ValidationError
+func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.ValidationError {
+	var errors []model.ValidationError
 	
 	// 验证数据库配置
 	errors = append(errors, v.validateDatabaseConfig(cfg.Database)...)
@@ -223,17 +223,17 @@ func (v *ValidatorService) ValidateConfig(cfg *config.SetupConfig) []config.Vali
 }
 
 // validateDatabaseConfig 验证数据库配置
-func (v *ValidatorService) validateDatabaseConfig(cfg config.DatabaseConfig) []config.ValidationError {
-	var errors []config.ValidationError
+func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []model.ValidationError {
+	var errors []model.ValidationError
 	
 	// Host验证
 	if cfg.Host == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "database.host",
 			Message: "Database host is required",
 		})
 	} else if !hostRegex.MatchString(cfg.Host) {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "database.host",
 			Message: "Database host must be a valid hostname or IP address",
 		})
@@ -241,7 +241,7 @@ func (v *ValidatorService) validateDatabaseConfig(cfg config.DatabaseConfig) []c
 	
 	// Port验证
 	if cfg.Port <= 0 || cfg.Port > 65535 {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "database.port",
 			Message: "Database port must be between 1 and 65535",
 		})
@@ -249,17 +249,17 @@ func (v *ValidatorService) validateDatabaseConfig(cfg config.DatabaseConfig) []c
 	
 	// Database name验证
 	if cfg.Name == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "database.name",
 			Message: "Database name is required",
 		})
 	} else if len(cfg.Name) > 63 {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "database.name",
 			Message: "Database name must be 63 characters or less",
 		})
 	} else if !dbNameRegex.MatchString(cfg.Name) {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "database.name",
 			Message: "Database name must start with a letter and contain only letters, numbers, and underscores",
 		})
@@ -267,17 +267,17 @@ func (v *ValidatorService) validateDatabaseConfig(cfg config.DatabaseConfig) []c
 	
 	// User验证
 	if cfg.User == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "database.user",
 			Message: "Database user is required",
 		})
 	} else if len(cfg.User) > 63 {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "database.user",
 			Message: "Database user must be 63 characters or less",
 		})
 	} else if !dbNameRegex.MatchString(cfg.User) {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "database.user",
 			Message: "Database user must start with a letter and contain only letters, numbers, and underscores",
 		})
@@ -285,12 +285,12 @@ func (v *ValidatorService) validateDatabaseConfig(cfg config.DatabaseConfig) []c
 	
 	// Password验证 (数据库密码要求相对宽松)
 	if cfg.Password == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "database.password",
 			Message: "Database password is required",
 		})
 	} else if len(cfg.Password) < 8 {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "database.password",
 			Message: "Database password must be at least 8 characters long",
 		})
@@ -300,17 +300,17 @@ func (v *ValidatorService) validateDatabaseConfig(cfg config.DatabaseConfig) []c
 }
 
 // validateRedisConfig 验证Redis配置
-func (v *ValidatorService) validateRedisConfig(cfg config.RedisConfig) []config.ValidationError {
-	var errors []config.ValidationError
+func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.ValidationError {
+	var errors []model.ValidationError
 	
 	// Host验证
 	if cfg.Host == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "redis.host",
 			Message: "Redis host is required",
 		})
 	} else if !hostRegex.MatchString(cfg.Host) {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "redis.host",
 			Message: "Redis host must be a valid hostname or IP address",
 		})
@@ -318,7 +318,7 @@ func (v *ValidatorService) validateRedisConfig(cfg config.RedisConfig) []config.
 	
 	// Port验证
 	if cfg.Port <= 0 || cfg.Port > 65535 {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "redis.port",
 			Message: "Redis port must be between 1 and 65535",
 		})
@@ -326,12 +326,12 @@ func (v *ValidatorService) validateRedisConfig(cfg config.RedisConfig) []config.
 	
 	// Password验证（必填）
 	if cfg.Password == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "redis.password",
 			Message: "Redis password is required",
 		})
 	} else if len(cfg.Password) < 1 {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "redis.password",
 			Message: "Redis password cannot be empty",
 		})
@@ -341,17 +341,17 @@ func (v *ValidatorService) validateRedisConfig(cfg config.RedisConfig) []config.
 }
 
 // validateAppConfig 验证应用配置
-func (v *ValidatorService) validateAppConfig(cfg config.AppConfig) []config.ValidationError {
-	var errors []config.ValidationError
+func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.ValidationError {
+	var errors []model.ValidationError
 	
 	// Domain name验证
 	if cfg.DomainName == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "app.domain_name",
 			Message: "Domain name is required",
 		})
 	} else if !domainRegex.MatchString(cfg.DomainName) {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "app.domain_name",
 			Message: "Domain name must be a valid domain (e.g., example.com) or localhost",
 		})
@@ -359,17 +359,17 @@ func (v *ValidatorService) validateAppConfig(cfg config.AppConfig) []config.Vali
 	
 	// Brand name验证
 	if cfg.BrandName == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "app.brand_name",
 			Message: "Brand name is required",
 		})
 	} else if len(cfg.BrandName) < 2 || len(cfg.BrandName) > 50 {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "app.brand_name",
 			Message: "Brand name must be 2-50 characters long",
 		})
 	} else if !brandNameRegex.MatchString(cfg.BrandName) {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "app.brand_name",
 			Message: "Brand name must contain only letters, numbers, spaces, hyphens, and underscores",
 		})
@@ -377,12 +377,12 @@ func (v *ValidatorService) validateAppConfig(cfg config.AppConfig) []config.Vali
 	
 	// Admin email验证
 	if cfg.AdminEmail == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "app.admin_email",
 			Message: "Admin email is required",
 		})
 	} else if !emailRegex.MatchString(cfg.AdminEmail) {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "app.admin_email",
 			Message: "Admin email must be a valid email address",
 		})
@@ -392,7 +392,7 @@ func (v *ValidatorService) validateAppConfig(cfg config.AppConfig) []config.Vali
 	for i, origin := range cfg.CORSAllowOrigins {
 		origin = strings.TrimSpace(origin)
 		if origin != "" && !urlRegex.MatchString(origin) {
-			errors = append(errors, config.ValidationError{
+			errors = append(errors, model.ValidationError{
 				Field:   fmt.Sprintf("app.cors_allow_origins[%d]", i),
 				Message: "CORS origin must be a valid HTTP/HTTPS URL",
 			})
@@ -402,12 +402,12 @@ func (v *ValidatorService) validateAppConfig(cfg config.AppConfig) []config.Vali
 	// Default language验证
 	validLangs := map[string]bool{"en": true, "zh-Hans": true, "zh-Hant": true, "ja": true}
 	if cfg.DefaultLang == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "app.default_lang",
 			Message: "Default language is required",
 		})
 	} else if !validLangs[cfg.DefaultLang] {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "app.default_lang",
 			Message: "Default language must be one of: en, zh-Hans, zh-Hant, ja",
 		})
@@ -415,13 +415,13 @@ func (v *ValidatorService) validateAppConfig(cfg config.AppConfig) []config.Vali
 	
 	// 验证密钥长度（如果提供的话）
 	if cfg.SessionSecret != "" && len(cfg.SessionSecret) < 32 {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "app.session_secret",
 			Message: "Session secret must be at least 32 characters if provided",
 		})
 	}
 	if cfg.CSRFSecret != "" && len(cfg.CSRFSecret) < 32 {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "app.csrf_secret",
 			Message: "CSRF secret must be at least 32 characters if provided",
 		})
@@ -431,22 +431,22 @@ func (v *ValidatorService) validateAppConfig(cfg config.AppConfig) []config.Vali
 }
 
 // validateAdminUserConfig 验证管理员用户配置
-func (v *ValidatorService) validateAdminUserConfig(cfg config.AdminUserConfig) []config.ValidationError {
-	var errors []config.ValidationError
+func (v *ValidatorService) validateAdminUserConfig(cfg model.AdminUserConfig) []model.ValidationError {
+	var errors []model.ValidationError
 	
 	// Username验证（与主项目规则完全一致）
 	if cfg.Username == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.username",
 			Message: "Admin username is required",
 		})
 	} else if len(cfg.Username) < 4 || len(cfg.Username) > 20 {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.username",
 			Message: "Username must be 4-20 characters long",
 		})
 	} else if !usernameRegex.MatchString(cfg.Username) {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.username",
 			Message: "Username must start and end with alphanumeric characters, can contain letters, numbers, dots, underscores, and hyphens",
 		})
@@ -454,12 +454,12 @@ func (v *ValidatorService) validateAdminUserConfig(cfg config.AdminUserConfig) [
 	
 	// Email验证
 	if cfg.Email == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.email",
 			Message: "Admin email is required",
 		})
 	} else if !emailRegex.MatchString(cfg.Email) {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.email",
 			Message: "Admin email must be a valid email address",
 		})
@@ -467,12 +467,12 @@ func (v *ValidatorService) validateAdminUserConfig(cfg config.AdminUserConfig) [
 	
 	// Password验证（与主项目规则完全一致）
 	if cfg.Password == "" {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.password",
 			Message: "Admin password is required",
 		})
 	} else if !validatePassword(cfg.Password) {
-		errors = append(errors, config.ValidationError{
+		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.password",
 			Message: "Password must be 12-64 characters with lowercase, uppercase, numbers, and special characters (!@#$%^&*)",
 		})
@@ -482,8 +482,8 @@ func (v *ValidatorService) validateAdminUserConfig(cfg config.AdminUserConfig) [
 }
 
 // TestAllConnections 测试所有连接
-func (v *ValidatorService) TestAllConnections(cfg *config.SetupConfig) []config.ConnectionTestResult {
-	var results []config.ConnectionTestResult
+func (v *ValidatorService) TestAllConnections(cfg *model.SetupConfig) []model.ConnectionTestResult {
+	var results []model.ConnectionTestResult
 	
 	// 测试数据库连接
 	results = append(results, v.TestDatabaseConnection(cfg.Database))

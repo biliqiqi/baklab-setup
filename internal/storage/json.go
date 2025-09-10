@@ -9,14 +9,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/oodzchen/baklab/setup/internal/config"
+	"github.com/oodzchen/baklab/setup/internal/model"
 )
 
 // JSONStorage JSON文件存储实现
 type JSONStorage struct {
 	dataDir          string
 	mu               sync.RWMutex
-	deploymentStatus *config.DeploymentStatus
+	deploymentStatus *model.DeploymentStatus
 	deploymentMu     sync.RWMutex
 }
 
@@ -33,7 +33,7 @@ func NewJSONStorage(dataDir string) *JSONStorage {
 }
 
 // GetSetupState 获取setup状态
-func (s *JSONStorage) GetSetupState() (*config.SetupState, error) {
+func (s *JSONStorage) GetSetupState() (*model.SetupState, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	
@@ -41,8 +41,8 @@ func (s *JSONStorage) GetSetupState() (*config.SetupState, error) {
 	
 	// 如果文件不存在，返回默认状态
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return &config.SetupState{
-			Status:    config.StatusPending,
+		return &model.SetupState{
+			Status:    model.StatusPending,
 			Progress:  0,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -54,7 +54,7 @@ func (s *JSONStorage) GetSetupState() (*config.SetupState, error) {
 		return nil, fmt.Errorf("failed to read setup state: %w", err)
 	}
 	
-	var state config.SetupState
+	var state model.SetupState
 	if err := json.Unmarshal(data, &state); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal setup state: %w", err)
 	}
@@ -63,7 +63,7 @@ func (s *JSONStorage) GetSetupState() (*config.SetupState, error) {
 }
 
 // SaveSetupState 保存setup状态
-func (s *JSONStorage) SaveSetupState(state *config.SetupState) error {
+func (s *JSONStorage) SaveSetupState(state *model.SetupState) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	
@@ -83,14 +83,14 @@ func (s *JSONStorage) SaveSetupState(state *config.SetupState) error {
 }
 
 // GetSetupConfig 获取setup配置
-func (s *JSONStorage) GetSetupConfig() (*config.SetupConfig, error) {
+func (s *JSONStorage) GetSetupConfig() (*model.SetupConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	
 	filePath := filepath.Join(s.dataDir, "config-draft.json")
 	
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return &config.SetupConfig{}, nil
+		return &model.SetupConfig{}, nil
 	}
 	
 	data, err := os.ReadFile(filePath)
@@ -98,7 +98,7 @@ func (s *JSONStorage) GetSetupConfig() (*config.SetupConfig, error) {
 		return nil, fmt.Errorf("failed to read setup config: %w", err)
 	}
 	
-	var cfg config.SetupConfig
+	var cfg model.SetupConfig
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal setup config: %w", err)
 	}
@@ -107,7 +107,7 @@ func (s *JSONStorage) GetSetupConfig() (*config.SetupConfig, error) {
 }
 
 // SaveSetupConfig 保存setup配置
-func (s *JSONStorage) SaveSetupConfig(cfg *config.SetupConfig) error {
+func (s *JSONStorage) SaveSetupConfig(cfg *model.SetupConfig) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	
@@ -125,7 +125,7 @@ func (s *JSONStorage) SaveSetupConfig(cfg *config.SetupConfig) error {
 }
 
 // GetSetupToken 获取setup令牌
-func (s *JSONStorage) GetSetupToken() (*config.SetupToken, error) {
+func (s *JSONStorage) GetSetupToken() (*model.SetupToken, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	
@@ -140,7 +140,7 @@ func (s *JSONStorage) GetSetupToken() (*config.SetupToken, error) {
 		return nil, fmt.Errorf("failed to read setup token: %w", err)
 	}
 	
-	var token config.SetupToken
+	var token model.SetupToken
 	if err := json.Unmarshal(data, &token); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal setup token: %w", err)
 	}
@@ -149,7 +149,7 @@ func (s *JSONStorage) GetSetupToken() (*config.SetupToken, error) {
 }
 
 // SaveSetupToken 保存setup令牌
-func (s *JSONStorage) SaveSetupToken(token *config.SetupToken) error {
+func (s *JSONStorage) SaveSetupToken(token *model.SetupToken) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	
@@ -173,7 +173,7 @@ func (s *JSONStorage) IsSetupCompleted() (bool, error) {
 		return false, err
 	}
 	
-	return state.Status == config.StatusCompleted, nil
+	return state.Status == model.StatusCompleted, nil
 }
 
 // MarkSetupCompleted 标记setup为已完成
@@ -184,7 +184,7 @@ func (s *JSONStorage) MarkSetupCompleted() error {
 	}
 	
 	now := time.Now()
-	state.Status = config.StatusCompleted
+	state.Status = model.StatusCompleted
 	state.Progress = 100
 	state.CompletedAt = &now
 	state.Message = "Setup completed successfully"
@@ -207,7 +207,7 @@ func (s *JSONStorage) CleanupTempFiles() error {
 }
 
 // SaveDeploymentStatus 保存部署状态
-func (s *JSONStorage) SaveDeploymentStatus(status *config.DeploymentStatus) error {
+func (s *JSONStorage) SaveDeploymentStatus(status *model.DeploymentStatus) error {
 	s.deploymentMu.Lock()
 	defer s.deploymentMu.Unlock()
 	
@@ -227,7 +227,7 @@ func (s *JSONStorage) SaveDeploymentStatus(status *config.DeploymentStatus) erro
 }
 
 // GetDeploymentStatus 获取部署状态
-func (s *JSONStorage) GetDeploymentStatus() (*config.DeploymentStatus, error) {
+func (s *JSONStorage) GetDeploymentStatus() (*model.DeploymentStatus, error) {
 	s.deploymentMu.RLock()
 	defer s.deploymentMu.RUnlock()
 	
@@ -245,7 +245,7 @@ func (s *JSONStorage) GetDeploymentStatus() (*config.DeploymentStatus, error) {
 		return nil, fmt.Errorf("failed to read deployment status: %w", err)
 	}
 	
-	var status config.DeploymentStatus
+	var status model.DeploymentStatus
 	if err := json.Unmarshal(data, &status); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal deployment status: %w", err)
 	}
@@ -255,7 +255,7 @@ func (s *JSONStorage) GetDeploymentStatus() (*config.DeploymentStatus, error) {
 }
 
 // AppendDeploymentLog 追加部署日志
-func (s *JSONStorage) AppendDeploymentLog(entry config.DeploymentLogEntry) error {
+func (s *JSONStorage) AppendDeploymentLog(entry model.DeploymentLogEntry) error {
 	s.deploymentMu.Lock()
 	defer s.deploymentMu.Unlock()
 	
