@@ -39,7 +39,7 @@ go.work.sum
 setup
 
 # 生成的配置文件目录（每次运行都会重新生成）
-config/
+output/
 
 # 运行时数据和状态文件
 data/*.json

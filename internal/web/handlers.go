@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/oodzchen/baklab/setup/internal/config"
+	"github.com/oodzchen/baklab/setup/internal/model"
 	"github.com/oodzchen/baklab/setup/internal/services"
 )
 
@@ -37,7 +37,7 @@ func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if completed {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: "Setup has already been completed",
 		}, http.StatusForbidden)
@@ -84,14 +84,14 @@ func (h *SetupHandlers) InitializeHandler(w http.ResponseWriter, r *http.Request
 	// 初始化setup
 	token, err := h.setupService.InitializeSetup(clientIP)
 	if err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: err.Error(),
 		}, http.StatusBadRequest)
 		return
 	}
 
-	h.writeJSONResponse(w, config.SetupResponse{
+	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Message: "Setup initialized successfully",
 		Data: map[string]interface{}{
@@ -110,14 +110,14 @@ func (h *SetupHandlers) StatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	state, err := h.setupService.GetSetupStatus()
 	if err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: "Failed to get setup status",
 		}, http.StatusInternalServerError)
 		return
 	}
 
-	h.writeJSONResponse(w, config.SetupResponse{
+	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Data:    state,
 	}, http.StatusOK)
@@ -130,9 +130,9 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var cfg config.SetupConfig
+	var cfg model.SetupConfig
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: "Invalid JSON format",
 		}, http.StatusBadRequest)
@@ -144,7 +144,7 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 	errors := validator.ValidateConfig(&cfg)
 
 	if len(errors) > 0 {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: "Configuration validation failed",
 			Errors:  errors,
@@ -154,14 +154,14 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 
 	// 保存配置
 	if err := h.setupService.SaveConfiguration(&cfg); err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: err.Error(),
 		}, http.StatusBadRequest)
 		return
 	}
 
-	h.writeJSONResponse(w, config.SetupResponse{
+	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Message: "Configuration saved successfully",
 	}, http.StatusOK)
@@ -176,7 +176,7 @@ func (h *SetupHandlers) GetConfigHandler(w http.ResponseWriter, r *http.Request)
 
 	cfg, err := h.setupService.GetSetupConfig()
 	if err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: "Failed to get configuration",
 		}, http.StatusInternalServerError)
@@ -192,7 +192,7 @@ func (h *SetupHandlers) GetConfigHandler(w http.ResponseWriter, r *http.Request)
 	safeCfg.App.SessionSecret = ""
 	safeCfg.App.CSRFSecret = ""
 
-	h.writeJSONResponse(w, config.SetupResponse{
+	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Data:    safeCfg,
 	}, http.StatusOK)
@@ -205,9 +205,9 @@ func (h *SetupHandlers) TestConnectionsHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	var cfg config.SetupConfig
+	var cfg model.SetupConfig
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: "Invalid JSON format",
 		}, http.StatusBadRequest)
@@ -217,14 +217,14 @@ func (h *SetupHandlers) TestConnectionsHandler(w http.ResponseWriter, r *http.Re
 	// 测试连接
 	results, err := h.setupService.TestConnections(&cfg)
 	if err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: err.Error(),
 		}, http.StatusInternalServerError)
 		return
 	}
 
-	h.writeJSONResponse(w, config.SetupResponse{
+	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Data:    results,
 	}, http.StatusOK)
@@ -240,7 +240,7 @@ func (h *SetupHandlers) GenerateConfigHandler(w http.ResponseWriter, r *http.Req
 	// 获取保存的配置
 	cfg, err := h.setupService.GetSetupConfig()
 	if err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: "Failed to get configuration",
 		}, http.StatusInternalServerError)
@@ -249,14 +249,14 @@ func (h *SetupHandlers) GenerateConfigHandler(w http.ResponseWriter, r *http.Req
 
 	// 生成配置文件
 	if err := h.setupService.GenerateConfigFiles(cfg); err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: err.Error(),
 		}, http.StatusInternalServerError)
 		return
 	}
 
-	h.writeJSONResponse(w, config.SetupResponse{
+	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Message: "Configuration files generated successfully",
 	}, http.StatusOK)
@@ -271,14 +271,14 @@ func (h *SetupHandlers) CompleteSetupHandler(w http.ResponseWriter, r *http.Requ
 
 	// 完成setup
 	if err := h.setupService.CompleteSetup(); err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: err.Error(),
 		}, http.StatusInternalServerError)
 		return
 	}
 
-	h.writeJSONResponse(w, config.SetupResponse{
+	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Message: "Setup completed successfully! You can now start the main application.",
 	}, http.StatusOK)
@@ -291,9 +291,9 @@ func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	var cfg config.SetupConfig
+	var cfg model.SetupConfig
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: "Invalid JSON format",
 		}, http.StatusBadRequest)
@@ -305,7 +305,7 @@ func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Req
 	errors := validator.ValidateConfig(&cfg)
 
 	if len(errors) > 0 {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: "Configuration validation failed",
 			Errors:  errors,
@@ -313,7 +313,7 @@ func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	h.writeJSONResponse(w, config.SetupResponse{
+	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Message: "Configuration is valid",
 	}, http.StatusOK)
@@ -342,7 +342,7 @@ func getClientIP(r *http.Request) string {
 }
 
 // writeJSONResponse 写入JSON响应
-func (h *SetupHandlers) writeJSONResponse(w http.ResponseWriter, response config.SetupResponse, statusCode int) {
+func (h *SetupHandlers) writeJSONResponse(w http.ResponseWriter, response model.SetupResponse, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -360,7 +360,7 @@ func (h *SetupHandlers) StartDeploymentHandler(w http.ResponseWriter, r *http.Re
 	// 生成部署ID
 	deploymentID, err := generateDeploymentID()
 	if err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: "Failed to generate deployment ID",
 		}, http.StatusInternalServerError)
@@ -374,7 +374,7 @@ func (h *SetupHandlers) StartDeploymentHandler(w http.ResponseWriter, r *http.Re
 		}
 	}()
 
-	h.writeJSONResponse(w, config.SetupResponse{
+	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Message: "Deployment started",
 		Data: map[string]interface{}{
@@ -392,14 +392,14 @@ func (h *SetupHandlers) DeploymentStatusHandler(w http.ResponseWriter, r *http.R
 
 	status, err := h.setupService.GetDeploymentStatus()
 	if err != nil {
-		h.writeJSONResponse(w, config.SetupResponse{
+		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: "Failed to get deployment status",
 		}, http.StatusInternalServerError)
 		return
 	}
 
-	h.writeJSONResponse(w, config.SetupResponse{
+	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Data:    status,
 	}, http.StatusOK)

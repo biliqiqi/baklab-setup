@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/oodzchen/baklab/setup/internal/config"
+	"github.com/oodzchen/baklab/setup/internal/model"
 	"github.com/oodzchen/baklab/setup/internal/services"
 )
 
@@ -45,7 +45,7 @@ func (m *SetupMiddleware) SetupAuth(next http.Handler) http.Handler {
 		}
 
 		if token == "" {
-			writeJSONResponse(w, config.SetupResponse{
+			writeJSONResponse(w, model.SetupResponse{
 				Success: false,
 				Message: "Setup token is required",
 			}, http.StatusUnauthorized)
@@ -57,7 +57,7 @@ func (m *SetupMiddleware) SetupAuth(next http.Handler) http.Handler {
 
 		// 验证令牌
 		if err := m.setupService.ValidateSetupToken(token, clientIP); err != nil {
-			writeJSONResponse(w, config.SetupResponse{
+			writeJSONResponse(w, model.SetupResponse{
 				Success: false,
 				Message: "Invalid or expired setup token",
 			}, http.StatusUnauthorized)
@@ -72,7 +72,7 @@ func (m *SetupMiddleware) SetupAuth(next http.Handler) http.Handler {
 
 
 // writeJSONResponse 写入JSON响应（中间件专用）
-func writeJSONResponse(w http.ResponseWriter, response config.SetupResponse, statusCode int) {
+func writeJSONResponse(w http.ResponseWriter, response model.SetupResponse, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	// 简单的JSON序列化，避免导入encoding/json
