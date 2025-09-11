@@ -57,20 +57,25 @@ go build -o setup .
 ## 生成的配置文件
 
 ```
-config/
+output/
 ├── .env.production              # 环境变量配置
 ├── docker-compose.production.yml # Docker Compose 配置
 ├── Dockerfile.pg                # PostgreSQL 自定义镜像
+├── certs/                       # SSL 证书目录
 ├── db/                          # 数据库配置
 │   ├── initdb/                  # 初始化脚本
 │   └── postgresql.conf          # PostgreSQL 配置
+├── geoip/                       # GeoIP 数据目录
+├── keys/                        # 密钥文件目录
+├── manage_static/               # 静态文件管理目录
 ├── nginx/                       # Nginx 配置
 │   ├── nginx.conf
 │   └── templates/
 │       └── webapp.conf.template
-└── redis/                       # Redis/Valkey 配置
-    ├── redis.conf
-    └── users.acl                # ACL 用户配置
+├── redis/                       # Redis/Valkey 配置
+│   ├── redis.conf
+│   └── users.acl                # ACL 用户配置
+└── static/                      # 静态资源目录
 ```
 
 ## 技术特性
@@ -111,15 +116,15 @@ config/
 ### 2. 准备部署环境
 
 ```bash
-# 复制整个 config 目录到部署服务器
-scp -r config/ server:/opt/baklab/
+# 复制整个 output 目录到部署服务器
+scp -r output/ server:/opt/baklab/
 
 # 或者单独复制必要文件
-scp config/.env.production server:/opt/baklab/
-scp config/docker-compose.production.yml server:/opt/baklab/
-scp -r config/db/ server:/opt/baklab/config/
-scp -r config/nginx/ server:/opt/baklab/config/
-scp -r config/redis/ server:/opt/baklab/config/
+scp output/.env.production server:/opt/baklab/
+scp output/docker-compose.production.yml server:/opt/baklab/
+scp -r output/db/ server:/opt/baklab/output/
+scp -r output/nginx/ server:/opt/baklab/output/
+scp -r output/redis/ server:/opt/baklab/output/
 ```
 
 ### 3. 启动生产环境
@@ -129,18 +134,18 @@ scp -r config/redis/ server:/opt/baklab/config/
 cd /opt/baklab
 
 # 加载环境变量并启动
-source config/.env.production
-docker-compose -f config/docker-compose.production.yml up -d
+source output/.env.production
+docker-compose -f output/docker-compose.production.yml up -d
 ```
 
 ### 4. 验证部署
 
 ```bash
 # 检查容器状态
-docker-compose -f config/docker-compose.production.yml ps
+docker-compose -f output/docker-compose.production.yml ps
 
 # 查看日志
-docker-compose -f config/docker-compose.production.yml logs -f
+docker-compose -f output/docker-compose.production.yml logs -f
 
 # 测试服务
 curl -I http://your-domain.com
@@ -162,16 +167,16 @@ curl -I http://your-domain.com
 ### 目录说明
 
 - **templates/** : 存放不可变的配置模板，从主项目复制而来
-- **config/** : 存放生成的配置文件，每次生成前会清空
+- **output/** : 存放生成的配置文件，每次生成前会清空
 - **data/** : 存放 setup 过程中的临时数据
 - **static/** : Web 界面的静态资源
 
 ### 配置生成逻辑
 
-1. **清理阶段**: 清空 `config/` 目录
-2. **模板复制**: 从 `templates/` 复制文件到 `config/`
+1. **清理阶段**: 清空 `output/` 目录
+2. **模板复制**: 从 `templates/` 复制文件到 `output/`
 3. **配置生成**: 基于用户输入生成配置文件
-4. **文件整合**: 将所有配置文件整合到 `config/` 目录
+4. **文件整合**: 将所有配置文件整合到 `output/` 目录
 
 ### 与主项目的一致性
 
@@ -186,7 +191,7 @@ curl -I http://your-domain.com
 
 ```bash
 # 1. 备份生成的配置文件
-cp -r config/ /safe/backup/location/
+cp -r output/ /safe/backup/location/
 
 # 2. 删除敏感的运行时数据
 rm -rf data/
@@ -211,5 +216,5 @@ rm -rf data/
 ./setup 2>&1 | tee setup.log
 
 # 生成配置后的容器日志  
-docker-compose -f config/docker-compose.production.yml logs
+docker-compose -f output/docker-compose.production.yml logs
 ```
