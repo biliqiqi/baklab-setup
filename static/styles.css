@@ -6,8 +6,9 @@
 }
 
 :root {
-    --primary-color: #2563eb;
-    --primary-hover: #1d4ed8;
+    --primary-color: #0284c7;
+    --primary-hover: #0369a1;
+    --primary-color-rgb: 2, 132, 199;
     --success-color: #059669;
     --error-color: #dc2626;
     --warning-color: #d97706;
@@ -137,7 +138,7 @@ body {
 .language-selector:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .header p {
@@ -178,7 +179,7 @@ body {
 }
 
 .sidebar-step.active {
-    background-color: rgba(37, 99, 235, 0.1);
+    background-color: rgba(var(--primary-color-rgb), 0.1);
     color: var(--primary-color);
 }
 
@@ -367,7 +368,7 @@ body {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .form-group input[type="checkbox"] {
@@ -550,8 +551,8 @@ body {
 }
 
 .alert-info {
-    background: rgba(37, 99, 235, 0.1);
-    border: 1px solid rgba(37, 99, 235, 0.2);
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border: 1px solid rgba(var(--primary-color-rgb), 0.2);
     color: var(--primary-color);
 }
 
