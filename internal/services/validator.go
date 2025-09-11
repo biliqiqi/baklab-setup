@@ -77,6 +77,33 @@ func validatePassword(pwd string) bool {
 		   passwordSpecialRegex.Match(pwdBytes)
 }
 
+// validateDatabasePassword 验证数据库/Redis密码（比用户密码稍微宽松）
+func validateDatabasePassword(pwd string) bool {
+	pwdBytes := []byte(pwd)
+	
+	// 检查格式、长度和字符集
+	if !passwordFormatRegex.Match(pwdBytes) {
+		return false
+	}
+	
+	// 至少包含3种字符类型
+	typeCount := 0
+	if passwordLowerRegex.Match(pwdBytes) {
+		typeCount++
+	}
+	if passwordUpperRegex.Match(pwdBytes) {
+		typeCount++
+	}
+	if passwordDigitRegex.Match(pwdBytes) {
+		typeCount++
+	}
+	if passwordSpecialRegex.Match(pwdBytes) {
+		typeCount++
+	}
+	
+	return typeCount >= 3
+}
+
 // TestDatabaseConnection 验证数据库配置格式
 func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) model.ConnectionTestResult {
 	result := model.ConnectionTestResult{
@@ -283,16 +310,16 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		})
 	}
 	
-	// Password验证 (数据库密码要求相对宽松)
+	// Password验证 (数据库密码要求加强)
 	if cfg.Password == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.password",
 			Message: "Database password is required",
 		})
-	} else if len(cfg.Password) < 8 {
+	} else if !validateDatabasePassword(cfg.Password) {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.password",
-			Message: "Database password must be at least 8 characters long",
+			Message: "Database password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
 		})
 	}
 	
@@ -324,16 +351,16 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		})
 	}
 	
-	// Password验证（必填）
+	// Password验证（加强要求）
 	if cfg.Password == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "redis.password",
 			Message: "Redis password is required",
 		})
-	} else if len(cfg.Password) < 1 {
+	} else if !validateDatabasePassword(cfg.Password) {
 		errors = append(errors, model.ValidationError{
 			Field:   "redis.password",
-			Message: "Redis password cannot be empty",
+			Message: "Redis password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
 		})
 	}
 	

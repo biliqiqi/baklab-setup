@@ -76,8 +76,8 @@
       
       "password_label": "密码",
       "password_placeholder": "输入数据库密码",
-      "password_help": "最少8个字符（数据库身份验证密码）",
-      "password_error": "数据库密码必须至少8个字符"
+      "password_help": "12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+      "password_error": "数据库密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）"
     },
     
     "redis": {
@@ -96,8 +96,8 @@
       
       "password_label": "密码",
       "password_placeholder": "输入 Redis 密码",
-      "password_help": "Redis 身份验证密码（必填）",
-      "password_error": "Redis 密码是必填的"
+      "password_help": "12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+      "password_error": "Redis 密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）"
     },
     
     "app": {

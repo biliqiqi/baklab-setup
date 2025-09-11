@@ -130,3 +130,383 @@ func TestValidateAppConfigDomainField(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateDatabasePassword(t *testing.T) {
+	tests := []struct {
+		name     string
+		password string
+		want     bool
+	}{
+		{
+			name:     "too short - 6 chars",
+			password: "123456",
+			want:     false,
+		},
+		{
+			name:     "too short - 8 chars, only numbers",
+			password: "12345678",
+			want:     false,
+		},
+		{
+			name:     "12 chars but only lowercase letters",
+			password: "abcdefghijkl",
+			want:     false,
+		},
+		{
+			name:     "12 chars but only uppercase letters",
+			password: "ABCDEFGHIJKL",
+			want:     false,
+		},
+		{
+			name:     "12 chars but only 2 types (lowercase + numbers)",
+			password: "abcdefghijk1",
+			want:     false,
+		},
+		{
+			name:     "valid - 3 types (lowercase + uppercase + numbers)",
+			password: "Abcdefghijk1",
+			want:     true,
+		},
+		{
+			name:     "valid - 3 types (lowercase + numbers + special)",
+			password: "abcdefghijk1!",
+			want:     true,
+		},
+		{
+			name:     "valid - 3 types (uppercase + numbers + special)",
+			password: "ABCDEFGHIJK1!",
+			want:     true,
+		},
+		{
+			name:     "valid - 4 types (all types)",
+			password: "Abcdefghijk!",
+			want:     true,
+		},
+		{
+			name:     "valid - readable password with 4 types",
+			password: "MyPassword123!",
+			want:     true,
+		},
+		{
+			name:     "valid - database password example",
+			password: "DatabasePass1!",
+			want:     true,
+		},
+		{
+			name:     "valid - Redis password example",
+			password: "RedisSecure2@",
+			want:     true,
+		},
+		{
+			name:     "too long - over 64 chars",
+			password: "VeryLongPasswordThatExceedsTheMaximumLengthLimitOf64Characters12!",
+			want:     false,
+		},
+		{
+			name:     "too short but valid types",
+			password: "Short1!",
+			want:     false,
+		},
+		{
+			name:     "contains invalid characters",
+			password: "ValidPassword1中",
+			want:     false,
+		},
+		{
+			name:     "exactly 12 chars with 3 types",
+			password: "Password123!",
+			want:     true,
+		},
+		{
+			name:     "exactly 64 chars with 4 types",
+			password: "VeryLongPasswordButStillValidWithExactly64CharactersTotal1!",
+			want:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := validateDatabasePassword(tt.password); got != tt.want {
+				t.Errorf("validateDatabasePassword(%q) = %v, want %v", tt.password, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestValidateUserPassword(t *testing.T) {
+	tests := []struct {
+		name     string
+		password string
+		want     bool
+	}{
+		{
+			name:     "valid user password - all 4 types required",
+			password: "MyPassword123!",
+			want:     true,
+		},
+		{
+			name:     "invalid - missing uppercase",
+			password: "mypassword123!",
+			want:     false,
+		},
+		{
+			name:     "invalid - missing lowercase",
+			password: "MYPASSWORD123!",
+			want:     false,
+		},
+		{
+			name:     "invalid - missing numbers",
+			password: "MyPassword!",
+			want:     false,
+		},
+		{
+			name:     "invalid - missing special chars",
+			password: "MyPassword123",
+			want:     false,
+		},
+		{
+			name:     "valid - minimum requirements met",
+			password: "Abcdefghijk1!",
+			want:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := validatePassword(tt.password); got != tt.want {
+				t.Errorf("validatePassword(%q) = %v, want %v", tt.password, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestValidatorService_ValidateConfig_PasswordValidation(t *testing.T) {
+	validator := NewValidatorService()
+
+	tests := []struct {
+		name           string
+		dbPassword     string
+		redisPassword  string
+		wantErrors     int
+		wantDBError    bool
+		wantRedisError bool
+	}{
+		{
+			name:           "valid passwords",
+			dbPassword:     "DatabasePass1!",
+			redisPassword:  "RedisSecure2@",
+			wantErrors:     0,
+			wantDBError:    false,
+			wantRedisError: false,
+		},
+		{
+			name:           "invalid database password - too weak",
+			dbPassword:     "weakpass",
+			redisPassword:  "RedisSecure2@",
+			wantErrors:     1,
+			wantDBError:    true,
+			wantRedisError: false,
+		},
+		{
+			name:           "invalid Redis password - too weak",
+			dbPassword:     "DatabasePass1!",
+			redisPassword:  "weak",
+			wantErrors:     1,
+			wantDBError:    false,
+			wantRedisError: true,
+		},
+		{
+			name:           "both passwords invalid",
+			dbPassword:     "weak",
+			redisPassword:  "alsoweak",
+			wantErrors:     2,
+			wantDBError:    true,
+			wantRedisError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &model.SetupConfig{
+				Database: model.DatabaseConfig{
+					Host:     "localhost",
+					Port:     5432,
+					Name:     "testdb",
+					User:     "testuser",
+					Password: tt.dbPassword,
+				},
+				Redis: model.RedisConfig{
+					Host:     "localhost",
+					Port:     6379,
+					Password: tt.redisPassword,
+				},
+				App: model.AppConfig{
+					DomainName:  "test.com",
+					BrandName:   "Test",
+					AdminEmail:  "admin@test.com",
+					DefaultLang: "en",
+				},
+				AdminUser: model.AdminUserConfig{
+					Username: "admin",
+					Email:    "admin@test.com",
+					Password: "AdminPassword123!",
+				},
+			}
+
+			errors := validator.ValidateConfig(cfg)
+
+			if len(errors) != tt.wantErrors {
+				t.Errorf("ValidateConfig() returned %d errors, want %d", len(errors), tt.wantErrors)
+				for _, err := range errors {
+					t.Logf("Error: %s - %s", err.Field, err.Message)
+				}
+				return
+			}
+
+			// 检查具体的错误类型
+			hasDBError := false
+			hasRedisError := false
+			for _, err := range errors {
+				if err.Field == "database.password" {
+					hasDBError = true
+				}
+				if err.Field == "redis.password" {
+					hasRedisError = true
+				}
+			}
+
+			if hasDBError != tt.wantDBError {
+				t.Errorf("Expected database password error: %v, got: %v", tt.wantDBError, hasDBError)
+			}
+			if hasRedisError != tt.wantRedisError {
+				t.Errorf("Expected Redis password error: %v, got: %v", tt.wantRedisError, hasRedisError)
+			}
+		})
+	}
+}
+
+func TestValidatorService_ValidateDatabaseConfig_Password(t *testing.T) {
+	validator := NewValidatorService()
+
+	tests := []struct {
+		name   string
+		config model.DatabaseConfig
+		want   int // number of errors expected
+	}{
+		{
+			name: "valid config",
+			config: model.DatabaseConfig{
+				Host:     "localhost",
+				Port:     5432,
+				Name:     "baklab",
+				User:     "baklab",
+				Password: "DatabasePass123!",
+			},
+			want: 0,
+		},
+		{
+			name: "weak password",
+			config: model.DatabaseConfig{
+				Host:     "localhost",
+				Port:     5432,
+				Name:     "baklab",
+				User:     "baklab",
+				Password: "weak",
+			},
+			want: 1,
+		},
+		{
+			name: "empty password",
+			config: model.DatabaseConfig{
+				Host:     "localhost",
+				Port:     5432,
+				Name:     "baklab",
+				User:     "baklab",
+				Password: "",
+			},
+			want: 1,
+		},
+		{
+			name: "password with only 2 character types",
+			config: model.DatabaseConfig{
+				Host:     "localhost",
+				Port:     5432,
+				Name:     "baklab",
+				User:     "baklab",
+				Password: "password123456",
+			},
+			want: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			errors := validator.validateDatabaseConfig(tt.config)
+			if len(errors) != tt.want {
+				t.Errorf("validateDatabaseConfig() returned %d errors, want %d", len(errors), tt.want)
+				for _, err := range errors {
+					t.Logf("Error: %s - %s", err.Field, err.Message)
+				}
+			}
+		})
+	}
+}
+
+func TestValidatorService_ValidateRedisConfig_Password(t *testing.T) {
+	validator := NewValidatorService()
+
+	tests := []struct {
+		name   string
+		config model.RedisConfig
+		want   int // number of errors expected
+	}{
+		{
+			name: "valid config",
+			config: model.RedisConfig{
+				Host:     "localhost",
+				Port:     6379,
+				Password: "RedisSecure123!",
+			},
+			want: 0,
+		},
+		{
+			name: "weak password",
+			config: model.RedisConfig{
+				Host:     "localhost",
+				Port:     6379,
+				Password: "weak",
+			},
+			want: 1,
+		},
+		{
+			name: "empty password",
+			config: model.RedisConfig{
+				Host:     "localhost",
+				Port:     6379,
+				Password: "",
+			},
+			want: 1,
+		},
+		{
+			name: "password with only 2 character types",
+			config: model.RedisConfig{
+				Host:     "localhost",
+				Port:     6379,
+				Password: "password123456",
+			},
+			want: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			errors := validator.validateRedisConfig(tt.config)
+			if len(errors) != tt.want {
+				t.Errorf("validateRedisConfig() returned %d errors, want %d", len(errors), tt.want)
+				for _, err := range errors {
+					t.Logf("Error: %s - %s", err.Field, err.Message)
+				}
+			}
+		})
+	}
+}
