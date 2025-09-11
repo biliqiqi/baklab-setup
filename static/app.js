@@ -297,7 +297,9 @@ class SetupApp {
                             value="${this.config.database.password}" 
                             data-i18n-placeholder="setup.database.password_placeholder"
                             required
-                            minlength="8"
+                            minlength="12"
+                            maxlength="64"
+                            pattern="^[A-Za-z\\d!@#$%^&*]{12,64}$"
                             data-i18n-title="setup.database.password_error"
                         >
                         <div class="form-help" data-i18n="setup.database.password_help"></div>
@@ -315,6 +317,17 @@ class SetupApp {
         // 添加表单提交事件监听
         document.getElementById('database-form').addEventListener('submit', (e) => {
             e.preventDefault();
+            
+            // 验证数据库密码强度
+            const password = document.getElementById('db-password').value;
+            const passwordField = document.getElementById('db-password');
+            
+            if (password && !this.validateDatabasePasswordStrength(password)) {
+                passwordField.setCustomValidity('Password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)');
+            } else {
+                passwordField.setCustomValidity('');
+            }
+            
             if (e.target.checkValidity()) {
                 app.saveDatabaseConfig();
             } else {
@@ -372,7 +385,9 @@ class SetupApp {
                         value="${this.config.redis.password}" 
                         data-i18n-placeholder="setup.redis.password_placeholder"
                         required
-                        minlength="1"
+                        minlength="12"
+                        maxlength="64"
+                        pattern="^[A-Za-z\\d!@#$%^&*]{12,64}$"
                         data-i18n-title="setup.redis.password_error"
                     >
                     <div class="form-help" data-i18n="setup.redis.password_help"></div>
@@ -389,6 +404,17 @@ class SetupApp {
         // 添加表单提交事件监听
         document.getElementById('redis-form').addEventListener('submit', (e) => {
             e.preventDefault();
+            
+            // 验证Redis密码强度
+            const password = document.getElementById('redis-password').value;
+            const passwordField = document.getElementById('redis-password');
+            
+            if (password && !this.validateDatabasePasswordStrength(password)) {
+                passwordField.setCustomValidity('Password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)');
+            } else {
+                passwordField.setCustomValidity('');
+            }
+            
             if (e.target.checkValidity()) {
                 app.saveRedisConfig();
             } else {
@@ -1543,6 +1569,29 @@ class SetupApp {
                upperRegex.test(password) &&
                digitRegex.test(password) &&
                specialRegex.test(password);
+    }
+
+    validateDatabasePasswordStrength(password) {
+        // 数据库/Redis密码验证规则（比用户密码稍微宽松）
+        // 12-64位，只允许字母、数字和特定特殊字符
+        const formatRegex = /^[A-Za-z\d!@#$%^&*]{12,64}$/;
+        const lowerRegex = /[a-z]/;
+        const upperRegex = /[A-Z]/;
+        const digitRegex = /\d/;
+        const specialRegex = /[!@#$%^&*]/;
+        
+        if (!formatRegex.test(password)) {
+            return false;
+        }
+        
+        // 至少包含3种字符类型
+        let typeCount = 0;
+        if (lowerRegex.test(password)) typeCount++;
+        if (upperRegex.test(password)) typeCount++;
+        if (digitRegex.test(password)) typeCount++;
+        if (specialRegex.test(password)) typeCount++;
+        
+        return typeCount >= 3;
     }
 
     async completeSetup() {

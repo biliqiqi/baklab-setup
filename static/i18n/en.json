@@ -76,8 +76,8 @@
       
       "password_label": "Password",
       "password_placeholder": "Enter database password",
-      "password_help": "Minimum 8 characters (database authentication password)",
-      "password_error": "Database password must be at least 8 characters long"
+      "password_help": "12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+      "password_error": "Database password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)"
     },
     
     "redis": {
@@ -96,8 +96,8 @@
       
       "password_label": "Password",
       "password_placeholder": "Enter Redis password",
-      "password_help": "Redis authentication password (required)",
-      "password_error": "Redis password is required"
+      "password_help": "12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+      "password_error": "Redis password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)"
     },
     
     "app": {
