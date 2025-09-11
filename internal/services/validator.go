@@ -31,8 +31,8 @@ var (
 	// 数据库名称和用户名（以字母开头，只包含字母、数字、下划线）
 	dbNameRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*$`)
 	
-	// 域名格式
-	domainRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$|^localhost$`)
+	// 域名格式 - 支持多级域名和子域名
+	domainRegex = regexp.MustCompile(`^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$|^localhost$`)
 	
 	// 品牌名称（字母、数字、空格、连字符、下划线）
 	brandNameRegex = regexp.MustCompile(`^[a-zA-Z0-9\s\-_]+$`)
