@@ -389,6 +389,46 @@ body {
     margin-bottom: 0;
 }
 
+/* Radio Button Styles */
+.radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.radio-group .radio-option {
+    display: flex !important;
+    align-items: flex-start;
+    cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    margin: 0 0.75rem 0 0;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.radio-option input[type="radio"]:checked + div > span {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.radio-option > div > span {
+    font-weight: 400;
+    color: var(--gray-700);
+    transition: color 0.2s;
+}
+
+.radio-help {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-top: 0.25rem;
+    line-height: 1.4;
+}
+
 .form-group.error input,
 .form-group.error select,
 .form-group.error textarea {

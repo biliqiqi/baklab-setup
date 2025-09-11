@@ -54,6 +54,12 @@
       "title": "Database Configuration",
       "description": "Configure your PostgreSQL database connection settings. Connection will be tested after Docker deployment.",
       
+      "service_type_label": "Service Type",
+      "service_type_docker": "Docker Compose",
+      "service_type_docker_help": "Use database service from Docker Compose",
+      "service_type_external": "External Service",
+      "service_type_external_help": "Connect to existing PostgreSQL server",
+      
       "host_label": "Host",
       "host_placeholder": "localhost", 
       "host_help": "Hostname or IP address (e.g., localhost, db.example.com, 192.168.1.10)",
@@ -83,6 +89,12 @@
     "redis": {
       "title": "Redis Configuration",
       "description": "Configure your Redis cache server settings. Connection will be tested after Docker deployment.",
+      
+      "service_type_label": "Service Type",
+      "service_type_docker": "Docker Compose",
+      "service_type_docker_help": "Use Redis service from Docker Compose",
+      "service_type_external": "External Service",
+      "service_type_external_help": "Connect to existing Redis server",
       
       "host_label": "Host",
       "host_placeholder": "localhost",

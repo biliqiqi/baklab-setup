@@ -7,6 +7,7 @@ class SetupApp {
         this.deploymentEventSource = null;
         this.config = {
             database: {
+                service_type: 'docker',
                 host: 'localhost',
                 port: 5433,
                 name: 'baklab',
@@ -14,8 +15,10 @@ class SetupApp {
                 password: ''
             },
             redis: {
+                service_type: 'docker',
                 host: 'localhost',
                 port: 6377,
+                user: '',
                 password: ''
             },
             smtp: {
@@ -218,7 +221,27 @@ class SetupApp {
                 <h3 data-i18n="setup.database.title"></h3>
                 <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.database.description"></p>
                 
-                <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label"><span data-i18n="setup.database.service_type_label"></span> <span data-i18n="common.required"></span></label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="db-service-type" value="docker" ${this.config.database.service_type === 'docker' ? 'checked' : ''}>
+                            <div>
+                                <span data-i18n="setup.database.service_type_docker"></span>
+                                <div class="radio-help" data-i18n="setup.database.service_type_docker_help"></div>
+                            </div>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="db-service-type" value="external" ${this.config.database.service_type === 'external' ? 'checked' : ''}>
+                            <div>
+                                <span data-i18n="setup.database.service_type_external"></span>
+                                <div class="radio-help" data-i18n="setup.database.service_type_external_help"></div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-row" id="db-connection-fields">
                     <div class="form-group">
                         <label for="db-host"><span data-i18n="setup.database.host_label"></span> <span data-i18n="common.required"></span></label>
                         <input 
@@ -314,6 +337,19 @@ class SetupApp {
             </form>
         `;
         
+        // 添加服务类型切换事件监听
+        const serviceTypeRadios = document.querySelectorAll('input[name="db-service-type"]');
+        serviceTypeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.updateDatabaseHostField(e.target.value);
+                this.updateRadioStyles('db-service-type');
+            });
+        });
+        
+        // 初始化主机字段状态和样式
+        this.updateDatabaseHostField(this.config.database.service_type);
+        this.updateRadioStyles('db-service-type');
+        
         // 添加表单提交事件监听
         document.getElementById('database-form').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -341,6 +377,26 @@ class SetupApp {
             <form id="redis-form" class="form-section" novalidate>
                 <h3 data-i18n="setup.redis.title"></h3>
                 <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.redis.description"></p>
+                
+                <div class="form-group">
+                    <label class="form-label"><span data-i18n="setup.redis.service_type_label"></span> <span data-i18n="common.required"></span></label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="redis-service-type" value="docker" ${this.config.redis.service_type === 'docker' ? 'checked' : ''}>
+                            <div>
+                                <span data-i18n="setup.redis.service_type_docker"></span>
+                                <div class="radio-help" data-i18n="setup.redis.service_type_docker_help"></div>
+                            </div>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="redis-service-type" value="external" ${this.config.redis.service_type === 'external' ? 'checked' : ''}>
+                            <div>
+                                <span data-i18n="setup.redis.service_type_external"></span>
+                                <div class="radio-help" data-i18n="setup.redis.service_type_external_help"></div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
                 
                 <div class="form-row">
                     <div class="form-group">
@@ -400,6 +456,19 @@ class SetupApp {
                 </div>
             </form>
         `;
+        
+        // 添加服务类型切换事件监听
+        const serviceTypeRadios = document.querySelectorAll('input[name="redis-service-type"]');
+        serviceTypeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.updateRedisHostField(e.target.value);
+                this.updateRadioStyles('redis-service-type');
+            });
+        });
+        
+        // 初始化主机字段状态和样式
+        this.updateRedisHostField(this.config.redis.service_type);
+        this.updateRadioStyles('redis-service-type');
         
         // 添加表单提交事件监听
         document.getElementById('redis-form').addEventListener('submit', (e) => {
@@ -983,8 +1052,10 @@ class SetupApp {
     }
     
     async saveDatabaseConfig() {
+        const serviceType = document.querySelector('input[name="db-service-type"]:checked').value;
         this.config.database = {
-            host: document.getElementById('db-host').value,
+            service_type: serviceType,
+            host: serviceType === 'docker' ? 'localhost' : document.getElementById('db-host').value,
             port: parseInt(document.getElementById('db-port').value),
             name: document.getElementById('db-name').value,
             user: document.getElementById('db-user').value,
@@ -996,16 +1067,55 @@ class SetupApp {
         this.nextStep();
     }
     
+    updateDatabaseHostField(serviceType) {
+        const hostField = document.getElementById('db-host');
+        if (serviceType === 'docker') {
+            hostField.value = 'localhost';
+            hostField.readOnly = true;
+            hostField.style.backgroundColor = 'var(--gray-100)';
+        } else {
+            hostField.readOnly = false;
+            hostField.style.backgroundColor = '';
+        }
+    }
+    
     async saveRedisConfig() {
+        const serviceType = document.querySelector('input[name="redis-service-type"]:checked').value;
         this.config.redis = {
-            host: document.getElementById('redis-host').value,
+            service_type: serviceType,
+            host: serviceType === 'docker' ? 'localhost' : document.getElementById('redis-host').value,
             port: parseInt(document.getElementById('redis-port').value),
+            user: document.getElementById('redis-user') ? document.getElementById('redis-user').value : '',
             password: document.getElementById('redis-password').value
         };
         
         // 只保存到本地缓存，不调用后端API
         this.saveToLocalCache();
         this.nextStep();
+    }
+    
+    updateRedisHostField(serviceType) {
+        const hostField = document.getElementById('redis-host');
+        if (serviceType === 'docker') {
+            hostField.value = 'localhost';
+            hostField.readOnly = true;
+            hostField.style.backgroundColor = 'var(--gray-100)';
+        } else {
+            hostField.readOnly = false;
+            hostField.style.backgroundColor = '';
+        }
+    }
+    
+    updateRadioStyles(radioName) {
+        const radios = document.querySelectorAll(`input[name="${radioName}"]`);
+        radios.forEach(radio => {
+            const option = radio.closest('.radio-option');
+            if (radio.checked) {
+                option.classList.add('selected');
+            } else {
+                option.classList.remove('selected');
+            }
+        });
     }
     
     async saveAppConfig() {
