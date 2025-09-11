@@ -54,6 +54,12 @@
       "title": "数据库配置",
       "description": "配置您的 PostgreSQL 数据库连接设置。连接将在 Docker 部署后进行测试。",
       
+      "service_type_label": "服务类型",
+      "service_type_docker": "Docker Compose",
+      "service_type_docker_help": "使用 Docker Compose 中的数据库服务",
+      "service_type_external": "外部服务",
+      "service_type_external_help": "连接到现有的 PostgreSQL 服务器",
+      
       "host_label": "主机地址",
       "host_placeholder": "localhost",
       "host_help": "主机名或IP地址（例如：localhost、db.example.com、192.168.1.10）",
@@ -83,6 +89,12 @@
     "redis": {
       "title": "Redis 配置",
       "description": "配置您的 Redis 缓存服务器设置。连接将在 Docker 部署后进行测试。",
+      
+      "service_type_label": "服务类型",
+      "service_type_docker": "Docker Compose",
+      "service_type_docker_help": "使用 Docker Compose 中的 Redis 服务",
+      "service_type_external": "外部服务",
+      "service_type_external_help": "连接到现有的 Redis 服务器",
       
       "host_label": "主机地址",
       "host_placeholder": "localhost",

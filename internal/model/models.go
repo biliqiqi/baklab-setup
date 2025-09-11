@@ -25,19 +25,21 @@ type SetupState struct {
 
 // DatabaseConfig 数据库配置
 type DatabaseConfig struct {
-	Host     string `json:"host" validate:"required"`
-	Port     int    `json:"port" validate:"required,min=1,max=65535"`
-	Name     string `json:"name" validate:"required"`
-	User     string `json:"user" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	ServiceType string `json:"service_type" validate:"required,oneof=docker external"` // "docker" for docker compose, "external" for external service
+	Host        string `json:"host" validate:"required"`
+	Port        int    `json:"port" validate:"required,min=1,max=65535"`
+	Name        string `json:"name" validate:"required"`
+	User        string `json:"user" validate:"required"`
+	Password    string `json:"password" validate:"required"`
 }
 
 // RedisConfig Redis配置
 type RedisConfig struct {
-	Host     string `json:"host" validate:"required"`
-	Port     int    `json:"port" validate:"required,min=1,max=65535"`
-	User     string `json:"user" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	ServiceType string `json:"service_type" validate:"required,oneof=docker external"` // "docker" for docker compose, "external" for external service
+	Host        string `json:"host" validate:"required"`
+	Port        int    `json:"port" validate:"required,min=1,max=65535"`
+	User        string `json:"user"`
+	Password    string `json:"password" validate:"required"`
 }
 
 // SMTPConfig SMTP配置

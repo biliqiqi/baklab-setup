@@ -253,17 +253,35 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []model.ValidationError {
 	var errors []model.ValidationError
 	
-	// Host验证
-	if cfg.Host == "" {
+	// ServiceType验证
+	if cfg.ServiceType != "docker" && cfg.ServiceType != "external" {
 		errors = append(errors, model.ValidationError{
-			Field:   "database.host",
-			Message: "Database host is required",
+			Field:   "database.service_type",
+			Message: "Database service type must be 'docker' or 'external'",
 		})
-	} else if !hostRegex.MatchString(cfg.Host) {
-		errors = append(errors, model.ValidationError{
-			Field:   "database.host",
-			Message: "Database host must be a valid hostname or IP address",
-		})
+	}
+	
+	// Host验证 - docker模式下强制localhost
+	if cfg.ServiceType == "docker" {
+		if cfg.Host != "localhost" {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.host",
+				Message: "Database host must be 'localhost' when using docker compose",
+			})
+		}
+	} else {
+		// external模式下需要验证host
+		if cfg.Host == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.host",
+				Message: "Database host is required",
+			})
+		} else if !hostRegex.MatchString(cfg.Host) {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.host",
+				Message: "Database host must be a valid hostname or IP address",
+			})
+		}
 	}
 	
 	// Port验证
@@ -330,17 +348,35 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.ValidationError {
 	var errors []model.ValidationError
 	
-	// Host验证
-	if cfg.Host == "" {
+	// ServiceType验证
+	if cfg.ServiceType != "docker" && cfg.ServiceType != "external" {
 		errors = append(errors, model.ValidationError{
-			Field:   "redis.host",
-			Message: "Redis host is required",
+			Field:   "redis.service_type",
+			Message: "Redis service type must be 'docker' or 'external'",
 		})
-	} else if !hostRegex.MatchString(cfg.Host) {
-		errors = append(errors, model.ValidationError{
-			Field:   "redis.host",
-			Message: "Redis host must be a valid hostname or IP address",
-		})
+	}
+	
+	// Host验证 - docker模式下强制localhost
+	if cfg.ServiceType == "docker" {
+		if cfg.Host != "localhost" {
+			errors = append(errors, model.ValidationError{
+				Field:   "redis.host",
+				Message: "Redis host must be 'localhost' when using docker compose",
+			})
+		}
+	} else {
+		// external模式下需要验证host
+		if cfg.Host == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "redis.host",
+				Message: "Redis host is required",
+			})
+		} else if !hostRegex.MatchString(cfg.Host) {
+			errors = append(errors, model.ValidationError{
+				Field:   "redis.host",
+				Message: "Redis host must be a valid hostname or IP address",
+			})
+		}
 	}
 	
 	// Port验证
