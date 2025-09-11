@@ -1,4 +1,4 @@
-// Baklab Setup - Frontend Application - v1.2 (Double Escaped Patterns)
+// BakLab Setup - Frontend Application - v1.2 (Double Escaped Patterns)
 class SetupApp {
     constructor() {
         this.currentStep = 0;
@@ -27,7 +27,7 @@ class SetupApp {
             },
             app: {
                 domain_name: '',
-                brand_name: 'Baklab',
+                brand_name: 'BakLab',
                 admin_email: '',
                 default_lang: 'en',
                 version: 'latest',
@@ -943,18 +943,18 @@ class SetupApp {
             <div class="container">
                 <div class="header">
                     <h1>✅ Setup Complete!</h1>
-                    <p>Your Baklab application has been successfully configured and deployed.</p>
+                    <p>Your BakLab application has been successfully configured and deployed.</p>
                 </div>
                 
                 <div class="setup-card">
                     <div class="alert alert-success">
-                        <strong>Congratulations!</strong> Your Baklab instance is now ready for use.
+                        <strong>Congratulations!</strong> Your BakLab instance is now ready for use.
                         The setup service remains available for future configuration updates.
                     </div>
                     
                     <h3>Next Steps</h3>
                     <ul style="line-height: 1.8; color: var(--gray-700);">
-                        <li><strong>Access your application:</strong> Visit your domain to start using Baklab</li>
+                        <li><strong>Access your application:</strong> Visit your domain to start using BakLab</li>
                         <li><strong>Configuration updates:</strong> You can re-run setup anytime to update your configuration</li>
                         <li><strong>Backups:</strong> Set up regular backups of your data and configuration</li>
                         <li><strong>Monitoring:</strong> Monitor your services with <code>docker-compose ps</code></li>
@@ -1601,7 +1601,7 @@ class SetupApp {
             // 清除本地缓存（设置已完成）
             this.clearLocalCache();
             
-            this.showAlert('success', window.i18n ? window.i18n.t('messages.setup_completed') : 'Setup completed successfully! Your Baklab application is ready to use.');
+            this.showAlert('success', window.i18n ? window.i18n.t('messages.setup_completed') : 'Setup completed successfully! Your BakLab application is ready to use.');
             
             // 延迟跳转到完成页面
             setTimeout(() => {

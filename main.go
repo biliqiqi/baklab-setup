@@ -32,7 +32,7 @@ var (
 func main() {
 	flag.Parse()
 	
-	log.Printf("Starting Baklab Setup Service...")
+	log.Printf("Starting BakLab Setup Service...")
 	log.Printf("Data directory: %s", *dataDir)
 	log.Printf("Server will run on port %s", *port)
 	
@@ -104,14 +104,6 @@ func main() {
 	// 主页路由
 	r.Get("/", handlers.IndexHandler)
 	
-	// 健康检查
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte(`{"status":"ok","service":"baklab-setup"}`)); err != nil {
-			log.Printf("Warning: failed to write health check response: %v", err)
-		}
-	})
 	
 	// 启动服务器
 	server := &http.Server{

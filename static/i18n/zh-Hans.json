@@ -20,8 +20,8 @@
   },
   
   "setup": {
-    "title": "Baklab 设置",
-    "subtitle": "配置您的 Baklab 应用程序用于生产部署",
+    "title": "BakLab 设置",
+    "subtitle": "配置您的 BakLab 应用程序用于生产部署",
     
     "steps": {
       "initialize": "初始化",
@@ -35,8 +35,8 @@
     },
     
     "init": {
-      "welcome_title": "欢迎使用 Baklab 设置向导",
-      "welcome_description": "此设置向导将帮助您配置 Baklab 应用程序用于生产部署。点击下面的按钮生成安全设置令牌并开始配置过程。",
+      "welcome_title": "欢迎使用 BakLab 设置向导",
+      "welcome_description": "此设置向导将帮助您配置 BakLab 应用程序用于生产部署。点击下面的按钮生成安全设置令牌并开始配置过程。",
       "existing_deployment_warning": "⚠️ 检测到现有部署",
       "existing_deployment_details": "配置文件已存在于 config/ 目录中。继续操作将覆盖现有的部署配置。",
       "existing_deployment_effects": "这将会：",
@@ -110,7 +110,7 @@
       "domain_error": "请输入有效的域名（例如：example.com）或 localhost",
       
       "brand_label": "品牌名称",
-      "brand_placeholder": "Baklab",
+      "brand_placeholder": "BakLab",
       "brand_error": "品牌名称必须是2-50个字符，只能包含字母、数字、空格、连字符和下划线",
       
       "version_label": "应用程序版本",
@@ -214,9 +214,9 @@
     "complete": {
       "title": "设置完成！",
       "emoji": "🎉",
-      "description": "您的 Baklab 应用程序已成功配置。配置文件已生成并准备好部署。",
+      "description": "您的 BakLab 应用程序已成功配置。配置文件已生成并准备好部署。",
       "ready_notice": "准备部署！",
-      "ready_description": "您的配置已生成并验证。点击\"部署应用程序\"自动启动您的 Baklab 服务。",
+      "ready_description": "您的配置已生成并验证。点击\"部署应用程序\"自动启动您的 BakLab 服务。",
       "deploy_button": "🚀 部署应用程序",
       "skip_button": "跳过部署"
     },
@@ -235,12 +235,12 @@
     
     "completed": {
       "title": "✅ 设置完成！",
-      "description": "您的 Baklab 应用程序已成功配置和部署。",
-      "congratulations": "恭喜！您的 Baklab 实例现在已准备就绪。设置服务仍可用于未来的配置更新。",
+      "description": "您的 BakLab 应用程序已成功配置和部署。",
+      "congratulations": "恭喜！您的 BakLab 实例现在已准备就绪。设置服务仍可用于未来的配置更新。",
       
       "next_steps": "下一步",
       "steps_list": [
-        "访问您的应用程序：访问您的域名开始使用 Baklab",
+        "访问您的应用程序：访问您的域名开始使用 BakLab",
         "配置更新：您可以随时重新运行设置来更新配置",
         "备份：设置数据和配置的定期备份",
         "监控：使用 docker-compose ps 监控您的服务",
