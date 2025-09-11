@@ -343,6 +343,12 @@ services:
     links:
       - db
       - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:$APP_PORT/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   db:
     build:
@@ -446,7 +452,14 @@ services:
       - $NGINX_SSL_PORT:443
       - $NGINX_PORT:80
     depends_on:
-      - webapp{{ if .GoAccess.Enabled }}
+      webapp:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s{{ if .GoAccess.Enabled }}
   goaccess:
     image: allinurl/goaccess:1.7.2
     container_name: "local-goaccess"
