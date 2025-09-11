@@ -74,11 +74,11 @@ class SetupI18n {
         this.translations = {
             'en': {
                 common: { next: "Next", previous: "Previous", save: "Save", cancel: "Cancel", loading: "Loading..." },
-                setup: { title: "Baklab Setup", welcome: "Welcome to Baklab Setup" }
+                setup: { title: "BakLab Setup", welcome: "Welcome to BakLab Setup" }
             },
             'zh-Hans': {
                 common: { next: "下一步", previous: "上一步", save: "保存", cancel: "取消", loading: "加载中..." },
-                setup: { title: "Baklab 设置", welcome: "欢迎使用 Baklab 设置向导" }
+                setup: { title: "BakLab 设置", welcome: "欢迎使用 BakLab 设置向导" }
             }
         };
     }

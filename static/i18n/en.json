@@ -20,8 +20,8 @@
   },
   
   "setup": {
-    "title": "Baklab Setup",
-    "subtitle": "Configure your Baklab application for production deployment",
+    "title": "BakLab Setup",
+    "subtitle": "Configure your BakLab application for production deployment",
     
     "steps": {
       "initialize": "Initialize",
@@ -35,8 +35,8 @@
     },
     
     "init": {
-      "welcome_title": "Welcome to Baklab Setup",
-      "welcome_description": "This setup wizard will help you configure your Baklab application for production deployment. Click the button below to generate a secure setup token and begin the configuration process.",
+      "welcome_title": "Welcome to BakLab Setup",
+      "welcome_description": "This setup wizard will help you configure your BakLab application for production deployment. Click the button below to generate a secure setup token and begin the configuration process.",
       "existing_deployment_warning": "⚠️ Existing Deployment Detected",
       "existing_deployment_details": "Configuration files already exist in the config/ directory. Proceeding will overwrite the existing deployment configuration.",
       "existing_deployment_effects": "This will:",
@@ -110,7 +110,7 @@
       "domain_error": "Please enter a valid domain name (e.g., example.com) or localhost",
       
       "brand_label": "Brand Name",
-      "brand_placeholder": "Baklab",
+      "brand_placeholder": "BakLab",
       "brand_error": "Brand name must be 2-50 characters and contain only letters, numbers, spaces, hyphens, and underscores",
       
       "version_label": "Application Version",
@@ -214,9 +214,9 @@
     "complete": {
       "title": "Setup Complete!",
       "emoji": "🎉",
-      "description": "Your Baklab application has been successfully configured. The configuration files have been generated and are ready for deployment.",
+      "description": "Your BakLab application has been successfully configured. The configuration files have been generated and are ready for deployment.",
       "ready_notice": "Ready for Deployment!",
-      "ready_description": "Your configuration has been generated and validated. Click \"Deploy Application\" to automatically start your Baklab services.",
+      "ready_description": "Your configuration has been generated and validated. Click \"Deploy Application\" to automatically start your BakLab services.",
       "deploy_button": "🚀 Deploy Application",
       "skip_button": "Skip Deployment"
     },
@@ -235,12 +235,12 @@
     
     "completed": {
       "title": "✅ Setup Complete!",
-      "description": "Your Baklab application has been successfully configured and deployed.",
-      "congratulations": "Congratulations! Your Baklab instance is now ready for use. The setup service remains available for future configuration updates.",
+      "description": "Your BakLab application has been successfully configured and deployed.",
+      "congratulations": "Congratulations! Your BakLab instance is now ready for use. The setup service remains available for future configuration updates.",
       
       "next_steps": "Next Steps",
       "steps_list": [
-        "Access your application: Visit your domain to start using Baklab",
+        "Access your application: Visit your domain to start using BakLab",
         "Configuration updates: You can re-run setup anytime to update your configuration", 
         "Backups: Set up regular backups of your data and configuration",
         "Monitoring: Monitor your services with docker-compose ps",
