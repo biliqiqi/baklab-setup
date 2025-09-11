@@ -20,7 +20,7 @@
   },
   
   "setup": {
-    "title": "🚀 Baklab 设置",
+    "title": "Baklab 设置",
     "subtitle": "配置您的 Baklab 应用程序用于生产部署",
     
     "steps": {

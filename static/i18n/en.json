@@ -20,7 +20,7 @@
   },
   
   "setup": {
-    "title": "🚀 Baklab Setup",
+    "title": "Baklab Setup",
     "subtitle": "Configure your Baklab application for production deployment",
     
     "steps": {

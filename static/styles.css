@@ -59,6 +59,15 @@ body {
     font-weight: bold;
     color: var(--primary-color);
     margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-logo {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
 }
 
 .sidebar-subtitle {
@@ -672,6 +681,15 @@ body {
     
     .main-content {
         padding: 0.75rem;
+    }
+    
+    .sidebar-logo {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .sidebar-title {
+        font-size: 1.1rem;
     }
 }
 
