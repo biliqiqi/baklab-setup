@@ -126,7 +126,10 @@ class SetupApp {
             <div class="container">
                 <div class="sidebar">
                     <div class="sidebar-header">
-                        <h1 class="sidebar-title" data-i18n="setup.title"></h1>
+                        <h1 class="sidebar-title">
+                            <img src="/static/logo-icon.png" alt="BakLab Logo" class="sidebar-logo">
+                            <span data-i18n="setup.title"></span>
+                        </h1>
                         <p class="sidebar-subtitle" data-i18n="setup.subtitle"></p>
                     </div>
                     ${this.renderSidebarSteps()}
