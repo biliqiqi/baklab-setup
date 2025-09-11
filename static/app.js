@@ -410,7 +410,7 @@ class SetupApp {
                             value="${this.config.app.domain_name}" 
                             data-i18n-placeholder="setup.app.domain_placeholder"
                             required
-                            pattern="^[a-zA-Z0-9][a-zA-Z0-9\\-]{1,61}[a-zA-Z0-9]\\.[a-zA-Z]{2,}$|^localhost$"
+                            pattern="^([a-zA-Z0-9]([a-zA-Z0-9\\-]*[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$|^localhost$"
                             data-i18n-title="setup.app.domain_error"
                         >
                         <div class="form-help" data-i18n="setup.app.domain_help"></div>
