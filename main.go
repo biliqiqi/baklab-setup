@@ -16,7 +16,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"golang.org/x/text/language"
 
+	"github.com/biliqiqi/baklab-setup/internal/i18n"
 	"github.com/biliqiqi/baklab-setup/internal/services"
 	"github.com/biliqiqi/baklab-setup/internal/storage"
 	"github.com/biliqiqi/baklab-setup/internal/web"
@@ -41,8 +43,11 @@ func main() {
 	// 初始化服务
 	setupService := services.NewSetupService(jsonStorage)
 
+	// 初始化i18n管理器
+	i18nManager := i18n.NewI18nManager(language.English)
+
 	// 创建处理器
-	handlers := web.NewSetupHandlers(setupService)
+	handlers := web.NewSetupHandlers(setupService, i18nManager)
 	middlewares := web.NewSetupMiddleware(setupService)
 
 	// 设置路由
@@ -71,6 +76,9 @@ func main() {
 
 	// setup阶段禁用缓存
 	r.Use(middleware.NoCache)
+
+	// i18n中间件
+	r.Use(web.I18nMiddleware)
 
 	// 静态文件服务
 	workDir, _ := os.Getwd()
