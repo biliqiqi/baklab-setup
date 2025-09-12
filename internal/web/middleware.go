@@ -70,7 +70,6 @@ func (m *SetupMiddleware) SetupAuth(next http.Handler) http.Handler {
 	})
 }
 
-
 // writeJSONResponse 写入JSON响应（中间件专用）
 func writeJSONResponse(w http.ResponseWriter, response model.SetupResponse, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")

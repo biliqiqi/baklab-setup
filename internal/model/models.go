@@ -106,10 +106,10 @@ type SetupToken struct {
 
 // ConnectionTestResult 连接测试结果
 type ConnectionTestResult struct {
-	Service   string `json:"service"`
-	Success   bool   `json:"success"`
-	Message   string `json:"message,omitempty"`
-	TestedAt  time.Time `json:"tested_at"`
+	Service  string    `json:"service"`
+	Success  bool      `json:"success"`
+	Message  string    `json:"message,omitempty"`
+	TestedAt time.Time `json:"tested_at"`
 }
 
 // ValidationError 验证错误
@@ -120,13 +120,13 @@ type ValidationError struct {
 
 // DeploymentStatus 部署状态
 type DeploymentStatus struct {
-	ID       string     `json:"id"`
-	Status   string     `json:"status"` // "preparing", "running", "completed", "failed"
-	Progress int        `json:"progress"`
-	Message  string     `json:"message"`
+	ID       string               `json:"id"`
+	Status   string               `json:"status"` // "preparing", "running", "completed", "failed"
+	Progress int                  `json:"progress"`
+	Message  string               `json:"message"`
 	Logs     []DeploymentLogEntry `json:"logs"`
-	StartAt  time.Time  `json:"start_at"`
-	EndAt    *time.Time `json:"end_at,omitempty"`
+	StartAt  time.Time            `json:"start_at"`
+	EndAt    *time.Time           `json:"end_at,omitempty"`
 }
 
 // DeploymentLogEntry 部署日志条目
@@ -138,8 +138,8 @@ type DeploymentLogEntry struct {
 
 // SetupResponse 通用API响应
 type SetupResponse struct {
-	Success bool                   `json:"success"`
-	Message string                 `json:"message,omitempty"`
-	Data    interface{}            `json:"data,omitempty"`
-	Errors  []ValidationError      `json:"errors,omitempty"`
+	Success bool              `json:"success"`
+	Message string            `json:"message,omitempty"`
+	Data    interface{}       `json:"data,omitempty"`
+	Errors  []ValidationError `json:"errors,omitempty"`
 }

@@ -330,6 +330,14 @@ class SetupApp {
                     </div>
                 </div>
                 
+                <div id="db-test-connection-container" style="display: none;">
+                    <div class="form-group">
+                        <button type="button" id="db-test-btn" class="btn btn-outline-primary" onclick="app.testDatabaseConnection()" data-i18n="setup.database.test_connection"></button>
+                        <div class="form-help" data-i18n="setup.database.test_connection_help"></div>
+                    </div>
+                    <div id="db-connection-results" class="connection-results-container"></div>
+                </div>
+                
                 <div class="btn-group">
                     <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
                     <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
@@ -448,6 +456,14 @@ class SetupApp {
                     >
                     <div class="form-help" data-i18n="setup.redis.password_help"></div>
                     <div class="invalid-feedback" data-i18n="setup.redis.password_error"></div>
+                </div>
+                
+                <div id="redis-test-connection-container" style="display: none;">
+                    <div class="form-group">
+                        <button type="button" id="redis-test-btn" class="btn btn-outline-primary" onclick="app.testRedisConnection()" data-i18n="setup.redis.test_connection"></button>
+                        <div class="form-help" data-i18n="setup.redis.test_connection_help"></div>
+                    </div>
+                    <div id="redis-connection-results" class="connection-results-container"></div>
                 </div>
                 
                 <div class="btn-group">
@@ -1069,13 +1085,21 @@ class SetupApp {
     
     updateDatabaseHostField(serviceType) {
         const hostField = document.getElementById('db-host');
+        const testConnectionContainer = document.getElementById('db-test-connection-container');
+        
         if (serviceType === 'docker') {
             hostField.value = 'localhost';
             hostField.readOnly = true;
             hostField.style.backgroundColor = 'var(--gray-100)';
+            if (testConnectionContainer) {
+                testConnectionContainer.style.display = 'none';
+            }
         } else {
             hostField.readOnly = false;
             hostField.style.backgroundColor = '';
+            if (testConnectionContainer) {
+                testConnectionContainer.style.display = 'block';
+            }
         }
     }
     
@@ -1096,13 +1120,21 @@ class SetupApp {
     
     updateRedisHostField(serviceType) {
         const hostField = document.getElementById('redis-host');
+        const testConnectionContainer = document.getElementById('redis-test-connection-container');
+        
         if (serviceType === 'docker') {
             hostField.value = 'localhost';
             hostField.readOnly = true;
             hostField.style.backgroundColor = 'var(--gray-100)';
+            if (testConnectionContainer) {
+                testConnectionContainer.style.display = 'none';
+            }
         } else {
             hostField.readOnly = false;
             hostField.style.backgroundColor = '';
+            if (testConnectionContainer) {
+                testConnectionContainer.style.display = 'block';
+            }
         }
     }
     
@@ -1264,8 +1296,15 @@ class SetupApp {
     async testConnection(type) {
         const testConfig = { ...this.config };
         
+        // Show loading state
+        const testBtn = document.getElementById(`${type === 'database' ? 'db' : 'redis'}-test-btn`);
+        const originalText = testBtn.textContent;
+        testBtn.disabled = true;
+        testBtn.textContent = window.i18n ? window.i18n.t('common.testing') : 'Testing...';
+        
         if (type === 'database') {
             testConfig.database = {
+                service_type: document.querySelector('input[name="db-service-type"]:checked').value,
                 host: document.getElementById('db-host').value,
                 port: parseInt(document.getElementById('db-port').value),
                 name: document.getElementById('db-name').value,
@@ -1274,17 +1313,23 @@ class SetupApp {
             };
         } else if (type === 'redis') {
             testConfig.redis = {
+                service_type: document.querySelector('input[name="redis-service-type"]:checked').value,
                 host: document.getElementById('redis-host').value,
                 port: parseInt(document.getElementById('redis-port').value),
+                user: '',
                 password: document.getElementById('redis-password').value
             };
         }
         
         try {
             const result = await this.api('POST', '/api/test-connections', testConfig);
-            this.displayConnectionResults(result.data);
+            this.displayConnectionResults(result.data, type);
         } catch (error) {
             this.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
+        } finally {
+            // Reset button state
+            testBtn.disabled = false;
+            testBtn.textContent = originalText;
         }
     }
     
@@ -1297,23 +1342,50 @@ class SetupApp {
         }
     }
     
-    displayConnectionResults(results) {
-        const container = document.getElementById('connection-results');
-        container.innerHTML = `
-            <div class="connection-results">
-                <h4 style="margin-bottom: 1rem;">Connection Test Results</h4>
-                ${results.map(result => `
-                    <div class="connection-result ${result.success ? 'success' : 'error'}">
-                        <div class="connection-result-icon">
-                            ${result.success ? '✓' : '✗'}
-                        </div>
-                        <div class="connection-result-text">
-                            <strong>${result.service.toUpperCase()}</strong>: ${result.message}
-                        </div>
+    displayConnectionResults(results, serviceType = null) {
+        // If serviceType is specified, show results in the specific service container
+        if (serviceType) {
+            const containerId = `${serviceType === 'database' ? 'db' : 'redis'}-connection-results`;
+            const container = document.getElementById(containerId);
+            if (container) {
+                const serviceResults = results.filter(r => r.service === serviceType);
+                container.innerHTML = serviceResults.length > 0 ? `
+                    <div class="connection-results">
+                        ${serviceResults.map(result => `
+                            <div class="connection-result ${result.success ? 'success' : 'error'}">
+                                <div class="connection-result-icon">
+                                    ${result.success ? '✓' : '✗'}
+                                </div>
+                                <div class="connection-result-text">
+                                    <strong>${result.service.toUpperCase()}</strong>: ${result.message}
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
-                `).join('')}
-            </div>
-        `;
+                ` : '';
+                return;
+            }
+        }
+        
+        // Default behavior - show all results in main container
+        const container = document.getElementById('connection-results');
+        if (container) {
+            container.innerHTML = `
+                <div class="connection-results">
+                    <h4 style="margin-bottom: 1rem;">Connection Test Results</h4>
+                    ${results.map(result => `
+                        <div class="connection-result ${result.success ? 'success' : 'error'}">
+                            <div class="connection-result-icon">
+                                ${result.success ? '✓' : '✗'}
+                            </div>
+                            <div class="connection-result-text">
+                                <strong>${result.service.toUpperCase()}</strong>: ${result.message}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
     }
     
     async generateConfig() {

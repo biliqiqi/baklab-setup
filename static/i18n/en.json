@@ -16,7 +16,8 @@
     "ok": "OK",
     "close": "Close",
     "confirm": "Confirm",
-    "retry": "Retry"
+    "retry": "Retry",
+    "testing": "Testing..."
   },
   
   "setup": {
@@ -83,7 +84,10 @@
       "password_label": "Password",
       "password_placeholder": "Enter database password",
       "password_help": "12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
-      "password_error": "Database password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)"
+      "password_error": "Database password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+      
+      "test_connection": "Test Connection",
+      "test_connection_help": "Test the database connection with current settings (only available for external services)"
     },
     
     "redis": {
@@ -109,7 +113,10 @@
       "password_label": "Password",
       "password_placeholder": "Enter Redis password",
       "password_help": "12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
-      "password_error": "Redis password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)"
+      "password_error": "Redis password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+      
+      "test_connection": "Test Connection",
+      "test_connection_help": "Test the Redis connection with current settings (only available for external services)"
     },
     
     "app": {
