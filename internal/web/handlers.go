@@ -2,8 +2,10 @@ package web
 
 import (
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"log"
@@ -676,6 +678,124 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 	}, http.StatusOK)
 }
 
+// UploadJWTKeyFileHandler 处理 JWT key 文件上传
+func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.Request) {
+	// 限制请求体大小为10MB（JWT key 文件通常很小）
+	maxSize := int64(10 * 1024 * 1024) // 10MB
+	r.Body = http.MaxBytesReader(w, r.Body, maxSize)
+
+	if err := r.ParseMultipartForm(maxSize); err != nil {
+		log.Printf("Failed to parse multipart form: %v", err)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "File too large or invalid form data",
+		}, http.StatusBadRequest)
+		return
+	}
+
+	file, handler, err := r.FormFile("jwt_key_file")
+	if err != nil {
+		log.Printf("Failed to get form file: %v", err)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "No file uploaded or invalid file field",
+		}, http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// 验证文件扩展名 (只支持 .pem 格式，符合 BakLab JWT 模块要求)
+	filename := strings.ToLower(handler.Filename)
+	if !strings.HasSuffix(filename, ".pem") {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Invalid file type. Only .pem files are allowed for JWT private keys",
+		}, http.StatusBadRequest)
+		return
+	}
+
+	// 验证文件大小
+	if handler.Size > maxSize {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "File too large. Maximum size is 10MB",
+		}, http.StatusBadRequest)
+		return
+	}
+
+	// 使用临时目录存储上传的文件，避免配置生成时被清空
+	tempDir := filepath.Join("./data", "temp")
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		log.Printf("Failed to create temp directory: %v", err)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Failed to create upload directory",
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	// 使用原始文件名保存到临时目录
+	destPath := filepath.Join(tempDir, handler.Filename)
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		log.Printf("Failed to create destination file: %v", err)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Failed to create destination file",
+		}, http.StatusInternalServerError)
+		return
+	}
+	defer destFile.Close()
+
+	// 读取文件内容进行验证
+	fileContent, err := io.ReadAll(file)
+	if err != nil {
+		log.Printf("Failed to read JWT key file: %v", err)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Failed to read file",
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	// 验证 PEM 格式
+	if err := validateJWTKeyFile(fileContent); err != nil {
+		log.Printf("Invalid JWT key file: %v", err)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: fmt.Sprintf("Invalid JWT private key file: %v", err),
+		}, http.StatusBadRequest)
+		return
+	}
+
+	// 写入文件
+	bytesWritten, err := destFile.Write(fileContent)
+	if err != nil {
+		log.Printf("Failed to write JWT key file: %v", err)
+		// 删除不完整的文件
+		os.Remove(destPath)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Failed to save file",
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("JWT key file uploaded to temp directory: %s (%d bytes)", destPath, bytesWritten)
+
+	// 返回成功响应
+	h.writeJSONResponse(w, model.SetupResponse{
+		Success: true,
+		Message: "JWT key file uploaded successfully",
+		Data: map[string]interface{}{
+			"filename":      handler.Filename,
+			"size":          bytesWritten,
+			"original_name": handler.Filename,
+			"temp_path":     destPath,
+		},
+	}, http.StatusOK)
+}
+
 // generateDeploymentID 生成部署ID
 func generateDeploymentID() (string, error) {
 	bytes := make([]byte, 8)
@@ -683,4 +803,34 @@ func generateDeploymentID() (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(bytes), nil
+}
+
+// validateJWTKeyFile 验证 JWT 私钥文件格式
+// 支持 RSA 和 Ed25519 私钥，格式要求与 BakLab JWT 模块一致
+func validateJWTKeyFile(keyBytes []byte) error {
+	block, _ := pem.Decode(keyBytes)
+	if block == nil {
+		return fmt.Errorf("invalid PEM format")
+	}
+	
+	switch block.Type {
+	case "PRIVATE KEY":
+		// PKCS#8 format - 支持 RSA 和 Ed25519
+		_, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err != nil {
+			return fmt.Errorf("invalid PKCS#8 private key: %w", err)
+		}
+		return nil
+		
+	case "RSA PRIVATE KEY":
+		// PKCS#1 format - 仅支持 RSA
+		_, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return fmt.Errorf("invalid PKCS#1 RSA private key: %w", err)
+		}
+		return nil
+		
+	default:
+		return fmt.Errorf("unsupported PEM block type: %s. Expected 'PRIVATE KEY' (PKCS#8) or 'RSA PRIVATE KEY' (PKCS#1)", block.Type)
+	}
 }

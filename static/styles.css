@@ -399,7 +399,7 @@ body {
 
 .radio-group .radio-option {
     display: flex !important;
-    align-items: flex-start;
+    align-items: center;
     cursor: pointer;
 }
 
@@ -1000,4 +1000,22 @@ body {
 /* Hidden */
 .hidden {
     display: none !important;
+}
+
+/* Code styling for JWT generation commands */
+code {
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9em;
+    color: #333;
+    white-space: nowrap;
+}
+
+.info-box code {
+    background-color: #fff;
+    border: 1px solid #bbdefb;
+    color: #0d47a1;
 }

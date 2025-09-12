@@ -150,7 +150,34 @@
       "language_error": "请选择默认语言",
       
       "debug_label": "启用调试模式",
-      "debug_help": "仅在开发环境中启用"
+      "debug_help": "仅在开发环境中启用",
+      
+      "jwt_section_title": "JWT 密钥配置",
+      "jwt_section_description": "配置用于身份验证令牌的 JWT 签名密钥。BakLab 支持 PEM 格式的 RSA 和 Ed25519 私钥。您可以上传密钥文件或指定宿主机文件路径用于 Docker 卷挂载。",
+      
+      "jwt_method_label": "JWT 密钥方式",
+      "jwt_method_upload": "上传密钥文件",
+      "jwt_method_path": "指定宿主机文件路径",
+      
+      "jwt_file_label": "JWT 密钥文件",
+      "jwt_file_help": "将 JWT 私钥文件拖放到此处或点击选择（仅支持 .pem 格式）",
+      "jwt_file_note": "要求：PEM 格式的私钥（RSA 或 Ed25519）",
+      "select_jwt_file": "选择 JWT 密钥文件",
+      "selected_file": "已选择文件",
+      "file_size": "文件大小",
+      
+      "jwt_path_label": "JWT 密钥文件路径（宿主机）",
+      "jwt_path_placeholder": "/host/path/to/jwt.pem",
+      "jwt_path_help": "宿主机上 JWT 私钥文件（.pem）的绝对路径",
+      "jwt_path_required": "JWT 密钥文件路径为必填项",
+      "jwt_upload_required": "请先上传 JWT 密钥文件",
+      "jwt_uploading": "上传中...",
+      "jwt_upload_success": "上传成功！",
+      "jwt_upload_failed": "上传失败",
+      "jwt_upload_failed_alert": "JWT 密钥文件上传失败",
+      
+      "jwt_generation_title": "如何生成 JWT 私钥",
+      "jwt_generation_commands": "<strong>Ed25519（推荐）：</strong><br><code>openssl genpkey -algorithm Ed25519 -out jwt.pem</code><br><br><strong>RSA-3072：</strong><br><code>openssl genrsa -out jwt.pem 3072</code><br><br><strong>设置正确的文件权限：</strong><br><code>chmod 600 jwt.pem</code>"
     },
     
     "goaccess": {
