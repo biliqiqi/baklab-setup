@@ -34,22 +34,22 @@ func (s *SetupService) InitializeSetup(ipAddress string) (*model.SetupToken, err
 	// if err != nil {
 	//     return nil, fmt.Errorf("failed to check setup status: %w", err)
 	// }
-	// 
+	//
 	// if completed {
 	//     return nil, fmt.Errorf("setup has already been completed")
 	// }
-	
+
 	// 生成访问令牌
 	token, err := s.generateSetupToken(ipAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate setup token: %w", err)
 	}
-	
+
 	// 保存令牌
 	if err := s.storage.SaveSetupToken(token); err != nil {
 		return nil, fmt.Errorf("failed to save setup token: %w", err)
 	}
-	
+
 	// 初始化setup状态
 	state := &model.SetupState{
 		Status:      model.StatusPending,
@@ -59,11 +59,11 @@ func (s *SetupService) InitializeSetup(ipAddress string) (*model.SetupToken, err
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
-	
+
 	if err := s.storage.SaveSetupState(state); err != nil {
 		return nil, fmt.Errorf("failed to save setup state: %w", err)
 	}
-	
+
 	return token, nil
 }
 
@@ -78,27 +78,27 @@ func (s *SetupService) ValidateSetupToken(tokenStr string, ipAddress string) err
 	if err != nil {
 		return fmt.Errorf("failed to get setup token: %w", err)
 	}
-	
+
 	// 检查令牌是否匹配
 	if token.Token != tokenStr {
 		return fmt.Errorf("invalid setup token")
 	}
-	
+
 	// 检查是否已过期
 	if time.Now().After(token.ExpiresAt) {
 		return fmt.Errorf("setup token has expired")
 	}
-	
+
 	// 检查是否已使用
 	if token.Used {
 		return fmt.Errorf("setup token has already been used")
 	}
-	
+
 	// 检查IP地址（可选的严格模式）
 	if token.IPAddress != "" && token.IPAddress != ipAddress {
 		return fmt.Errorf("setup token can only be used from IP: %s", token.IPAddress)
 	}
-	
+
 	return nil
 }
 
@@ -108,12 +108,12 @@ func (s *SetupService) SaveConfiguration(cfg *model.SetupConfig) error {
 	if errors := s.validator.ValidateConfig(cfg); len(errors) > 0 {
 		return fmt.Errorf("configuration validation failed: %d errors", len(errors))
 	}
-	
+
 	// 更新状态
 	if err := s.updateSetupProgress("configuration", 25, "Configuration saved"); err != nil {
 		return err
 	}
-	
+
 	// 保存配置
 	return s.storage.SaveSetupConfig(cfg)
 }
@@ -124,10 +124,10 @@ func (s *SetupService) TestConnections(cfg *model.SetupConfig) ([]model.Connecti
 	if err := s.updateSetupProgress("connection-test", 50, "Testing connections..."); err != nil {
 		return nil, err
 	}
-	
+
 	// 执行连接测试
 	results := s.validator.TestAllConnections(cfg)
-	
+
 	// 检查是否有失败的连接
 	hasFailures := false
 	for _, result := range results {
@@ -136,7 +136,7 @@ func (s *SetupService) TestConnections(cfg *model.SetupConfig) ([]model.Connecti
 			break
 		}
 	}
-	
+
 	if hasFailures {
 		if err := s.updateSetupProgress("connection-test", 50, "Some connection tests failed"); err != nil {
 			log.Printf("Warning: failed to update setup progress: %v", err)
@@ -146,7 +146,7 @@ func (s *SetupService) TestConnections(cfg *model.SetupConfig) ([]model.Connecti
 			log.Printf("Warning: failed to update setup progress: %v", err)
 		}
 	}
-	
+
 	return results, nil
 }
 
@@ -156,22 +156,22 @@ func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 	if err := s.generator.ClearOutputDir(); err != nil {
 		return fmt.Errorf("failed to clear output directory: %w", err)
 	}
-	
+
 	// 更新状态
 	if err := s.updateSetupProgress("generation", 90, "Generating configuration files..."); err != nil {
 		return err
 	}
-	
+
 	// 生成.env文件
 	if err := s.generator.GenerateEnvFile(cfg); err != nil {
 		return fmt.Errorf("failed to generate .env file: %w", err)
 	}
-	
+
 	// 生成Docker配置文件
 	if err := s.generator.GenerateDockerConfig(cfg); err != nil {
 		return fmt.Errorf("failed to generate docker config: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -179,25 +179,25 @@ func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 func (s *SetupService) StartDeployment(deploymentID string) error {
 	// 创建部署状态
 	status := &model.DeploymentStatus{
-		ID:      deploymentID,
-		Status:  "preparing",
+		ID:       deploymentID,
+		Status:   "preparing",
 		Progress: 0,
-		Message: "Initializing deployment...",
-		Logs:    []model.DeploymentLogEntry{},
-		StartAt: time.Now(),
+		Message:  "Initializing deployment...",
+		Logs:     []model.DeploymentLogEntry{},
+		StartAt:  time.Now(),
 	}
-	
+
 	if err := s.storage.SaveDeploymentStatus(status); err != nil {
 		return fmt.Errorf("failed to save deployment status: %w", err)
 	}
-	
+
 	// 添加初始日志
 	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "Deployment started",
 	})
-	
+
 	// 更新状态为运行中
 	status.Status = "running"
 	status.Progress = 10
@@ -205,11 +205,11 @@ func (s *SetupService) StartDeployment(deploymentID string) error {
 	if err := s.storage.SaveDeploymentStatus(status); err != nil {
 		return err
 	}
-	
+
 	// 执行Docker Compose部署
 	err := s.generator.StartDockerCompose(func(entry model.DeploymentLogEntry) {
 		s.addDeploymentLog(entry)
-		
+
 		// 根据日志更新进度
 		if entry.Level == "success" {
 			status.Progress = 80
@@ -217,7 +217,7 @@ func (s *SetupService) StartDeployment(deploymentID string) error {
 			s.storage.SaveDeploymentStatus(status)
 		}
 	})
-	
+
 	if err != nil {
 		status.Status = "failed"
 		status.Message = err.Error()
@@ -226,10 +226,10 @@ func (s *SetupService) StartDeployment(deploymentID string) error {
 		s.storage.SaveDeploymentStatus(status)
 		return err
 	}
-	
+
 	// 等待服务启动并进行健康检查
 	go s.performHealthCheck(deploymentID)
-	
+
 	return nil
 }
 
@@ -243,45 +243,45 @@ func (s *SetupService) addDeploymentLog(entry model.DeploymentLogEntry) {
 // performHealthCheck 执行健康检查（轮询方式，2分钟超时）
 func (s *SetupService) performHealthCheck(deploymentID string) {
 	const (
-		maxDuration = 2 * time.Minute    // 最长2分钟
+		maxDuration   = 2 * time.Minute  // 最长2分钟
 		checkInterval = 10 * time.Second // 每10秒检查一次
 	)
-	
+
 	startTime := time.Now()
 	attempt := 0
-	
+
 	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "Starting health check (timeout: 2 minutes)...",
 	})
-	
+
 	for {
 		attempt++
 		elapsed := time.Since(startTime)
-		
+
 		// 检查是否超时
 		if elapsed > maxDuration {
 			s.failDeploymentWithTimeout()
 			return
 		}
-		
+
 		s.addDeploymentLog(model.DeploymentLogEntry{
 			Timestamp: time.Now(),
 			Level:     "info",
 			Message:   fmt.Sprintf("Health check attempt %d (elapsed: %.0fs/120s)...", attempt, elapsed.Seconds()),
 		})
-		
+
 		// 更新进度（基于时间进度）
 		progress := 80 + int(elapsed.Seconds()/120*15) // 80% 到 95%
 		s.updateDeploymentProgress(progress, fmt.Sprintf("Health checking... (%d/%d seconds)", int(elapsed.Seconds()), 120))
-		
+
 		// 执行健康检查
 		if s.performSingleHealthCheck() {
 			s.completeDeployment()
 			return
 		}
-		
+
 		// 等待下次检查
 		time.Sleep(checkInterval)
 	}
@@ -295,22 +295,22 @@ func (s *SetupService) performSingleHealthCheck() bool {
 		Level:     "info",
 		Message:   "Checking container status...",
 	})
-	
+
 	if !s.checkContainerStatus() {
 		return false
 	}
-	
+
 	// 检查服务连通性
 	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "Testing service connectivity...",
 	})
-	
+
 	if !s.checkServiceConnectivity() {
 		return false
 	}
-	
+
 	return true
 }
 
@@ -337,10 +337,10 @@ func (s *SetupService) checkServiceConnectivity() bool {
 		})
 		return false
 	}
-	
+
 	// 执行真实的连接测试
 	results := s.validator.TestAllConnections(cfg)
-	
+
 	for _, result := range results {
 		if !result.Success {
 			s.addDeploymentLog(model.DeploymentLogEntry{
@@ -357,7 +357,7 @@ func (s *SetupService) checkServiceConnectivity() bool {
 			})
 		}
 	}
-	
+
 	return true
 }
 
@@ -368,7 +368,7 @@ func (s *SetupService) completeDeployment() {
 		Level:     "success",
 		Message:   "All health checks passed! Deployment completed successfully.",
 	})
-	
+
 	status, _ := s.storage.GetDeploymentStatus()
 	if status != nil {
 		status.Status = "completed"
@@ -387,31 +387,31 @@ func (s *SetupService) failDeploymentWithTimeout() {
 		Level:     "error",
 		Message:   "Health check timeout after 2 minutes",
 	})
-	
+
 	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "💡 Services may still be starting. You can:",
 	})
-	
+
 	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "   1. Check logs: docker-compose -f docker-compose.production.yml logs",
 	})
-	
+
 	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "   2. Check status: docker-compose -f docker-compose.production.yml ps",
 	})
-	
+
 	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
 		Message:   "   3. Wait a bit longer - some services need more time to initialize",
 	})
-	
+
 	status, _ := s.storage.GetDeploymentStatus()
 	if status != nil {
 		status.Status = "timeout"
@@ -429,7 +429,7 @@ func (s *SetupService) updateDeploymentProgress(progress int, message string) {
 	if err != nil {
 		return
 	}
-	
+
 	status.Progress = progress
 	status.Message = message
 	s.storage.SaveDeploymentStatus(status)
@@ -441,16 +441,16 @@ func (s *SetupService) HealthCheckServices() ([]model.ConnectionTestResult, erro
 	if err := s.updateSetupProgress("health-check", 98, "Performing post-deployment health checks..."); err != nil {
 		return nil, err
 	}
-	
+
 	// 获取配置
 	cfg, err := s.storage.GetSetupConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get configuration: %w", err)
 	}
-	
+
 	// 执行真实的连接测试
 	results := s.validator.TestAllConnections(cfg)
-	
+
 	// 检查是否有失败的服务
 	hasFailures := false
 	for _, result := range results {
@@ -459,7 +459,7 @@ func (s *SetupService) HealthCheckServices() ([]model.ConnectionTestResult, erro
 			break
 		}
 	}
-	
+
 	if hasFailures {
 		if err := s.updateSetupProgress("health-check", 98, "Some services failed health check"); err != nil {
 			log.Printf("Warning: failed to update setup progress: %v", err)
@@ -469,7 +469,7 @@ func (s *SetupService) HealthCheckServices() ([]model.ConnectionTestResult, erro
 			log.Printf("Warning: failed to update setup progress: %v", err)
 		}
 	}
-	
+
 	return results, nil
 }
 
@@ -479,17 +479,17 @@ func (s *SetupService) CompleteSetup() error {
 	// if err := s.storage.MarkSetupCompleted(); err != nil {
 	//     return fmt.Errorf("failed to mark setup as completed: %w", err)
 	// }
-	
+
 	// 注释：不再失效令牌，允许继续使用
 	// if err := s.invalidateAllTokens(); err != nil {
 	//     log.Printf("Warning: failed to invalidate tokens: %v", err)
 	// }
-	
+
 	// 注释：不清理临时文件，保持setup可用
 	// if err := s.storage.CleanupTempFiles(); err != nil {
 	//     return fmt.Errorf("failed to cleanup temp files: %w", err)
 	// }
-	
+
 	log.Printf("Setup completed successfully - service remains available for updates")
 	return nil
 }
@@ -511,15 +511,15 @@ func (s *SetupService) generateSetupToken(ipAddress string) (*model.SetupToken, 
 	if _, err := rand.Read(bytes); err != nil {
 		return nil, fmt.Errorf("failed to generate random token: %w", err)
 	}
-	
+
 	token := &model.SetupToken{
 		Token:     hex.EncodeToString(bytes),
 		ExpiresAt: time.Now().Add(2 * time.Hour), // 2小时过期
-		IPAddress: ipAddress,                      // 绑定IP地址
-		Used:      false,                          // 初始未使用
+		IPAddress: ipAddress,                     // 绑定IP地址
+		Used:      false,                         // 初始未使用
 		CreatedAt: time.Now(),
 	}
-	
+
 	return token, nil
 }
 
@@ -529,15 +529,14 @@ func (s *SetupService) updateSetupProgress(step string, progress int, message st
 	if err != nil {
 		return err
 	}
-	
+
 	state.Status = model.StatusInProgress
 	state.CurrentStep = step
 	state.Progress = progress
 	state.Message = message
-	
+
 	return s.storage.SaveSetupState(state)
 }
-
 
 // invalidateAllTokens 失效所有令牌
 func (s *SetupService) invalidateAllTokens() error {
@@ -546,11 +545,11 @@ func (s *SetupService) invalidateAllTokens() error {
 		// 如果令牌不存在，认为已经清理完成
 		return nil
 	}
-	
+
 	// 将令牌标记为已使用并过期
 	token.Used = true
 	token.ExpiresAt = time.Now().Add(-1 * time.Hour) // 设置为过期
-	
+
 	return s.storage.SaveSetupToken(token)
 }
 
@@ -564,6 +563,6 @@ func (s *SetupService) ResetSetup() error {
 	if err := s.storage.ResetSetupState(); err != nil {
 		return fmt.Errorf("failed to reset setup state: %w", err)
 	}
-	
+
 	return nil
 }

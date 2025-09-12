@@ -25,7 +25,7 @@ func TestDomainValidation(t *testing.T) {
 		{"api.v1.service.example.com", true, "API subdomain with version"},
 		{"cdn-assets.production.myapp.io", true, "CDN subdomain with hyphens"},
 		{"db1.region-us-east.cluster.aws.com", true, "AWS-style complex domain"},
-		
+
 		// Invalid domains
 		{"invalid", false, "No TLD"},
 		{"-invalid.com", false, "Starts with hyphen"},
@@ -50,7 +50,7 @@ func TestDomainValidation(t *testing.T) {
 			// Test through the validator service
 			cfg := model.AppConfig{DomainName: tc.domain}
 			errors := validator.validateAppConfig(cfg)
-			
+
 			hasDomainError := false
 			for _, err := range errors {
 				if err.Field == "app.domain_name" {
@@ -58,7 +58,7 @@ func TestDomainValidation(t *testing.T) {
 					break
 				}
 			}
-			
+
 			if tc.expected && hasDomainError {
 				t.Errorf("validateAppConfig(%q) returned domain error, but domain should be valid", tc.domain)
 			}
@@ -79,30 +79,30 @@ func TestValidateAppConfigDomainField(t *testing.T) {
 	}{
 		{
 			config: model.AppConfig{
-				DomainName:    "staging-32194.baklab.app",
-				BrandName:     "Test Brand",
-				AdminEmail:    "admin@example.com",
-				DefaultLang:   "en",
+				DomainName:  "staging-32194.baklab.app",
+				BrandName:   "Test Brand",
+				AdminEmail:  "admin@example.com",
+				DefaultLang: "en",
 			},
 			expected: true,
 			name:     "Valid config with staging domain",
 		},
 		{
 			config: model.AppConfig{
-				DomainName:    "invalid-domain",
-				BrandName:     "Test Brand",
-				AdminEmail:    "admin@example.com",
-				DefaultLang:   "en",
+				DomainName:  "invalid-domain",
+				BrandName:   "Test Brand",
+				AdminEmail:  "admin@example.com",
+				DefaultLang: "en",
 			},
 			expected: false,
 			name:     "Invalid domain without TLD",
 		},
 		{
 			config: model.AppConfig{
-				DomainName:    "localhost",
-				BrandName:     "Test Brand",
-				AdminEmail:    "admin@example.com",
-				DefaultLang:   "en",
+				DomainName:  "localhost",
+				BrandName:   "Test Brand",
+				AdminEmail:  "admin@example.com",
+				DefaultLang: "en",
 			},
 			expected: true,
 			name:     "Valid config with localhost",
@@ -112,7 +112,7 @@ func TestValidateAppConfigDomainField(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			errors := validator.validateAppConfig(tc.config)
-			
+
 			hasDomainError := false
 			for _, err := range errors {
 				if err.Field == "app.domain_name" {
@@ -120,7 +120,7 @@ func TestValidateAppConfigDomainField(t *testing.T) {
 					break
 				}
 			}
-			
+
 			if tc.expected && hasDomainError {
 				t.Errorf("validateAppConfig returned domain error for valid config: %v", errors)
 			}

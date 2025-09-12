@@ -26,7 +26,7 @@ func NewJSONStorage(dataDir string) *JSONStorage {
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		log.Printf("Warning: failed to create data directory %s: %v", dataDir, err)
 	}
-	
+
 	return &JSONStorage{
 		dataDir: dataDir,
 	}
@@ -36,9 +36,9 @@ func NewJSONStorage(dataDir string) *JSONStorage {
 func (s *JSONStorage) GetSetupState() (*model.SetupState, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	filePath := filepath.Join(s.dataDir, "setup-state.json")
-	
+
 	// 如果文件不存在，返回默认状态
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return &model.SetupState{
@@ -48,17 +48,17 @@ func (s *JSONStorage) GetSetupState() (*model.SetupState, error) {
 			UpdatedAt: time.Now(),
 		}, nil
 	}
-	
+
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read setup state: %w", err)
 	}
-	
+
 	var state model.SetupState
 	if err := json.Unmarshal(data, &state); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal setup state: %w", err)
 	}
-	
+
 	return &state, nil
 }
 
@@ -66,19 +66,19 @@ func (s *JSONStorage) GetSetupState() (*model.SetupState, error) {
 func (s *JSONStorage) SaveSetupState(state *model.SetupState) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	state.UpdatedAt = time.Now()
-	
+
 	data, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal setup state: %w", err)
 	}
-	
+
 	filePath := filepath.Join(s.dataDir, "setup-state.json")
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write setup state: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -86,23 +86,23 @@ func (s *JSONStorage) SaveSetupState(state *model.SetupState) error {
 func (s *JSONStorage) GetSetupConfig() (*model.SetupConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	filePath := filepath.Join(s.dataDir, "config-draft.json")
-	
+
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return &model.SetupConfig{}, nil
 	}
-	
+
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read setup config: %w", err)
 	}
-	
+
 	var cfg model.SetupConfig
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal setup config: %w", err)
 	}
-	
+
 	return &cfg, nil
 }
 
@@ -110,17 +110,17 @@ func (s *JSONStorage) GetSetupConfig() (*model.SetupConfig, error) {
 func (s *JSONStorage) SaveSetupConfig(cfg *model.SetupConfig) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal setup config: %w", err)
 	}
-	
+
 	filePath := filepath.Join(s.dataDir, "config-draft.json")
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write setup config: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -128,23 +128,23 @@ func (s *JSONStorage) SaveSetupConfig(cfg *model.SetupConfig) error {
 func (s *JSONStorage) GetSetupToken() (*model.SetupToken, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	filePath := filepath.Join(s.dataDir, "tokens.json")
-	
+
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("setup token not found")
 	}
-	
+
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read setup token: %w", err)
 	}
-	
+
 	var token model.SetupToken
 	if err := json.Unmarshal(data, &token); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal setup token: %w", err)
 	}
-	
+
 	return &token, nil
 }
 
@@ -152,17 +152,17 @@ func (s *JSONStorage) GetSetupToken() (*model.SetupToken, error) {
 func (s *JSONStorage) SaveSetupToken(token *model.SetupToken) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	data, err := json.MarshalIndent(token, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal setup token: %w", err)
 	}
-	
+
 	filePath := filepath.Join(s.dataDir, "tokens.json")
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write setup token: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -172,7 +172,7 @@ func (s *JSONStorage) IsSetupCompleted() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	
+
 	return state.Status == model.StatusCompleted, nil
 }
 
@@ -182,27 +182,27 @@ func (s *JSONStorage) MarkSetupCompleted() error {
 	if err != nil {
 		return err
 	}
-	
+
 	now := time.Now()
 	state.Status = model.StatusCompleted
 	state.Progress = 100
 	state.CompletedAt = &now
 	state.Message = "Setup completed successfully"
-	
+
 	return s.SaveSetupState(state)
 }
 
 // CleanupTempFiles 清理临时文件
 func (s *JSONStorage) CleanupTempFiles() error {
 	tempFiles := []string{"config-draft.json", "tokens.json"}
-	
+
 	for _, filename := range tempFiles {
 		filePath := filepath.Join(s.dataDir, filename)
 		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to remove %s: %w", filename, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -210,19 +210,19 @@ func (s *JSONStorage) CleanupTempFiles() error {
 func (s *JSONStorage) SaveDeploymentStatus(status *model.DeploymentStatus) error {
 	s.deploymentMu.Lock()
 	defer s.deploymentMu.Unlock()
-	
+
 	s.deploymentStatus = status
-	
+
 	data, err := json.MarshalIndent(status, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal deployment status: %w", err)
 	}
-	
+
 	filePath := filepath.Join(s.dataDir, "deployment-status.json")
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write deployment status: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -230,26 +230,26 @@ func (s *JSONStorage) SaveDeploymentStatus(status *model.DeploymentStatus) error
 func (s *JSONStorage) GetDeploymentStatus() (*model.DeploymentStatus, error) {
 	s.deploymentMu.RLock()
 	defer s.deploymentMu.RUnlock()
-	
+
 	if s.deploymentStatus != nil {
 		return s.deploymentStatus, nil
 	}
-	
+
 	filePath := filepath.Join(s.dataDir, "deployment-status.json")
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("deployment not started")
 	}
-	
+
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read deployment status: %w", err)
 	}
-	
+
 	var status model.DeploymentStatus
 	if err := json.Unmarshal(data, &status); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal deployment status: %w", err)
 	}
-	
+
 	s.deploymentStatus = &status
 	return &status, nil
 }
@@ -258,13 +258,13 @@ func (s *JSONStorage) GetDeploymentStatus() (*model.DeploymentStatus, error) {
 func (s *JSONStorage) AppendDeploymentLog(entry model.DeploymentLogEntry) error {
 	s.deploymentMu.Lock()
 	defer s.deploymentMu.Unlock()
-	
+
 	if s.deploymentStatus == nil {
 		return fmt.Errorf("deployment not initialized")
 	}
-	
+
 	s.deploymentStatus.Logs = append(s.deploymentStatus.Logs, entry)
-	
+
 	return nil
 }
 
@@ -272,28 +272,28 @@ func (s *JSONStorage) AppendDeploymentLog(entry model.DeploymentLogEntry) error 
 func (s *JSONStorage) ResetSetupState() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	s.deploymentMu.Lock()
 	defer s.deploymentMu.Unlock()
-	
+
 	// 清理所有setup相关文件
 	filesToRemove := []string{
 		"setup-state.json",
-		"config-draft.json", 
+		"config-draft.json",
 		"tokens.json",
 		"deployment-status.json",
 	}
-	
+
 	for _, filename := range filesToRemove {
 		filePath := filepath.Join(s.dataDir, filename)
 		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
 			log.Printf("Warning: failed to remove %s: %v", filename, err)
 		}
 	}
-	
+
 	// 清理内存中的部署状态
 	s.deploymentStatus = nil
-	
+
 	log.Printf("Setup state has been reset")
 	return nil
 }

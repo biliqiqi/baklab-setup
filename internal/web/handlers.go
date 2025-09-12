@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/biliqiqi/baklab-setup/internal/model"
 	"github.com/biliqiqi/baklab-setup/internal/services"
+	"github.com/go-chi/chi/v5"
 )
 
 // SetupHandlers Web处理程序
@@ -50,7 +50,7 @@ func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	// 返回setup界面
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	
+
 	// 这里应该返回HTML页面，暂时返回简单提示
 	_, err = fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
@@ -81,9 +81,9 @@ func (h *SetupHandlers) InitializeHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// 获取客户端IP地址  
+	// 获取客户端IP地址
 	clientIP := getClientIP(r)
-	
+
 	// 初始化setup
 	token, err := h.setupService.InitializeSetup(clientIP)
 	if err != nil {
@@ -540,7 +540,7 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 	// 限制请求体大小为100MB
 	maxSize := int64(100 * 1024 * 1024) // 100MB
 	r.Body = http.MaxBytesReader(w, r.Body, maxSize)
-	
+
 	if err := r.ParseMultipartForm(maxSize); err != nil {
 		log.Printf("Failed to parse multipart form: %v", err)
 		h.writeJSONResponse(w, model.SetupResponse{
@@ -617,7 +617,7 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	log.Printf("GeoIP file uploaded to temp directory: %s (%d bytes)", destPath, bytesWritten)
-	
+
 	// 返回成功响应
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,

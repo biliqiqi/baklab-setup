@@ -517,6 +517,17 @@ body {
     background: var(--gray-300);
 }
 
+.btn-outline-primary {
+    background: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.btn-outline-primary:hover:not(:disabled) {
+    background: var(--primary-color);
+    color: white;
+}
+
 .btn-success {
     background: var(--success-color);
     color: white;
@@ -563,6 +574,14 @@ body {
 
 .connection-result-text {
     flex: 1;
+}
+
+.connection-results-container {
+    margin-top: 1rem;
+}
+
+.connection-results-container .connection-results {
+    margin-top: 0;
 }
 
 /* Alerts */
