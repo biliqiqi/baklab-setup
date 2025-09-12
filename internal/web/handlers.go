@@ -91,6 +91,8 @@ func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
     <title>BakLab Setup</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" href="/static/logo-icon.png">
     <link rel="stylesheet" href="/static/styles.css?v=1.2">
 </head>
 <body>
