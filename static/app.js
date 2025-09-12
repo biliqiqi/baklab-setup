@@ -79,6 +79,9 @@ class SetupApp {
     }
     
     async init() {
+        // Set initial favicon
+        this.setFavicon();
+        
         try {
             // 从本地缓存加载配置
             this.loadFromLocalCache();
@@ -133,6 +136,9 @@ class SetupApp {
     }
     
     render() {
+        // Set favicon dynamically
+        this.setFavicon();
+        
         const app = document.getElementById('app');
         const step = this.steps[this.currentStep];
         
@@ -2281,6 +2287,27 @@ class SetupApp {
             this.currentStep--;
             this.render();
         }
+    }
+    
+    // Set favicon for the page
+    setFavicon() {
+        // Remove existing favicons
+        const existingLinks = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+        existingLinks.forEach(link => link.remove());
+        
+        // Add new favicon
+        const faviconLink = document.createElement('link');
+        faviconLink.rel = 'icon';
+        faviconLink.type = 'image/x-icon';
+        faviconLink.href = '/static/favicon.ico';
+        document.head.appendChild(faviconLink);
+        
+        // Add PNG favicon as fallback
+        const pngFaviconLink = document.createElement('link');
+        pngFaviconLink.rel = 'icon';
+        pngFaviconLink.type = 'image/png';
+        pngFaviconLink.href = '/static/logo-icon.png';
+        document.head.appendChild(pngFaviconLink);
     }
     
     // Utility functions
