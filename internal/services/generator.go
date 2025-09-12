@@ -135,35 +135,35 @@ func (g *GeneratorService) GenerateEnvFile(cfg *model.SetupConfig) error {
 DEFAULT_LANG={{ .App.DefaultLang }}
 
 # Database Configuration
-DB_HOST={{ .Database.Host }}
+DB_HOST='{{ .Database.Host }}'
 DB_PORT={{ .Database.Port }}
-PG_USER={{ .Database.User }}
-PG_PASSWORD={{ .Database.Password }}
-APP_DB_NAME={{ .Database.Name }}
-APP_DB_USER={{ .Database.User }}
-APP_DB_PASSWORD={{ .Database.Password }}
+PG_USER='{{ .Database.User }}'
+PG_PASSWORD='{{ .Database.Password }}'
+APP_DB_NAME='{{ .Database.Name }}'
+APP_DB_USER='{{ .Database.User }}'
+APP_DB_PASSWORD='{{ .Database.Password }}'
 
 # Redis Configuration
-REDIS_HOST={{ .Redis.Host }}
+REDIS_HOST='{{ .Redis.Host }}'
 REDIS_PORT={{ .Redis.Port }}
-REDIS_USER={{ if .Redis.User }}{{ .Redis.User }}{{ else }}user{{ end }}
-REDIS_PASSWORD={{ .Redis.Password }}
-REDISCLI_AUTH={{ .Redis.Password }}
+REDIS_USER='{{ if .Redis.User }}{{ .Redis.User }}{{ else }}user{{ end }}'
+REDIS_PASSWORD='{{ .Redis.Password }}'
+REDISCLI_AUTH='{{ .Redis.Password }}'
 
 # Application Configuration
-DOMAIN_NAME={{ .App.DomainName }}
-BASE_DOMAIN_NAME={{ .App.DomainName }}
-BRAND_NAME={{ .App.BrandName }}
-BRAND_DOMAIN_NAME={{ .App.DomainName }}
-ADMIN_EMAIL={{ .App.AdminEmail }}
-ADMIN_PASSWORD={{ .Database.Password }}
+DOMAIN_NAME='{{ .App.DomainName }}'
+BASE_DOMAIN_NAME='{{ .App.DomainName }}'
+BRAND_NAME='{{ .App.BrandName }}'
+BRAND_DOMAIN_NAME='{{ .App.DomainName }}'
+ADMIN_EMAIL='{{ .App.AdminEmail }}'
+ADMIN_PASSWORD='{{ .Database.Password }}'
 DEBUG={{ .App.Debug }}
 TEST=false
 APP_VERSION={{ if .App.Version }}{{ .App.Version }}{{ else }}latest{{ end }}
 
 # Security Configuration
-SESSION_SECRET={{ .App.SessionSecret }}
-CSRF_SECRET={{ .App.CSRFSecret }}
+SESSION_SECRET='{{ .App.SessionSecret }}'
+CSRF_SECRET='{{ .App.CSRFSecret }}'
 JWT_KEY_FILE=./keys/jwt-ed25519.pem
 
 # Application Ports
@@ -174,7 +174,7 @@ NGINX_PORT=80
 NGINX_SSL_PORT=443
 
 # Network Configuration
-{{ if .CORSOrigins }}CORS_ALLOW_ORIGINS={{ .CORSOrigins }}{{ else }}CORS_ALLOW_ORIGINS=http{{ if ne .App.DomainName "localhost" }}s{{ end }}://{{ .App.DomainName }}{{ end }}
+{{ if .CORSOrigins }}CORS_ALLOW_ORIGINS='{{ .CORSOrigins }}'{{ else }}CORS_ALLOW_ORIGINS='http{{ if ne .App.DomainName "localhost" }}s{{ end }}://{{ .App.DomainName }}'{{ end }}
 
 # Frontend Configuration
 FRONTEND_ROOT_ID=root
@@ -182,25 +182,25 @@ FRONTEND_SCRIPTS=
 FRONTEND_STYLES=
 
 # Service Configuration
-SERVICE_URL=http{{ if ne .App.DomainName "localhost" }}s{{ end }}://{{ .App.DomainName }}{{ if eq .App.DomainName "localhost" }}:3000{{ end }}
-STATIC_HOST_NAME={{ .App.DomainName }}{{ if eq .App.DomainName "localhost" }}:8787{{ end }}
+SERVICE_URL='http{{ if ne .App.DomainName "localhost" }}s{{ end }}://{{ .App.DomainName }}{{ if eq .App.DomainName "localhost" }}:3000{{ end }}'
+STATIC_HOST_NAME='{{ .App.DomainName }}{{ if eq .App.DomainName "localhost" }}:8787{{ end }}'
 
 # OAuth Configuration (optional)
-{{ if .App.GoogleClientID }}GOOGLE_CLIENT_ID={{ .App.GoogleClientID }}{{ else }}GOOGLE_CLIENT_ID={{ end }}
-{{ if .App.GoogleSecret }}GOOGLE_CLIENT_SECRET={{ .App.GoogleSecret }}{{ else }}GOOGLE_CLIENT_SECRET={{ end }}
-{{ if .App.GithubClientID }}GITHUB_CLIENT_ID={{ .App.GithubClientID }}{{ else }}GITHUB_CLIENT_ID={{ end }}
-{{ if .App.GithubSecret }}GITHUB_CLIENT_SECRET={{ .App.GithubSecret }}{{ else }}GITHUB_CLIENT_SECRET={{ end }}
+{{ if .App.GoogleClientID }}GOOGLE_CLIENT_ID='{{ .App.GoogleClientID }}'{{ else }}GOOGLE_CLIENT_ID={{ end }}
+{{ if .App.GoogleSecret }}GOOGLE_CLIENT_SECRET='{{ .App.GoogleSecret }}'{{ else }}GOOGLE_CLIENT_SECRET={{ end }}
+{{ if .App.GithubClientID }}GITHUB_CLIENT_ID='{{ .App.GithubClientID }}'{{ else }}GITHUB_CLIENT_ID={{ end }}
+{{ if .App.GithubSecret }}GITHUB_CLIENT_SECRET='{{ .App.GithubSecret }}'{{ else }}GITHUB_CLIENT_SECRET={{ end }}
 
 # Cloudflare Configuration (optional)
-{{ if .App.CloudflareSiteKey }}CLOUDFLARE_SITE_KEY={{ .App.CloudflareSiteKey }}{{ else }}CLOUDFLARE_SITE_KEY={{ end }}
-{{ if .App.CloudflareSecret }}CLOUDFLARE_SECRET={{ .App.CloudflareSecret }}{{ else }}CLOUDFLARE_SECRET={{ end }}
+{{ if .App.CloudflareSiteKey }}CLOUDFLARE_SITE_KEY='{{ .App.CloudflareSiteKey }}'{{ else }}CLOUDFLARE_SITE_KEY={{ end }}
+{{ if .App.CloudflareSecret }}CLOUDFLARE_SECRET='{{ .App.CloudflareSecret }}'{{ else }}CLOUDFLARE_SECRET={{ end }}
 
 # SMTP Configuration (optional)
-{{ if .SMTP.Server }}SMTP_SERVER={{ .SMTP.Server }}{{ else }}SMTP_SERVER={{ end }}
+{{ if .SMTP.Server }}SMTP_SERVER='{{ .SMTP.Server }}'{{ else }}SMTP_SERVER={{ end }}
 SMTP_SERVER_PORT={{ if .SMTP.Port }}{{ .SMTP.Port }}{{ else }}587{{ end }}
-{{ if .SMTP.User }}SMTP_USER={{ .SMTP.User }}{{ else }}SMTP_USER={{ end }}
-{{ if .SMTP.Password }}SMTP_PASSWORD={{ .SMTP.Password }}{{ else }}SMTP_PASSWORD={{ end }}
-{{ if .SMTP.Sender }}SMTP_SENDER={{ .SMTP.Sender }}{{ else }}SMTP_SENDER=noreply@{{ .App.DomainName }}{{ end }}
+{{ if .SMTP.User }}SMTP_USER='{{ .SMTP.User }}'{{ else }}SMTP_USER={{ end }}
+{{ if .SMTP.Password }}SMTP_PASSWORD='{{ .SMTP.Password }}'{{ else }}SMTP_PASSWORD={{ end }}
+{{ if .SMTP.Sender }}SMTP_SENDER='{{ .SMTP.Sender }}'{{ else }}SMTP_SENDER='noreply@{{ .App.DomainName }}'{{ end }}
 
 # File Paths
 GEOIP_ENABLED=false
