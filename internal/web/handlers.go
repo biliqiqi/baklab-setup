@@ -13,21 +13,49 @@ import (
 	"strings"
 	"time"
 
+	"github.com/biliqiqi/baklab-setup/internal/i18n"
 	"github.com/biliqiqi/baklab-setup/internal/model"
 	"github.com/biliqiqi/baklab-setup/internal/services"
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/text/language"
 )
 
 // SetupHandlers Web处理程序
 type SetupHandlers struct {
 	setupService *services.SetupService
+	i18nManager  *i18n.I18nManager
 }
 
 // NewSetupHandlers 创建处理程序实例
-func NewSetupHandlers(setupService *services.SetupService) *SetupHandlers {
+func NewSetupHandlers(setupService *services.SetupService, i18nManager *i18n.I18nManager) *SetupHandlers {
 	return &SetupHandlers{
 		setupService: setupService,
+		i18nManager:  i18nManager,
 	}
+}
+
+// getLocalizerFromContext 从请求上下文获取localizer
+func (h *SetupHandlers) getLocalizerFromContext(r *http.Request) *i18n.I18nCustom {
+	if h.i18nManager != nil {
+		// Get language from context (set by middleware)
+		if lang, ok := r.Context().Value(MiddlewareI18nLangKey).(language.Tag); ok {
+			return h.i18nManager.GetLocalizer(lang)
+		}
+		// Fallback: get language from request directly
+		lang := GetAcceptLang(r)
+		return h.i18nManager.GetLocalizer(lang)
+	}
+	// Return English localizer as fallback when i18nManager is not available
+	return i18n.New(language.English)
+}
+
+// localizeMessage 本地化消息
+func (h *SetupHandlers) localizeMessage(r *http.Request, messageKey string, data ...interface{}) string {
+	localizer := h.getLocalizerFromContext(r)
+	if len(data) > 0 {
+		return localizer.LocalTpl(messageKey, data...)
+	}
+	return localizer.LocalTpl(messageKey)
 }
 
 // IndexHandler 主页处理程序
@@ -35,14 +63,17 @@ func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	// 检查setup是否已完成
 	completed, err := h.setupService.IsSetupCompleted()
 	if err != nil {
-		http.Error(w, "Failed to check setup status", http.StatusInternalServerError)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.failed_check_status"),
+		}, http.StatusInternalServerError)
 		return
 	}
 
 	if completed {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Setup has already been completed",
+			Message: h.localizeMessage(r, "messages.errors.setup_already_completed"),
 		}, http.StatusForbidden)
 		return
 	}
@@ -77,7 +108,10 @@ func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
 // InitializeHandler 初始化setup
 func (h *SetupHandlers) InitializeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.method_not_allowed"),
+		}, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -96,7 +130,7 @@ func (h *SetupHandlers) InitializeHandler(w http.ResponseWriter, r *http.Request
 
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
-		Message: "Setup initialized successfully",
+		Message: h.localizeMessage(r, "messages.setup_initialized"),
 		Data: map[string]interface{}{
 			"token":      token.Token,
 			"expires_at": token.ExpiresAt,
@@ -166,7 +200,7 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
-		Message: "Configuration saved successfully",
+		Message: h.localizeMessage(r, "messages.config_saved"),
 	}, http.StatusOK)
 }
 
@@ -204,7 +238,10 @@ func (h *SetupHandlers) GetConfigHandler(w http.ResponseWriter, r *http.Request)
 // TestConnectionsHandler 测试连接
 func (h *SetupHandlers) TestConnectionsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.method_not_allowed"),
+		}, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -212,7 +249,7 @@ func (h *SetupHandlers) TestConnectionsHandler(w http.ResponseWriter, r *http.Re
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Invalid JSON format",
+			Message: h.localizeMessage(r, "messages.errors.invalid_json"),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -225,6 +262,14 @@ func (h *SetupHandlers) TestConnectionsHandler(w http.ResponseWriter, r *http.Re
 			Message: err.Error(),
 		}, http.StatusInternalServerError)
 		return
+	}
+
+	// 翻译带key:前缀的消息
+	for i, result := range results {
+		if strings.HasPrefix(result.Message, "key:") {
+			messageKey := strings.TrimPrefix(result.Message, "key:")
+			results[i].Message = h.localizeMessage(r, messageKey)
+		}
 	}
 
 	h.writeJSONResponse(w, model.SetupResponse{
@@ -283,7 +328,7 @@ func (h *SetupHandlers) CompleteSetupHandler(w http.ResponseWriter, r *http.Requ
 
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
-		Message: "Setup completed successfully! You can now start the main application.",
+		Message: h.localizeMessage(r, "messages.setup_completed"),
 	}, http.StatusOK)
 }
 

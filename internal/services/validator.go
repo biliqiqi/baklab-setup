@@ -117,31 +117,31 @@ func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) mode
 	// 验证必填字段
 	if cfg.Host == "" {
 		result.Success = false
-		result.Message = "Database host is required"
+		result.Message = "key:validation.database.host_required"
 		return result
 	}
 
 	if cfg.Port <= 0 || cfg.Port > 65535 {
 		result.Success = false
-		result.Message = "Database port must be between 1 and 65535"
+		result.Message = "key:validation.database.port_invalid"
 		return result
 	}
 
 	if cfg.Name == "" {
 		result.Success = false
-		result.Message = "Database name is required"
+		result.Message = "key:validation.database.name_required"
 		return result
 	}
 
 	if cfg.User == "" {
 		result.Success = false
-		result.Message = "Database user is required"
+		result.Message = "key:validation.database.user_required"
 		return result
 	}
 
 	if cfg.Password == "" {
 		result.Success = false
-		result.Message = "Database password is required"
+		result.Message = "key:validation.database.password_required"
 		return result
 	}
 
@@ -155,7 +155,7 @@ func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) mode
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		result.Success = false
-		result.Message = fmt.Sprintf("Invalid database configuration: %v", err)
+		result.Message = "key:validation.database.config_invalid"
 		return result
 	}
 	defer db.Close()
@@ -166,12 +166,12 @@ func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) mode
 
 	if err := db.PingContext(ctx); err != nil {
 		result.Success = false
-		result.Message = fmt.Sprintf("Failed to connect to database: %v", err)
+		result.Message = "key:validation.database.connection_failed"
 		return result
 	}
 
 	result.Success = true
-	result.Message = "Database connection successful"
+	result.Message = "key:messages.database_connection_successful"
 	return result
 }
 
@@ -185,13 +185,13 @@ func (v *ValidatorService) TestRedisConnection(cfg model.RedisConfig) model.Conn
 	// 验证必填字段
 	if cfg.Host == "" {
 		result.Success = false
-		result.Message = "Redis host is required"
+		result.Message = "key:validation.redis.host_required"
 		return result
 	}
 
 	if cfg.Port <= 0 || cfg.Port > 65535 {
 		result.Success = false
-		result.Message = "Redis port must be between 1 and 65535"
+		result.Message = "key:validation.redis.port_invalid"
 		return result
 	}
 
@@ -218,12 +218,12 @@ func (v *ValidatorService) TestRedisConnection(cfg model.RedisConfig) model.Conn
 	// Ping Redis服务器
 	if err := client.Ping(ctx).Err(); err != nil {
 		result.Success = false
-		result.Message = fmt.Sprintf("Failed to connect to Redis: %v", err)
+		result.Message = "key:validation.redis.connection_failed"
 		return result
 	}
 
 	result.Success = true
-	result.Message = "Redis connection successful"
+	result.Message = "key:messages.redis_connection_successful"
 	return result
 }
 
@@ -241,7 +241,7 @@ func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.Connec
 	client, err := smtp.Dial(address)
 	if err != nil {
 		result.Success = false
-		result.Message = fmt.Sprintf("Failed to connect to SMTP server: %v", err)
+		result.Message = "key:validation.smtp.connection_failed"
 		return result
 	}
 	defer func() {
@@ -255,13 +255,13 @@ func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.Connec
 		auth := smtp.PlainAuth("", cfg.User, cfg.Password, cfg.Server)
 		if err := client.Auth(auth); err != nil {
 			result.Success = false
-			result.Message = fmt.Sprintf("SMTP authentication failed: %v", err)
+			result.Message = "key:validation.smtp.auth_failed"
 			return result
 		}
 	}
 
 	result.Success = true
-	result.Message = "SMTP connection successful"
+	result.Message = "key:messages.smtp_connection_successful"
 	return result
 }
 

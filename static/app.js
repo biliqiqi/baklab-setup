@@ -107,6 +107,11 @@ class SetupApp {
             options.headers['Setup-Token'] = this.token;
         }
         
+        // Add language header for request-level localization
+        if (window.i18n && window.i18n.getCurrentLanguage) {
+            options.headers['X-Language'] = window.i18n.getCurrentLanguage();
+        }
+        
         if (data) {
             options.body = JSON.stringify(data);
         }

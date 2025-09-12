@@ -1,11 +1,13 @@
 package web
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
 	"github.com/biliqiqi/baklab-setup/internal/model"
 	"github.com/biliqiqi/baklab-setup/internal/services"
+	"golang.org/x/text/language"
 )
 
 // SetupMiddleware setup中间件
@@ -94,4 +96,71 @@ func boolToString(b bool) string {
 		return "true"
 	}
 	return "false"
+}
+
+// MiddlewareCtxKey context key type for middleware
+type MiddlewareCtxKey string
+
+const (
+	MiddlewareI18nLangKey MiddlewareCtxKey = "i18n_lang"
+)
+
+// I18nMiddleware creates middleware for handling request-level internationalization
+func I18nMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Detect language from request and store in context
+		lang := GetAcceptLang(r)
+		ctx := context.WithValue(r.Context(), MiddlewareI18nLangKey, lang)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// GetAcceptLang determines the preferred language from request headers and cookies
+func GetAcceptLang(r *http.Request) language.Tag {
+	// Priority: X-Language header > lang cookie > Accept-Language header
+	xLang := r.Header.Get("X-Language")
+	cookieLang, _ := r.Cookie("lang")
+	acceptLangs := r.Header.Get("Accept-Language")
+
+	var langTags []language.Tag
+	
+	// Highest priority: X-Language header (for frontend language switching)
+	if xLang != "" {
+		if xLangTag, err := language.Parse(xLang); err == nil {
+			langTags = append(langTags, xLangTag)
+		}
+	}
+	
+	// Second priority: lang cookie
+	if cookieLang != nil {
+		if cookieLangTag, err := language.Parse(cookieLang.Value); err == nil {
+			langTags = append(langTags, cookieLangTag)
+		}
+	}
+
+	// Third priority: Accept-Language header
+	if acceptLangTags, _, err := language.ParseAcceptLanguage(acceptLangs); err == nil {
+		langTags = append(langTags, acceptLangTags...)
+	}
+
+	// Match against supported languages
+	matcher := language.NewMatcher([]language.Tag{
+		language.English,
+		language.SimplifiedChinese,
+	})
+	
+	if len(langTags) == 0 {
+		return language.English
+	}
+
+	tag, _, _ := matcher.Match(langTags...)
+	return tag
+}
+
+// GetLangFromContext extracts the language tag from request context  
+func GetLangFromContext(r *http.Request) language.Tag {
+	if lang, ok := r.Context().Value(MiddlewareI18nLangKey).(language.Tag); ok {
+		return lang
+	}
+	return language.English
 }
