@@ -164,7 +164,7 @@ APP_VERSION={{ if .App.Version }}{{ .App.Version }}{{ else }}latest{{ end }}
 # Security Configuration
 SESSION_SECRET='{{ .App.SessionSecret }}'
 CSRF_SECRET='{{ .App.CSRFSecret }}'
-JWT_KEY_FILE=./keys/jwt-ed25519.pem
+JWT_KEY_FILE=./keys/jwt-private.pem
 
 # Application Ports
 APP_PORT=3000
@@ -344,7 +344,11 @@ services:
       TEST: $TEST
     volumes:
       - ./manage_static:/app/manage_static
+      {{ if .App.HasJWTKeyFile -}}
       - ./keys:/app/keys
+      {{- else -}}
+      - {{ .App.JWTKeyFilePath }}:/app/keys/jwt-private.pem
+      {{- end }}
     {{- if or (eq .Database.ServiceType "docker") (eq .Redis.ServiceType "docker") }}
     depends_on:
       {{- if eq .Database.ServiceType "docker" }}
@@ -806,9 +810,8 @@ func (g *GeneratorService) generateAdditionalConfigs(cfg *model.SetupConfig) err
 		}
 	}
 
-	// 复制静态资源文件
 	if err := g.copyStaticFiles(); err != nil {
-		return fmt.Errorf("failed to copy static files: %w", err)
+		return fmt.Errorf("failed to create static directory: %w", err)
 	}
 
 	// 创建 keys 目录和文档
@@ -839,31 +842,22 @@ geoip-database /data/geoip/GeoLite2-City.mmdb`
 	return nil
 }
 
-// copyStaticFiles 复制静态资源文件
+// copyStaticFiles 创建静态资源目录
 func (g *GeneratorService) copyStaticFiles() error {
 	staticDir := filepath.Join(g.outputDir, "static")
 	if err := os.MkdirAll(staticDir, 0755); err != nil {
 		return fmt.Errorf("failed to create static directory: %w", err)
 	}
 
-	// 检查源静态文件目录是否存在
-	srcStaticDir := "./static"
-	if _, err := os.Stat(srcStaticDir); err == nil {
-		// 复制静态文件
-		if err := g.copyDir(srcStaticDir, staticDir); err != nil {
-			return fmt.Errorf("failed to copy static files: %w", err)
-		}
-	} else {
-		// 创建基本的静态文件占位
-		robotsContent := `User-agent: *
+	// 创建基本的静态文件占位，供nginx配置使用
+	robotsContent := `User-agent: *
 Allow: /
 
 Sitemap: https://example.com/sitemap.xml`
 
-		robotsPath := filepath.Join(staticDir, "robots.txt")
-		if err := os.WriteFile(robotsPath, []byte(robotsContent), 0644); err != nil {
-			return fmt.Errorf("failed to create robots.txt: %w", err)
-		}
+	robotsPath := filepath.Join(staticDir, "robots.txt")
+	if err := os.WriteFile(robotsPath, []byte(robotsContent), 0644); err != nil {
+		return fmt.Errorf("failed to create robots.txt: %w", err)
 	}
 
 	return nil
@@ -939,8 +933,8 @@ func (g *GeneratorService) createRequiredDirectories(cfg *model.SetupConfig) err
 	}
 
 	// 如果启用了 GoAccess 且有上传的 GeoIP 文件，从临时目录复制到输出目录
-	if cfg.GoAccess.Enabled && cfg.GoAccess.HasGeoFile {
-		tempGeoipFile := filepath.Join("./data", "temp", "GeoLite2-City.mmdb")
+	if cfg.GoAccess.Enabled && cfg.GoAccess.HasGeoFile && cfg.GoAccess.GeoTempPath != "" {
+		tempGeoipFile := cfg.GoAccess.GeoTempPath
 		destGeoipFile := filepath.Join(geoipDir, "GeoLite2-City.mmdb")
 
 		if _, err := os.Stat(tempGeoipFile); err == nil {
@@ -948,9 +942,17 @@ func (g *GeneratorService) createRequiredDirectories(cfg *model.SetupConfig) err
 			if err := g.copyFile(tempGeoipFile, destGeoipFile); err != nil {
 				return fmt.Errorf("failed to copy GeoIP database from temp: %w", err)
 			}
+			
+			// 复制成功后删除临时文件
+			if err := os.Remove(tempGeoipFile); err != nil {
+				log.Printf("Warning: failed to remove temporary GeoIP file %s: %v", tempGeoipFile, err)
+			} else {
+				log.Printf("Temporary GeoIP file %s removed successfully", tempGeoipFile)
+			}
+			
 			log.Printf("Copied GeoIP file from temp directory to output: %s", destGeoipFile)
 		} else {
-			log.Printf("Warning: GoAccess enabled but GeoIP file not found in temp directory: %s", tempGeoipFile)
+			return fmt.Errorf("GeoIP database file no longer available. The uploaded file may have been cleared. Please re-upload your GeoIP database file and try again")
 		}
 	}
 
@@ -982,6 +984,48 @@ func (g *GeneratorService) createRequiredDirectories(cfg *model.SetupConfig) err
 		if err := os.WriteFile(gitkeepGeoipPath, []byte{}, 0644); err != nil {
 			return fmt.Errorf("failed to create geoip .gitkeep: %w", err)
 		}
+	}
+
+	return nil
+}
+
+// HandleJWTKeyFile 处理JWT密钥文件
+func (g *GeneratorService) HandleJWTKeyFile(cfg *model.SetupConfig) error {
+	// 如果用户上传了JWT密钥文件，需要复制到keys目录
+	if cfg.App.HasJWTKeyFile && cfg.App.JWTKeyTempPath != "" {
+		// 获取临时文件路径
+		tempPath := cfg.App.JWTKeyTempPath
+		if _, err := os.Stat(tempPath); os.IsNotExist(err) {
+			return fmt.Errorf("JWT key file no longer available. The uploaded file may have been cleared. Please re-upload your JWT key file and try again")
+		}
+
+		// 确保keys目录存在
+		keysDir := filepath.Join(g.outputDir, "keys")
+		if err := os.MkdirAll(keysDir, 0755); err != nil {
+			return fmt.Errorf("failed to create keys directory: %w", err)
+		}
+
+		// 生成标准的JWT密钥文件名
+		destPath := filepath.Join(keysDir, "jwt-private.pem")
+		
+		// 复制文件
+		if err := g.copyFile(tempPath, destPath); err != nil {
+			return fmt.Errorf("failed to copy JWT key file: %w", err)
+		}
+
+		// 设置正确的文件权限（600 - 只有所有者可读写）
+		if err := os.Chmod(destPath, 0600); err != nil {
+			return fmt.Errorf("failed to set JWT key file permissions: %w", err)
+		}
+
+		// 复制成功后删除临时文件
+		if err := os.Remove(tempPath); err != nil {
+			log.Printf("Warning: failed to remove temporary JWT key file %s: %v", tempPath, err)
+		} else {
+			log.Printf("Temporary JWT key file %s removed successfully", tempPath)
+		}
+
+		log.Printf("JWT key file copied to: %s", destPath)
 	}
 
 	return nil

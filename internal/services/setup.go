@@ -172,6 +172,11 @@ func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to generate docker config: %w", err)
 	}
 
+	// 处理JWT密钥文件
+	if err := s.generator.HandleJWTKeyFile(cfg); err != nil {
+		return fmt.Errorf("failed to handle JWT key file: %w", err)
+	}
+
 	return nil
 }
 

@@ -53,9 +53,12 @@ type SMTPConfig struct {
 
 // GoAccessConfig GoAccess配置
 type GoAccessConfig struct {
-	Enabled    bool   `json:"enabled"`
-	GeoDBPath  string `json:"geo_db_path"`
-	HasGeoFile bool   `json:"has_geo_file"`
+	Enabled         bool   `json:"enabled"`
+	GeoDBPath       string `json:"geo_db_path"`
+	HasGeoFile      bool   `json:"has_geo_file"`          // 标记是否已上传GeoIP文件
+	GeoTempPath     string `json:"geo_file_temp_path"`    // GeoIP临时文件路径
+	OriginalFileName string `json:"original_file_name"`   // 原始文件名
+	FileSize         int64  `json:"file_size"`            // 文件大小
 }
 
 // AppConfig 应用配置
@@ -69,7 +72,10 @@ type AppConfig struct {
 	CORSAllowOrigins  []string `json:"cors_allow_origins"`
 	SessionSecret     string   `json:"session_secret"`
 	CSRFSecret        string   `json:"csrf_secret"`
-	JWTSecret         string   `json:"jwt_secret"`
+	JWTKeyFilePath    string   `json:"jwt_key_file_path"`
+	JWTKeyFromFile    bool     `json:"jwt_key_from_file"`
+	HasJWTKeyFile     bool     `json:"has_jwt_key_file"`
+	JWTKeyTempPath    string   `json:"jwt_key_temp_path"` // 临时文件路径，用于配置生成时复制文件
 	GoogleClientID    string   `json:"google_client_id"`
 	GoogleSecret      string   `json:"google_client_secret"`
 	GithubClientID    string   `json:"github_client_id"`

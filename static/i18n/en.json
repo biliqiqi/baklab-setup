@@ -150,7 +150,34 @@
       "language_error": "Please select a default language",
       
       "debug_label": "Enable Debug Mode",
-      "debug_help": "Only enable for development environments"
+      "debug_help": "Only enable for development environments",
+      
+      "jwt_section_title": "JWT Key Configuration",
+      "jwt_section_description": "Configure JWT signing key for authentication tokens. BakLab supports RSA and Ed25519 private keys in PEM format. You can upload a key file or specify the host machine path for Docker volume mounting.",
+      
+      "jwt_method_label": "JWT Key Method",
+      "jwt_method_upload": "Upload Key File",
+      "jwt_method_path": "Specify Host File Path",
+      
+      "jwt_file_label": "JWT Key File",
+      "jwt_file_help": "Drop a JWT private key file here or click to select (.pem format only)",
+      "jwt_file_note": "Required: PEM format private key (RSA or Ed25519)",
+      "select_jwt_file": "Select JWT Key File",
+      "selected_file": "Selected File",
+      "file_size": "File Size",
+      
+      "jwt_path_label": "JWT Key File Path (Host Machine)",
+      "jwt_path_placeholder": "/host/path/to/jwt.pem",
+      "jwt_path_help": "Absolute path to JWT private key file (.pem) on host machine",
+      "jwt_path_required": "JWT key file path is required",
+      "jwt_upload_required": "Please upload a JWT key file first",
+      "jwt_uploading": "Uploading...",
+      "jwt_upload_success": "Upload successful!",
+      "jwt_upload_failed": "Upload failed",
+      "jwt_upload_failed_alert": "JWT key file upload failed",
+      
+      "jwt_generation_title": "How to Generate JWT Private Key",
+      "jwt_generation_commands": "<strong>Ed25519 (Recommended):</strong><br><code>openssl genpkey -algorithm Ed25519 -out jwt.pem</code><br><br><strong>RSA-3072:</strong><br><code>openssl genrsa -out jwt.pem 3072</code><br><br><strong>Set proper permissions:</strong><br><code>chmod 600 jwt.pem</code>"
     },
     
     "goaccess": {

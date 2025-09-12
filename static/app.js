@@ -38,7 +38,13 @@ class SetupApp {
                 cors_allow_origins: [],
                 session_secret: '',
                 csrf_secret: '',
-                jwt_secret: '',
+                jwt_key_file_path: '/host/path/to/jwt.pem',
+                jwt_key_from_file: true,
+                has_jwt_key_file: false,
+                jwt_key_uploaded: false,
+                jwt_key_temp_path: '',
+                original_file_name: '',
+                file_size: 0,
                 google_client_id: '',
                 google_secret: '',
                 github_client_id: '',
@@ -168,6 +174,9 @@ class SetupApp {
                 style: 'dropdown'
             });
         }
+        
+        // 更新上传文件状态显示
+        this.updateUploadStates();
     }
     
     renderSidebarSteps() {
@@ -619,6 +628,86 @@ class SetupApp {
                     </div>
                 </div>
                 
+                <h4 style="margin: 2rem 0 1rem 0; color: var(--gray-700);" data-i18n="setup.app.jwt_section_title"></h4>
+                <p style="margin-bottom: 1rem; color: var(--gray-600);" data-i18n="setup.app.jwt_section_description"></p>
+                
+                <div class="info-box" style="background: var(--info-bg, #e3f2fd); border: 1px solid var(--info-border, #1976d2); border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem;">
+                    <h5 style="margin: 0 0 0.5rem 0; color: var(--info-text, #1565c0);" data-i18n="setup.app.jwt_generation_title"></h5>
+                    <div id="jwt-generation-commands" data-i18n-html="setup.app.jwt_generation_commands"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="radio-group-label" data-i18n="setup.app.jwt_method_label"></label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input 
+                                type="radio" 
+                                id="jwt-method-upload" 
+                                name="jwt_method" 
+                                value="upload" 
+                                ${this.config.app.has_jwt_key_file ? 'checked' : ''}
+                                onchange="app.updateJWTMethodDisplay(); app.updateRadioStyles('jwt_method');"
+                            >
+                            <label for="jwt-method-upload">
+                                <span data-i18n="setup.app.jwt_method_upload"></span>
+                            </label>
+                        </div>
+                        <div class="radio-option">
+                            <input 
+                                type="radio" 
+                                id="jwt-method-path" 
+                                name="jwt_method" 
+                                value="path" 
+                                ${this.config.app.jwt_key_from_file && !this.config.app.has_jwt_key_file ? 'checked' : (!this.config.app.has_jwt_key_file ? 'checked' : '')}
+                                onchange="app.updateJWTMethodDisplay(); app.updateRadioStyles('jwt_method');"
+                            >
+                            <label for="jwt-method-path">
+                                <span data-i18n="setup.app.jwt_method_path"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="jwt-upload-config" style="display: ${this.config.app.has_jwt_key_file ? 'block' : 'none'};">
+                    <div class="form-group">
+                        <label for="jwt-key-file" data-i18n="setup.app.jwt_file_label"></label>
+                        <div class="file-upload-area" id="jwt-upload-area">
+                            <input type="file" id="jwt-key-file" name="jwt_key_file" accept=".pem" style="display: none;">
+                            <div class="file-upload-content">
+                                <div class="file-upload-icon">🔑</div>
+                                <p data-i18n="setup.app.jwt_file_help"></p>
+                                <button type="button" class="btn-secondary" onclick="document.getElementById('jwt-key-file').click()">
+                                    <span data-i18n="setup.app.select_jwt_file"></span>
+                                </button>
+                            </div>
+                            <div id="jwt-file-info" style="display: none;">
+                                <p><strong data-i18n="setup.app.selected_file"></strong>: <span id="jwt-file-name"></span></p>
+                                <p><strong data-i18n="setup.app.file_size"></strong>: <span id="jwt-file-size"></span></p>
+                                <button type="button" class="btn-secondary" style="margin-top: 0.5rem;" onclick="app.showJWTUploadArea()">
+                                    <span data-i18n="setup.app.select_jwt_file"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="invalid-feedback" id="jwt-upload-error" style="display: none;"></div>
+                        <div class="form-help" data-i18n="setup.app.jwt_file_note"></div>
+                    </div>
+                </div>
+                
+                <div id="jwt-path-config" style="display: ${this.config.app.jwt_key_from_file && !this.config.app.has_jwt_key_file ? 'block' : 'none'};">
+                    <div class="form-group">
+                        <label for="jwt-key-path" data-i18n="setup.app.jwt_path_label"></label>
+                        <input 
+                            type="text" 
+                            id="jwt-key-path" 
+                            name="jwt_key_path"
+                            value="${this.config.app.jwt_key_file_path}" 
+                            data-i18n-placeholder="setup.app.jwt_path_placeholder"
+                        >
+                        <div class="form-help" data-i18n="setup.app.jwt_path_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.app.jwt_path_required"></div>
+                    </div>
+                </div>
+                
                 <div class="btn-group">
                     <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
                     <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
@@ -634,6 +723,27 @@ class SetupApp {
             } else {
                 app.showFormErrors(e.target);
             }
+        });
+        
+        // 初始化 JWT method 显示状态和样式
+        this.updateJWTMethodDisplay();
+        this.updateRadioStyles('jwt_method');
+        
+        // JWT key 文件上传事件监听
+        document.getElementById('jwt-key-file').addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                // 清除上传错误消息
+                const uploadError = document.getElementById('jwt-upload-error');
+                if (uploadError) {
+                    uploadError.style.display = 'none';
+                }
+                app.uploadJWTKeyFile(e.target.files[0]);
+            }
+        });
+        
+        // JWT key 路径输入框变化时清除验证错误
+        document.getElementById('jwt-key-path').addEventListener('input', (e) => {
+            e.target.setCustomValidity('');
         });
     }
     
@@ -663,9 +773,12 @@ class SetupApp {
                                     <span data-i18n="setup.goaccess.select_file"></span>
                                 </button>
                             </div>
-                            <div id="file-info" style="display: none;">
-                                <p><strong data-i18n="setup.goaccess.selected_file"></strong>: <span id="file-name"></span></p>
-                                <p><strong data-i18n="setup.goaccess.file_size"></strong>: <span id="file-size"></span></p>
+                            <div id="geo-file-info" style="display: none;">
+                                <p><strong data-i18n="setup.goaccess.selected_file"></strong>: <span id="geo-file-name"></span></p>
+                                <p><strong data-i18n="setup.goaccess.file_size"></strong>: <span id="geo-file-size"></span></p>
+                                <button type="button" class="btn-secondary" style="margin-top: 0.5rem;" onclick="app.showGeoUploadArea()">
+                                    <span data-i18n="setup.goaccess.select_file"></span>
+                                </button>
                             </div>
                         </div>
                         <div class="invalid-feedback" style="display: none;"></div>
@@ -751,7 +864,15 @@ class SetupApp {
         });
     }
 
-    async handleGeoFileSelect(file, fileInfoDiv) {
+    async handleGeoFileSelect(file, fileInfoDivParam) {
+        // 使用传入的参数或从DOM获取元素
+        const fileInfoDiv = fileInfoDivParam || document.getElementById('geo-file-info');
+        
+        if (!fileInfoDiv) {
+            console.error('fileInfoDiv is null in handleGeoFileSelect');
+            return;
+        }
+        
         if (!file.name.endsWith('.mmdb')) {
             const errorMsg = window.i18n ? window.i18n.t('setup.goaccess.invalid_file_type') : 
                            'Please select a valid .mmdb file';
@@ -779,11 +900,28 @@ class SetupApp {
             }
         }
 
-        // 显示上传进度
+        // 隐藏上传区域，显示文件信息
+        const fileUploadContent = document.querySelector('#geo-upload-area .file-upload-content');
+        if (fileUploadContent) {
+            fileUploadContent.style.display = 'none';
+        }
+        
         fileInfoDiv.style.display = 'block';
-        fileInfoDiv.querySelector('#file-name').textContent = file.name;
-        fileInfoDiv.querySelector('#file-size').textContent = this.formatFileSize(file.size);
-        fileInfoDiv.innerHTML += '<p id="upload-progress">Uploading...</p>';
+        fileInfoDiv.querySelector('#geo-file-name').textContent = file.name;
+        fileInfoDiv.querySelector('#geo-file-size').textContent = this.formatFileSize(file.size);
+        
+        // 移除之前的进度信息（如果存在）
+        const existingProgress = fileInfoDiv.querySelector('#geo-upload-progress');
+        if (existingProgress) {
+            existingProgress.remove();
+        }
+        
+        // 添加上传进度信息
+        const uploadingText = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'Uploading...';
+        const progressElement = document.createElement('p');
+        progressElement.id = 'geo-upload-progress';
+        progressElement.textContent = uploadingText;
+        fileInfoDiv.appendChild(progressElement);
 
         try {
             // 上传文件到服务器
@@ -802,16 +940,18 @@ class SetupApp {
 
             if (result.success) {
                 // 更新UI显示上传成功
-                const progressEl = fileInfoDiv.querySelector('#upload-progress');
+                const progressEl = fileInfoDiv.querySelector('#geo-upload-progress');
                 if (progressEl) {
-                    progressEl.textContent = 'Upload successful!';
+                    const successText = window.i18n ? window.i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
+                    progressEl.textContent = successText;
                     progressEl.style.color = 'var(--success-color)';
                 }
 
                 // 保存文件信息到配置中
                 this.config.goaccess.has_geo_file = true;
-                this.config.goaccess.geo_file_uploaded = true;
                 this.config.goaccess.geo_file_temp_path = result.data.temp_path;
+                this.config.goaccess.original_file_name = file.name;
+                this.config.goaccess.file_size = file.size;
                 
                 console.log('GeoIP file uploaded successfully:', result.data);
             } else {
@@ -819,16 +959,107 @@ class SetupApp {
             }
         } catch (error) {
             console.error('File upload error:', error);
-            const progressEl = fileInfoDiv.querySelector('#upload-progress');
+            const progressEl = fileInfoDiv.querySelector('#geo-upload-progress');
             if (progressEl) {
-                progressEl.textContent = 'Upload failed: ' + error.message;
+                const failedText = window.i18n ? window.i18n.t('setup.app.jwt_upload_failed') : 'Upload failed';
+                progressEl.textContent = `${failedText}: ${error.message}`;
                 progressEl.style.color = 'var(--error-color)';
             }
             
-            // 重置文件选择状态
+            // 重置文件选择状态和界面
             this.config.goaccess.has_geo_file = false;
-            this.config.goaccess.geo_file_uploaded = false;
-            alert('File upload failed: ' + error.message);
+            
+            // 显示上传区域，隐藏文件信息
+            setTimeout(() => {
+                this.showGeoUploadArea();
+            }, 2000); // 2秒后重置界面，让用户看到错误信息
+        }
+    }
+    
+    async uploadJWTKeyFile(file) {
+        // 清除错误消息
+        const uploadError = document.getElementById('jwt-upload-error');
+        if (uploadError) {
+            uploadError.style.display = 'none';
+        }
+        
+        // 隐藏上传区域，显示文件信息
+        const fileUploadContent = document.querySelector('#jwt-upload-area .file-upload-content');
+        const fileInfoDiv = document.getElementById('jwt-file-info');
+        
+        if (fileUploadContent) {
+            fileUploadContent.style.display = 'none';
+        }
+        
+        fileInfoDiv.style.display = 'block';
+        fileInfoDiv.querySelector('#jwt-file-name').textContent = file.name;
+        fileInfoDiv.querySelector('#jwt-file-size').textContent = this.formatFileSize(file.size);
+        
+        // 移除之前的进度信息（如果存在）
+        const existingProgress = fileInfoDiv.querySelector('#jwt-upload-progress');
+        if (existingProgress) {
+            existingProgress.remove();
+        }
+        
+        // 添加上传进度信息
+        const uploadingText = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'Uploading...';
+        const progressElement = document.createElement('p');
+        progressElement.id = 'jwt-upload-progress';
+        progressElement.textContent = uploadingText;
+        fileInfoDiv.appendChild(progressElement);
+        
+        try {
+            // 上传文件到服务器
+            const formData = new FormData();
+            formData.append('jwt_key_file', file);
+            
+            const response = await fetch('/api/upload/jwt-key-file', {
+                method: 'POST',
+                headers: {
+                    'Setup-Token': this.token
+                },
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // 更新UI显示上传成功
+                const progressEl = fileInfoDiv.querySelector('#jwt-upload-progress');
+                if (progressEl) {
+                    progressEl.textContent = window.i18n ? window.i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
+                    progressEl.style.color = 'var(--success-color)';
+                }
+                
+                // 保存文件信息到配置中
+                this.config.app.has_jwt_key_file = true;
+                this.config.app.jwt_key_uploaded = true;
+                this.config.app.jwt_key_temp_path = result.data.temp_path;
+                this.config.app.jwt_key_file_path = result.data.file_path;
+                this.config.app.original_file_name = file.name;
+                this.config.app.file_size = file.size;
+                
+                console.log('JWT key file uploaded successfully:', result.data);
+            } else {
+                throw new Error(result.message || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('JWT key file upload error:', error);
+            const progressEl = fileInfoDiv.querySelector('#jwt-upload-progress');
+            if (progressEl) {
+                const failedText = window.i18n ? window.i18n.t('setup.app.jwt_upload_failed') : 'Upload failed';
+                progressEl.textContent = `${failedText}: ${error.message}`;
+                progressEl.style.color = 'var(--error-color)';
+            }
+            
+            // 重置文件选择状态和界面
+            this.config.app.has_jwt_key_file = false;
+            this.config.app.jwt_key_uploaded = false;
+            
+            // 显示上传区域，隐藏文件信息
+            setTimeout(() => {
+                this.showJWTUploadArea();
+            }, 2000); // 2秒后重置界面，让用户看到错误信息
         }
     }
 
@@ -839,6 +1070,38 @@ class SetupApp {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
+    
+    showJWTUploadArea() {
+        const fileInfoDiv = document.getElementById('jwt-file-info');
+        const fileUploadContent = document.querySelector('#jwt-upload-area .file-upload-content');
+        
+        if (fileInfoDiv && fileUploadContent) {
+            fileInfoDiv.style.display = 'none';
+            fileUploadContent.style.display = 'block';
+            
+            // 清除文件输入框的值
+            const fileInput = document.getElementById('jwt-key-file');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+        }
+    }
+    
+    showGeoUploadArea() {
+        const fileInfoDiv = document.getElementById('geo-file-info');
+        const fileUploadContent = document.querySelector('#geo-upload-area .file-upload-content');
+        
+        if (fileInfoDiv && fileUploadContent) {
+            fileInfoDiv.style.display = 'none';
+            fileUploadContent.style.display = 'block';
+            
+            // 清除文件输入框的值
+            const fileInput = document.getElementById('goaccess-geo-file');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+        }
+    }
 
     validateGoAccessForm(form) {
         let valid = true;
@@ -846,12 +1109,23 @@ class SetupApp {
         
         const goAccessEnabled = form.querySelector('#goaccess-enabled').checked;
         
-        if (goAccessEnabled && !this.config.goaccess.has_geo_file) {
-            valid = false;
-            const uploadArea = form.querySelector('#geo-upload-area');
-            const errorMessage = window.i18n ? window.i18n.t('setup.goaccess.geo_file_required') : 
-                                'GeoIP database file is required when GoAccess is enabled';
-            this.showFieldError(uploadArea, errorMessage);
+        if (goAccessEnabled) {
+            // 检查是否需要上传GeoIP文件或文件已丢失
+            if (!this.config.goaccess.has_geo_file || 
+                (this.config.goaccess.has_geo_file && !this.config.goaccess.geo_file_temp_path)) {
+                valid = false;
+                const uploadArea = form.querySelector('#geo-upload-area');
+                let errorMessage;
+                
+                if (!this.config.goaccess.has_geo_file) {
+                    errorMessage = window.i18n ? window.i18n.t('setup.goaccess.geo_file_required') : 
+                                   'GeoIP database file is required when GoAccess is enabled';
+                } else {
+                    errorMessage = 'GeoIP database file is no longer available. Please re-upload your GeoIP database file.';
+                }
+                
+                this.showFieldError(uploadArea, errorMessage);
+            }
         }
 
         return valid;
@@ -1155,9 +1429,122 @@ class SetupApp {
         });
     }
     
+    updateJWTMethodDisplay() {
+        const method = document.querySelector('input[name="jwt_method"]:checked')?.value;
+        const uploadConfig = document.getElementById('jwt-upload-config');
+        const pathConfig = document.getElementById('jwt-path-config');
+        const pathInput = document.getElementById('jwt-key-path');
+        const uploadError = document.getElementById('jwt-upload-error');
+        const fileInfoDiv = document.getElementById('jwt-file-info');
+        const fileUploadContent = document.querySelector('#jwt-upload-area .file-upload-content');
+        
+        // 清除所有错误消息
+        if (uploadError) {
+            uploadError.style.display = 'none';
+        }
+        if (pathInput) {
+            pathInput.setCustomValidity('');
+        }
+        
+        if (method === 'upload') {
+            uploadConfig.style.display = 'block';
+            pathConfig.style.display = 'none';
+            // 上传方式时，路径输入框不是必填
+            if (pathInput) {
+                pathInput.required = false;
+            }
+            
+            // 检查是否已上传文件，如果已上传则显示文件信息
+            if (this.config.app.jwt_key_uploaded && this.config.app.jwt_key_temp_path) {
+                if (fileInfoDiv && fileUploadContent) {
+                    // 隐藏上传区域，显示文件信息
+                    fileUploadContent.style.display = 'none';
+                    fileInfoDiv.style.display = 'block';
+                    
+                    // 从临时路径中提取文件名（如果没有保存原始文件名）
+                    const fileName = this.config.app.original_file_name || this.config.app.jwt_key_temp_path.split('/').pop();
+                    const fileSize = this.config.app.file_size;
+                    
+                    // 更新文件信息
+                    const fileNameEl = fileInfoDiv.querySelector('#jwt-file-name');
+                    const fileSizeEl = fileInfoDiv.querySelector('#jwt-file-size');
+                    
+                    if (fileNameEl) fileNameEl.textContent = fileName;
+                    if (fileSizeEl) {
+                        fileSizeEl.textContent = (typeof fileSize === 'number' && fileSize > 0) ? 
+                            this.formatFileSize(fileSize) : 'Unknown';
+                    }
+                    
+                    // 移除之前的进度信息
+                    const existingProgress = fileInfoDiv.querySelector('#jwt-upload-progress');
+                    if (existingProgress) {
+                        existingProgress.remove();
+                    }
+                    
+                    // 添加上传成功状态（只有在没有进度元素时才添加）
+                    if (!fileInfoDiv.querySelector('#jwt-upload-progress')) {
+                        const successText = window.i18n ? window.i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
+                        const successElement = document.createElement('p');
+                        successElement.id = 'jwt-upload-progress';
+                        successElement.textContent = successText;
+                        successElement.style.color = 'var(--success-color)';
+                        fileInfoDiv.appendChild(successElement);
+                    }
+                }
+            } else {
+                // 如果没有上传文件，显示上传区域
+                if (fileInfoDiv && fileUploadContent) {
+                    fileUploadContent.style.display = 'block';
+                    fileInfoDiv.style.display = 'none';
+                }
+            }
+        } else if (method === 'path') {
+            uploadConfig.style.display = 'none';
+            pathConfig.style.display = 'block';
+            // 指定路径方式时，路径输入框是必填
+            if (pathInput) {
+                pathInput.required = true;
+            }
+        }
+    }
+    
     async saveAppConfig() {
         const corsText = document.getElementById('app-cors').value.trim();
         const corsOrigins = corsText ? corsText.split('\\n').map(url => url.trim()).filter(url => url) : [];
+        
+        // 处理 JWT key 配置
+        const jwtMethod = document.querySelector('input[name="jwt_method"]:checked')?.value || 'path';
+        let jwtKeyFromFile = true; // JWT 密钥是必须的
+        let hasJWTKeyFile = false;
+        let jwtKeyFilePath = '';
+        
+        // 验证 JWT 配置
+        let jwtValid = false;
+        if (jwtMethod === 'upload') {
+            hasJWTKeyFile = true;
+            // 检查是否已上传文件
+            jwtValid = this.config.app.has_jwt_key_file && this.config.app.jwt_key_uploaded;
+            if (!jwtValid) {
+                // 显示上传错误消息
+                const uploadError = document.getElementById('jwt-upload-error');
+                if (uploadError) {
+                    uploadError.textContent = window.i18n ? window.i18n.t('setup.app.jwt_upload_required') : 'Please upload a JWT key file first.';
+                    uploadError.style.display = 'block';
+                }
+                return;
+            }
+        } else if (jwtMethod === 'path') {
+            hasJWTKeyFile = false;
+            jwtKeyFilePath = document.getElementById('jwt-key-path').value.trim();
+            jwtValid = jwtKeyFilePath.length > 0;
+            if (!jwtValid) {
+                // 设置输入框验证错误
+                const pathInput = document.getElementById('jwt-key-path');
+                pathInput.setCustomValidity(window.i18n ? window.i18n.t('setup.app.jwt_path_required') : 'JWT key file path is required');
+                pathInput.reportValidity();
+                return;
+            }
+        }
         
         this.config.app = {
             ...this.config.app,
@@ -1167,7 +1554,10 @@ class SetupApp {
             version: document.getElementById('app-version').value,
             cors_allow_origins: corsOrigins,
             default_lang: document.getElementById('app-lang').value,
-            debug: document.getElementById('app-debug').checked
+            debug: document.getElementById('app-debug').checked,
+            jwt_key_from_file: jwtKeyFromFile,
+            has_jwt_key_file: hasJWTKeyFile,
+            jwt_key_file_path: jwtKeyFilePath
         };
         
         // 只保存到本地缓存，不调用后端API
@@ -1217,6 +1607,82 @@ class SetupApp {
             console.log('Local cache cleared');
         } catch (error) {
             console.warn('Failed to clear localStorage:', error);
+        }
+    }
+    
+    // 重置上传文件状态
+    resetUploadStates() {
+        // 重置JWT文件上传状态
+        this.config.app.jwt_key_uploaded = false;
+        this.config.app.jwt_key_temp_path = '';
+        this.config.app.original_file_name = '';
+        this.config.app.file_size = 0;
+        
+        // 重置GeoIP文件上传状态
+        this.config.goaccess.has_geo_file = false;
+        this.config.goaccess.geo_file_temp_path = '';
+        this.config.goaccess.original_file_name = '';
+        this.config.goaccess.file_size = 0;
+        
+        console.log('Upload states reset - temporary files have been cleared');
+    }
+    
+    // 更新上传文件状态显示
+    updateUploadStates() {
+        // 更新JWT文件状态显示
+        this.updateJWTMethodDisplay();
+        
+        // 更新GeoIP文件状态显示
+        this.updateGeoFileDisplay();
+    }
+    
+    // 更新GeoIP文件显示状态
+    updateGeoFileDisplay() {
+        const fileInfoDiv = document.getElementById('geo-file-info');
+        const fileUploadContent = document.querySelector('#geo-upload-area .file-upload-content');
+        
+        if (!fileInfoDiv || !fileUploadContent) {
+            return; // 如果不在相关页面就跳过
+        }
+        
+        // 检查是否已上传GeoIP文件
+        if (this.config.goaccess.has_geo_file && this.config.goaccess.geo_file_temp_path) {
+            // 隐藏上传区域，显示文件信息
+            fileUploadContent.style.display = 'none';
+            fileInfoDiv.style.display = 'block';
+            
+            // 更新文件信息
+            const fileName = this.config.goaccess.original_file_name || this.config.goaccess.geo_file_temp_path.split('/').pop();
+            const fileSize = this.config.goaccess.file_size;
+            
+            const fileNameEl = fileInfoDiv.querySelector('#geo-file-name');
+            const fileSizeEl = fileInfoDiv.querySelector('#geo-file-size');
+            
+            if (fileNameEl) fileNameEl.textContent = fileName;
+            if (fileSizeEl) {
+                fileSizeEl.textContent = (typeof fileSize === 'number' && fileSize > 0) ? 
+                    this.formatFileSize(fileSize) : 'Unknown';
+            }
+            
+            // 移除之前的进度信息
+            const existingProgress = fileInfoDiv.querySelector('#geo-upload-progress');
+            if (existingProgress) {
+                existingProgress.remove();
+            }
+            
+            // 添加上传成功状态（只有在没有进度元素时才添加）
+            if (!fileInfoDiv.querySelector('#geo-upload-progress')) {
+                const successText = window.i18n ? window.i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
+                const successElement = document.createElement('p');
+                successElement.id = 'geo-upload-progress';
+                successElement.textContent = successText;
+                successElement.style.color = 'var(--success-color)';
+                fileInfoDiv.appendChild(successElement);
+            }
+        } else {
+            // 如果没有上传文件，显示上传区域
+            fileUploadContent.style.display = 'block';
+            fileInfoDiv.style.display = 'none';
         }
     }
     
@@ -1403,6 +1869,9 @@ class SetupApp {
             
             // 清除本地缓存（配置已成功保存到后端）
             this.clearLocalCache();
+            
+            // 重置上传文件状态（因为临时文件在配置生成后被删除）
+            this.resetUploadStates();
             
             this.nextStep();
         } catch (error) {
