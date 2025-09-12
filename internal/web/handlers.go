@@ -151,7 +151,7 @@ func (h *SetupHandlers) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to get setup status",
+			Message: h.localizeMessage(r, "messages.failed_get_setup_status"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -185,7 +185,7 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 	if len(errors) > 0 {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Configuration validation failed",
+			Message: h.localizeMessage(r, "messages.configuration_validation_failed"),
 			Errors:  errors,
 		}, http.StatusBadRequest)
 		return
@@ -217,7 +217,7 @@ func (h *SetupHandlers) GetConfigHandler(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to get configuration",
+			Message: h.localizeMessage(r, "messages.failed_get_configuration"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -292,7 +292,7 @@ func (h *SetupHandlers) GenerateConfigHandler(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to get configuration",
+			Message: h.localizeMessage(r, "messages.failed_get_configuration"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -308,7 +308,7 @@ func (h *SetupHandlers) GenerateConfigHandler(w http.ResponseWriter, r *http.Req
 
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
-		Message: "Configuration files generated successfully",
+		Message: h.localizeMessage(r, "messages.configuration_files_generated_successfully"),
 	}, http.StatusOK)
 }
 
@@ -357,7 +357,7 @@ func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Req
 	if len(errors) > 0 {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Configuration validation failed",
+			Message: h.localizeMessage(r, "messages.configuration_validation_failed"),
 			Errors:  errors,
 		}, http.StatusBadRequest)
 		return
@@ -365,7 +365,7 @@ func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Req
 
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
-		Message: "Configuration is valid",
+		Message: h.localizeMessage(r, "messages.configuration_is_valid"),
 	}, http.StatusOK)
 }
 
@@ -412,7 +412,7 @@ func (h *SetupHandlers) StartDeploymentHandler(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to generate deployment ID",
+			Message: h.localizeMessage(r, "messages.failed_generate_deployment_id"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -426,7 +426,7 @@ func (h *SetupHandlers) StartDeploymentHandler(w http.ResponseWriter, r *http.Re
 
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
-		Message: "Deployment started",
+		Message: h.localizeMessage(r, "messages.deployment_started"),
 		Data: map[string]interface{}{
 			"deployment_id": deploymentID,
 		},
@@ -444,7 +444,7 @@ func (h *SetupHandlers) DeploymentStatusHandler(w http.ResponseWriter, r *http.R
 	if err != nil {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to get deployment status",
+			Message: h.localizeMessage(r, "messages.failed_get_deployment_status"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -465,7 +465,7 @@ func (h *SetupHandlers) DeploymentLogsHandler(w http.ResponseWriter, r *http.Req
 	// 获取部署ID
 	deploymentID := chi.URLParam(r, "deploymentId")
 	if deploymentID == "" {
-		http.Error(w, "Deployment ID required", http.StatusBadRequest)
+		http.Error(w, h.localizeMessage(r, "messages.deployment_id_required"), http.StatusBadRequest)
 		return
 	}
 
@@ -477,7 +477,7 @@ func (h *SetupHandlers) DeploymentLogsHandler(w http.ResponseWriter, r *http.Req
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+		http.Error(w, h.localizeMessage(r, "messages.streaming_unsupported"), http.StatusInternalServerError)
 		return
 	}
 
@@ -592,7 +592,7 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 		log.Printf("Failed to parse multipart form: %v", err)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "File too large or invalid form data",
+			Message: h.localizeMessage(r, "messages.file_too_large_or_invalid_form_data"),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -602,7 +602,7 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 		log.Printf("Failed to get form file: %v", err)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "No file uploaded or invalid file field",
+			Message: h.localizeMessage(r, "messages.no_file_uploaded_or_invalid_file_field"),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -612,7 +612,7 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 	if !strings.HasSuffix(strings.ToLower(handler.Filename), ".mmdb") {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Invalid file type. Only .mmdb files are allowed",
+			Message: h.localizeMessage(r, "messages.invalid_file_type_mmdb"),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -621,7 +621,7 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 	if handler.Size > maxSize {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "File too large. Maximum size is 100MB",
+			Message: h.localizeMessage(r, "messages.file_too_large_max_100mb"),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -632,7 +632,7 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 		log.Printf("Failed to create temp directory: %v", err)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to create upload directory",
+			Message: h.localizeMessage(r, "messages.failed_create_upload_directory"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -644,7 +644,7 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 		log.Printf("Failed to create destination file: %v", err)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to create destination file",
+			Message: h.localizeMessage(r, "messages.failed_create_destination_file"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -658,7 +658,7 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 		os.Remove(destPath)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to save file",
+			Message: h.localizeMessage(r, "messages.failed_save_file"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -668,7 +668,7 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 	// 返回成功响应
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
-		Message: "GeoIP file uploaded successfully",
+		Message: h.localizeMessage(r, "messages.geoip_file_uploaded_successfully"),
 		Data: map[string]interface{}{
 			"filename":      "GeoLite2-City.mmdb",
 			"size":          bytesWritten,
@@ -688,7 +688,7 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 		log.Printf("Failed to parse multipart form: %v", err)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "File too large or invalid form data",
+			Message: h.localizeMessage(r, "messages.file_too_large_or_invalid_form_data"),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -698,7 +698,7 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 		log.Printf("Failed to get form file: %v", err)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "No file uploaded or invalid file field",
+			Message: h.localizeMessage(r, "messages.no_file_uploaded_or_invalid_file_field"),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -709,7 +709,7 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 	if !strings.HasSuffix(filename, ".pem") {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Invalid file type. Only .pem files are allowed for JWT private keys",
+			Message: h.localizeMessage(r, "messages.invalid_file_type_pem"),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -718,7 +718,7 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 	if handler.Size > maxSize {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "File too large. Maximum size is 10MB",
+			Message: h.localizeMessage(r, "messages.file_too_large_max_10mb"),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -729,7 +729,7 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 		log.Printf("Failed to create temp directory: %v", err)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to create upload directory",
+			Message: h.localizeMessage(r, "messages.failed_create_upload_directory"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -741,7 +741,7 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 		log.Printf("Failed to create destination file: %v", err)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to create destination file",
+			Message: h.localizeMessage(r, "messages.failed_create_destination_file"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -753,7 +753,7 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 		log.Printf("Failed to read JWT key file: %v", err)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to read file",
+			Message: h.localizeMessage(r, "messages.failed_read_file"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -763,7 +763,7 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 		log.Printf("Invalid JWT key file: %v", err)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: fmt.Sprintf("Invalid JWT private key file: %v", err),
+			Message: h.localizeMessage(r, "messages.invalid_jwt_key_file", "error", err.Error()),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -776,7 +776,7 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 		os.Remove(destPath)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Failed to save file",
+			Message: h.localizeMessage(r, "messages.failed_save_file"),
 		}, http.StatusInternalServerError)
 		return
 	}
@@ -786,7 +786,7 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 	// 返回成功响应
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
-		Message: "JWT key file uploaded successfully",
+		Message: h.localizeMessage(r, "messages.jwt_key_file_uploaded_successfully"),
 		Data: map[string]interface{}{
 			"filename":      handler.Filename,
 			"size":          bytesWritten,
