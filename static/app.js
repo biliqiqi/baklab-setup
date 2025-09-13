@@ -65,7 +65,7 @@ class SetupApp {
         };
         
         this.steps = [
-            { key: 'init', titleKey: 'setup.steps.initialize', handler: this.renderInitStep },
+            { key: 'welcome', titleKey: 'setup.steps.welcome', handler: this.renderInitStep },
             { key: 'database', titleKey: 'setup.steps.database', handler: this.renderDatabaseStep },
             { key: 'redis', titleKey: 'setup.steps.redis', handler: this.renderRedisStep },
             { key: 'app', titleKey: 'setup.steps.application', handler: this.renderAppStep },
@@ -94,7 +94,7 @@ class SetupApp {
             const urlToken = urlParams.get('token');
             if (urlToken) {
                 this.token = urlToken;
-                this.currentStep = 1; // 跳过初始化步骤
+                this.currentStep = 0; // 从欢迎页开始
             }
             
             this.render();
@@ -225,8 +225,13 @@ class SetupApp {
                 
                 ${existingWarning}
                 
-                <div class="btn-group init-actions">
+                <div class="form-group" style="margin-bottom: 2rem;">
+                    <label class="form-label" data-i18n="setup.init.language_label"></label>
+                    <p style="margin-bottom: 1rem; font-size: 0.875rem; color: var(--gray-600);" data-i18n="setup.init.language_description"></p>
                     <div class="language-switcher-container" id="language-switcher"></div>
+                </div>
+                
+                <div class="btn-group init-actions">
                     <button class="btn btn-primary" onclick="app.initializeSetup()">
                         <span data-i18n="${this.showExistingDeploymentWarning ? 'setup.init.proceed_override' : 'setup.init.initialize_button'}"></span>
                     </button>

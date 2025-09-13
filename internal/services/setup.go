@@ -89,17 +89,36 @@ func (s *SetupService) ValidateSetupToken(tokenStr string, ipAddress string) err
 		return fmt.Errorf("setup token has expired")
 	}
 
-	// 检查是否已使用
-	if token.Used {
-		return fmt.Errorf("setup token has already been used")
-	}
+	// 在整个setup流程中，不检查Used状态
+	// Token只在部署成功或手动完成setup后才会失效
 
-	// 检查IP地址（可选的严格模式）
-	if token.IPAddress != "" && token.IPAddress != ipAddress {
+	// 检查IP地址绑定
+	if token.IPAddress == "0.0.0.0" {
+		// 首次使用时绑定IP地址
+		token.IPAddress = ipAddress
+		if err := s.storage.SaveSetupToken(token); err != nil {
+			return fmt.Errorf("failed to bind token to IP: %w", err)
+		}
+	} else if token.IPAddress != ipAddress {
 		return fmt.Errorf("setup token can only be used from IP: %s", token.IPAddress)
 	}
 
 	return nil
+}
+
+// MarkTokenAsUsed 标记token为已使用（用于非只读操作）
+func (s *SetupService) MarkTokenAsUsed(tokenStr string) error {
+	token, err := s.storage.GetSetupToken()
+	if err != nil {
+		return fmt.Errorf("failed to get setup token: %w", err)
+	}
+
+	if token.Token == tokenStr {
+		token.Used = true
+		return s.storage.SaveSetupToken(token)
+	}
+
+	return fmt.Errorf("token not found")
 }
 
 // SaveConfiguration 保存配置
@@ -374,11 +393,27 @@ func (s *SetupService) completeDeployment() {
 		Message:   "All health checks passed! Deployment completed successfully.",
 	})
 
+	// 部署成功后，失效所有token
+	if err := s.invalidateAllTokens(); err != nil {
+		log.Printf("Warning: failed to invalidate tokens after deployment: %v", err)
+		s.addDeploymentLog(model.DeploymentLogEntry{
+			Timestamp: time.Now(),
+			Level:     "warning",
+			Message:   "Failed to invalidate setup tokens, but deployment completed",
+		})
+	} else {
+		s.addDeploymentLog(model.DeploymentLogEntry{
+			Timestamp: time.Now(),
+			Level:     "info",
+			Message:   "Setup tokens invalidated - setup service is now secure",
+		})
+	}
+
 	status, _ := s.storage.GetDeploymentStatus()
 	if status != nil {
 		status.Status = "completed"
 		status.Progress = 100
-		status.Message = "Deployment completed successfully"
+		status.Message = "Deployment completed successfully - setup tokens invalidated"
 		now := time.Now()
 		status.EndAt = &now
 		s.storage.SaveDeploymentStatus(status)
@@ -396,7 +431,7 @@ func (s *SetupService) failDeploymentWithTimeout() {
 	s.addDeploymentLog(model.DeploymentLogEntry{
 		Timestamp: time.Now(),
 		Level:     "info",
-		Message:   "💡 Services may still be starting. You can:",
+		Message:   "Services may still be starting. You can:",
 	})
 
 	s.addDeploymentLog(model.DeploymentLogEntry{
@@ -478,24 +513,20 @@ func (s *SetupService) HealthCheckServices() ([]model.ConnectionTestResult, erro
 	return results, nil
 }
 
-// CompleteSetup 完成setup（不再禁用服务，允许重复运行）
+// CompleteSetup 完成setup（手动完成时失效token）
 func (s *SetupService) CompleteSetup() error {
-	// 注释：移除标记完成的逻辑，允许重复运行
-	// if err := s.storage.MarkSetupCompleted(); err != nil {
-	//     return fmt.Errorf("failed to mark setup as completed: %w", err)
-	// }
+	// 手动完成setup时，失效所有token
+	if err := s.invalidateAllTokens(); err != nil {
+		log.Printf("Warning: failed to invalidate tokens: %v", err)
+		return fmt.Errorf("setup completed but failed to invalidate tokens: %w", err)
+	}
 
-	// 注释：不再失效令牌，允许继续使用
-	// if err := s.invalidateAllTokens(); err != nil {
-	//     log.Printf("Warning: failed to invalidate tokens: %v", err)
-	// }
+	// 更新setup状态为已完成
+	if err := s.updateSetupProgress("completed", 100, "Setup completed successfully - tokens invalidated"); err != nil {
+		log.Printf("Warning: failed to update setup progress: %v", err)
+	}
 
-	// 注释：不清理临时文件，保持setup可用
-	// if err := s.storage.CleanupTempFiles(); err != nil {
-	//     return fmt.Errorf("failed to cleanup temp files: %w", err)
-	// }
-
-	log.Printf("Setup completed successfully - service remains available for updates")
+	log.Printf("Setup completed successfully - all tokens have been invalidated")
 	return nil
 }
 
@@ -519,7 +550,7 @@ func (s *SetupService) generateSetupToken(ipAddress string) (*model.SetupToken, 
 
 	token := &model.SetupToken{
 		Token:     hex.EncodeToString(bytes),
-		ExpiresAt: time.Now().Add(2 * time.Hour), // 2小时过期
+		ExpiresAt: time.Now().Add(8 * time.Hour), // 8小时过期，足够完成整个setup流程
 		IPAddress: ipAddress,                     // 绑定IP地址
 		Used:      false,                         // 初始未使用
 		CreatedAt: time.Now(),

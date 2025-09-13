@@ -62,6 +62,25 @@ func (h *SetupHandlers) localizeMessage(r *http.Request, messageKey string, data
 
 // IndexHandler 主页处理程序
 func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
+	// 检查是否有有效的token
+	token := r.Header.Get("Setup-Token")
+	if token == "" {
+		token = r.URL.Query().Get("token")
+	}
+
+	// 如果没有token，返回未授权页面
+	if token == "" {
+		h.renderUnauthorizedPage(w, r)
+		return
+	}
+
+	// 验证token有效性
+	clientIP := getClientIP(r)
+	if err := h.setupService.ValidateSetupToken(token, clientIP); err != nil {
+		h.renderUnauthorizedPage(w, r)
+		return
+	}
+
 	// 检查setup是否已完成
 	completed, err := h.setupService.IsSetupCompleted()
 	if err != nil {
@@ -81,32 +100,7 @@ func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 返回setup界面
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-
-	// 这里应该返回HTML页面，暂时返回简单提示
-	_, err = fmt.Fprintf(w, `<!DOCTYPE html>
-<html>
-<head>
-    <title>BakLab Setup</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link rel="icon" type="image/png" href="/static/logo-icon.png">
-    <link rel="stylesheet" href="/static/styles.css?v=1.2">
-</head>
-<body>
-    <div id="app">
-        <h1>BakLab Setup</h1>
-        <p>Loading setup interface...</p>
-    </div>
-    <script src="/static/i18n.js?v=1.0"></script>
-    <script src="/static/app.js?v=1.2"></script>
-</body>
-</html>`)
-	if err != nil {
-		log.Printf("Warning: failed to write HTML response: %v", err)
-	}
+	h.renderSetupPage(w, r)
 }
 
 // InitializeHandler 初始化setup
@@ -158,9 +152,18 @@ func (h *SetupHandlers) StatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 只返回基本状态信息，不包含敏感数据
+	safeState := map[string]interface{}{
+		"status":       state.Status,
+		"current_step": state.CurrentStep,
+		"progress":     state.Progress,
+		"message":      state.Message,
+		"updated_at":   state.UpdatedAt,
+	}
+
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
-		Data:    state,
+		Data:    safeState,
 	}, http.StatusOK)
 }
 
@@ -371,27 +374,6 @@ func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Req
 	}, http.StatusOK)
 }
 
-// getClientIP 获取客户端IP地址
-func getClientIP(r *http.Request) string {
-	// 检查X-Forwarded-For头（代理环境）
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		ips := strings.Split(xff, ",")
-		return strings.TrimSpace(ips[0])
-	}
-
-	// 检查X-Real-IP头
-	if xri := r.Header.Get("X-Real-IP"); xri != "" {
-		return strings.TrimSpace(xri)
-	}
-
-	// 使用RemoteAddr
-	ip := r.RemoteAddr
-	if colon := strings.LastIndex(ip, ":"); colon != -1 {
-		ip = ip[:colon]
-	}
-
-	return ip
-}
 
 // writeJSONResponse 写入JSON响应
 func (h *SetupHandlers) writeJSONResponse(w http.ResponseWriter, response model.SetupResponse, statusCode int) {
@@ -834,5 +816,45 @@ func validateJWTKeyFile(keyBytes []byte) error {
 		
 	default:
 		return fmt.Errorf("unsupported PEM block type: %s. Expected 'PRIVATE KEY' (PKCS#8) or 'RSA PRIVATE KEY' (PKCS#1)", block.Type)
+	}
+}
+
+// renderUnauthorizedPage 渲染未授权页面
+func (h *SetupHandlers) renderUnauthorizedPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusUnauthorized)
+
+	_, err := fmt.Fprintf(w, "Unauthorized: Valid setup token required")
+	if err != nil {
+		log.Printf("Warning: failed to write unauthorized page: %v", err)
+	}
+}
+
+// renderSetupPage 渲染setup界面
+func (h *SetupHandlers) renderSetupPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+
+	_, err := fmt.Fprintf(w, `<!DOCTYPE html>
+<html>
+<head>
+    <title>BakLab Setup</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" href="/static/logo-icon.png">
+    <link rel="stylesheet" href="/static/styles.css?v=1.2">
+</head>
+<body>
+    <div id="app">
+        <h1>BakLab Setup</h1>
+        <p>Loading setup interface...</p>
+    </div>
+    <script src="/static/i18n.js?v=1.0"></script>
+    <script src="/static/app.js?v=1.2"></script>
+</body>
+</html>`)
+	if err != nil {
+		log.Printf("Warning: failed to write setup page: %v", err)
 	}
 }
