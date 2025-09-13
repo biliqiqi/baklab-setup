@@ -2,8 +2,13 @@ package web
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/biliqiqi/baklab-setup/internal/model"
 	"github.com/biliqiqi/baklab-setup/internal/services"
@@ -13,31 +18,44 @@ import (
 // SetupMiddleware setup中间件
 type SetupMiddleware struct {
 	setupService *services.SetupService
+	logFile      *os.File
 }
 
 // NewSetupMiddleware 创建中间件实例
 func NewSetupMiddleware(setupService *services.SetupService) *SetupMiddleware {
+	// 创建日志目录
+	logDir := "./logs"
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		log.Printf("Warning: failed to create log directory: %v", err)
+	}
+
+	// 创建日志文件
+	logPath := filepath.Join(logDir, fmt.Sprintf("setup_%s.log", time.Now().Format("2006-01-02")))
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Printf("Warning: failed to open log file: %v", err)
+		logFile = nil
+	}
+
 	return &SetupMiddleware{
 		setupService: setupService,
+		logFile:      logFile,
 	}
 }
 
 // SetupAuth setup认证中间件
 func (m *SetupMiddleware) SetupAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 跳过静态文件和首页
+		// 记录所有API访问
+		m.logAPIAccess(r)
+
+		// 只跳过静态文件和首页
 		if strings.HasPrefix(r.URL.Path, "/static/") || r.URL.Path == "/" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		// 跳过初始化和状态检查接口
-		if r.URL.Path == "/api/initialize" || r.URL.Path == "/api/status" {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		// 注释：移除完成状态检查，允许重复执行
+		// 所有API接口都需要token验证，移除之前跳过的接口
 
 		// 验证setup令牌
 		token := r.Header.Get("Setup-Token")
@@ -47,6 +65,7 @@ func (m *SetupMiddleware) SetupAuth(next http.Handler) http.Handler {
 		}
 
 		if token == "" {
+			m.logSecurityEvent(r, "missing_token", "no_token_provided")
 			writeJSONResponse(w, model.SetupResponse{
 				Success: false,
 				Message: "Setup token is required",
@@ -59,6 +78,12 @@ func (m *SetupMiddleware) SetupAuth(next http.Handler) http.Handler {
 
 		// 验证令牌
 		if err := m.setupService.ValidateSetupToken(token, clientIP); err != nil {
+			// 安全截取token前8位用于日志
+			tokenPrefix := token
+			if len(token) > 8 {
+				tokenPrefix = token[:8] + "..."
+			}
+			m.logSecurityEvent(r, "token_validation_failed", tokenPrefix)
 			writeJSONResponse(w, model.SetupResponse{
 				Success: false,
 				Message: "Invalid or expired setup token",
@@ -66,7 +91,7 @@ func (m *SetupMiddleware) SetupAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		// 令牌在整个setup过程中可以重复使用，只在setup完成后才失效
+		// Token在整个setup流程中保持有效，不提前标记为已使用
 
 		next.ServeHTTP(w, r)
 	})
@@ -163,4 +188,59 @@ func GetLangFromContext(r *http.Request) language.Tag {
 		return lang
 	}
 	return language.English
+}
+
+// logAPIAccess 记录API访问日志
+func (m *SetupMiddleware) logAPIAccess(r *http.Request) {
+	clientIP := getClientIP(r)
+	message := fmt.Sprintf("[SETUP-ACCESS] %s %s from %s UA:%s", 
+		r.Method, r.URL.Path, clientIP, r.UserAgent())
+	
+	// 同时输出到控制台和文件
+	log.Print(message)
+	m.writeToLogFile(message)
+}
+
+// logSecurityEvent 记录安全事件
+func (m *SetupMiddleware) logSecurityEvent(r *http.Request, event, details string) {
+	clientIP := getClientIP(r)
+	message := fmt.Sprintf("[SETUP-SECURITY] %s: %s from %s %s UA:%s", 
+		event, details, clientIP, r.URL.Path, r.UserAgent())
+	
+	// 同时输出到控制台和文件
+	log.Print(message)
+	m.writeToLogFile(message)
+}
+
+// writeToLogFile 写入日志文件
+func (m *SetupMiddleware) writeToLogFile(message string) {
+	if m.logFile != nil {
+		timestamp := time.Now().Format("2006-01-02 15:04:05")
+		logLine := fmt.Sprintf("%s %s\n", timestamp, message)
+		if _, err := m.logFile.WriteString(logLine); err != nil {
+			log.Printf("Warning: failed to write to log file: %v", err)
+		}
+	}
+}
+
+// getClientIP 获取客户端IP地址
+func getClientIP(r *http.Request) string {
+	// 检查X-Forwarded-For头（代理环境）
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		ips := strings.Split(xff, ",")
+		return strings.TrimSpace(ips[0])
+	}
+
+	// 检查X-Real-IP头
+	if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		return strings.TrimSpace(xri)
+	}
+
+	// 使用RemoteAddr
+	ip := r.RemoteAddr
+	if colon := strings.LastIndex(ip, ":"); colon != -1 {
+		ip = ip[:colon]
+	}
+
+	return ip
 }

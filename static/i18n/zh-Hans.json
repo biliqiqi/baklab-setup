@@ -25,7 +25,7 @@
     "subtitle": "配置您的 BakLab 应用程序用于生产部署",
     
     "steps": {
-      "initialize": "初始化",
+      "welcome": "欢迎",
       "database": "数据库",
       "redis": "Redis缓存",
       "application": "应用程序",
@@ -38,6 +38,8 @@
     "init": {
       "welcome_title": "欢迎使用 BakLab 设置向导",
       "welcome_description": "此设置向导将帮助您配置 BakLab 应用程序用于生产部署。点击下面的按钮生成安全设置令牌并开始配置过程。",
+      "language_label": "设置向导界面语言",
+      "language_description": "选择此设置向导的显示语言。这仅影响设置向导界面，不会影响您部署的应用程序。",
       "existing_deployment_warning": "⚠️ 检测到现有部署",
       "existing_deployment_details": "配置文件已存在于 config/ 目录中。继续操作将覆盖现有的部署配置。",
       "existing_deployment_effects": "这将会：",
@@ -47,7 +49,7 @@
         "不会影响正在运行的服务（需要手动重启）"
       ],
       "backup_reminder": "如有需要，请确保备份当前配置。",
-      "initialize_button": "初始化设置",
+      "initialize_button": "开始",
       "proceed_override": "继续并覆盖"
     },
     

@@ -25,7 +25,7 @@
     "subtitle": "Configure your BakLab application for production deployment",
     
     "steps": {
-      "initialize": "Initialize",
+      "welcome": "Welcome",
       "database": "Database", 
       "redis": "Redis",
       "application": "Application",
@@ -38,6 +38,8 @@
     "init": {
       "welcome_title": "Welcome to BakLab Setup",
       "welcome_description": "This setup wizard will help you configure your BakLab application for production deployment. Click the button below to generate a secure setup token and begin the configuration process.",
+      "language_label": "Setup Interface Language",
+      "language_description": "Choose the language for this setup wizard. This only affects the setup interface, not your deployed application.",
       "existing_deployment_warning": "⚠️ Existing Deployment Detected",
       "existing_deployment_details": "Configuration files already exist in the config/ directory. Proceeding will overwrite the existing deployment configuration.",
       "existing_deployment_effects": "This will:",
@@ -47,7 +49,7 @@
         "Not affect running services (you'll need to restart them manually)"
       ],
       "backup_reminder": "Make sure to backup your current configuration if needed.",
-      "initialize_button": "Initialize Setup",
+      "initialize_button": "Start",
       "proceed_override": "Proceed with Override"
     },
     
