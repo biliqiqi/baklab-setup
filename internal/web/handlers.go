@@ -866,10 +866,14 @@ func (h *SetupHandlers) renderSetupPage(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 
+	// 获取翻译的页面标题
+	localizer := h.getLocalizerFromContext(r)
+	pageTitle := localizer.MustLocalize("setup.page_title", nil, nil)
+
 	_, err := fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
 <head>
-    <title>BakLab Setup</title>
+    <title>%s</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -884,7 +888,7 @@ func (h *SetupHandlers) renderSetupPage(w http.ResponseWriter, r *http.Request) 
     <script src="/static/i18n.js?v=1.0"></script>
     <script src="/static/app.js?v=1.2"></script>
 </body>
-</html>`)
+</html>`, pageTitle)
 	if err != nil {
 		log.Printf("Warning: failed to write setup page: %v", err)
 	}

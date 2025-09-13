@@ -23,6 +23,7 @@
   "setup": {
     "title": "BakLab 设置",
     "subtitle": "配置您的 BakLab 应用程序用于生产部署",
+    "page_title": "BakLab 设置",
     
     "steps": {
       "welcome": "欢迎",

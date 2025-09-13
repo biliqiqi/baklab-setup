@@ -74,11 +74,11 @@ class SetupI18n {
         this.translations = {
             'en': {
                 common: { next: "Next", previous: "Previous", save: "Save", cancel: "Cancel", loading: "Loading..." },
-                setup: { title: "BakLab Setup", welcome: "Welcome to BakLab Setup" }
+                setup: { title: "BakLab Setup", page_title: "BakLab Setup", welcome: "Welcome to BakLab Setup" }
             },
             'zh-Hans': {
                 common: { next: "下一步", previous: "上一步", save: "保存", cancel: "取消", loading: "加载中..." },
-                setup: { title: "BakLab 设置", welcome: "欢迎使用 BakLab 设置向导" }
+                setup: { title: "BakLab 设置", page_title: "BakLab 设置", welcome: "欢迎使用 BakLab 设置向导" }
             }
         };
     }
@@ -215,6 +215,9 @@ class SetupI18n {
 
     // 应用翻译到页面元素
     applyTranslations() {
+        // 更新页面标题
+        document.title = this.t('setup.page_title');
+        
         // 处理带有data-i18n属性的元素
         document.querySelectorAll('[data-i18n]').forEach(element => {
             const key = element.getAttribute('data-i18n');
