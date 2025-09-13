@@ -1019,3 +1019,13 @@ code {
     border: 1px solid #bbdefb;
     color: #0d47a1;
 }
+
+/* Details/Summary styling for collapsible JWT generation help */
+details summary {
+    cursor: pointer;
+    user-select: none;
+}
+
+details summary:hover {
+    color: var(--gray-700);
+}
