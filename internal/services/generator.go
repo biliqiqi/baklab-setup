@@ -98,15 +98,9 @@ func (g *GeneratorService) clearNginxDir(nginxPath string) error {
 
 // GenerateEnvFile 生成.env文件
 func (g *GeneratorService) GenerateEnvFile(cfg *model.SetupConfig) error {
-	// 确保输出目录和子目录存在
+	// 确保输出目录存在
 	if err := os.MkdirAll(g.outputDir, 0755); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
-	}
-
-	// 创建必要的子目录
-	certsDir := filepath.Join(g.outputDir, "certs")
-	if err := os.MkdirAll(certsDir, 0755); err != nil {
-		return fmt.Errorf("failed to create certs directory: %w", err)
 	}
 
 	dataDir := filepath.Join("./data")
@@ -212,11 +206,6 @@ DEFAULT_DATA_DIR=./config/defaults
 # Development Configuration
 HOST_PROXY=http://127.0.0.1:1008
 APP_LOCAL_HOST=172.17.0.1
-
-# TLS Configuration (uncomment to enable)
-# APP_AUTOCERT=1
-# APP_TLS_CERT=./certs/server.crt
-# APP_TLS_KEY=./certs/server.key
 
 # Version
 APP_VERSION={{ if .App.Version }}{{ .App.Version }}{{ else }}latest{{ end }}
@@ -474,10 +463,11 @@ services:
       - ./static:/data/static
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates/webapp.conf.template:/etc/nginx/templates/webapp.conf.template:ro
-      - ./nginx/logs:/etc/nginx/logs
-      - /etc/letsencrypt:/etc/letsencrypt
-    ports:
-      - $NGINX_SSL_PORT:443
+      - ./nginx/logs:/etc/nginx/logs{{if .SSL.Enabled}}
+      - {{.SSL.CertPath}}:/etc/ssl/certs/server.crt:ro
+      - {{.SSL.KeyPath}}:/etc/ssl/private/server.key:ro{{end}}
+    ports:{{if .SSL.Enabled}}
+      - $NGINX_SSL_PORT:443{{end}}
       - $NGINX_PORT:80
     depends_on:
       webapp:
@@ -491,16 +481,20 @@ services:
   goaccess:
     image: allinurl/goaccess:1.7.2
     container_name: "local-goaccess"
-    restart: always
+    restart: always{{if .SSL.Enabled}}
     entrypoint: 'sh -c "/bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880 --ssl-cert=$$SSL_CERT --ssl-key=$$SSL_KEY"'
     environment:
       - TZ="China/Shanghai"
-      - SSL_CERT=/etc/letsencrypt/live/${BASE_DOMAIN_NAME}/fullchain.pem
-      - SSL_KEY=/etc/letsencrypt/live/${BASE_DOMAIN_NAME}/privkey.pem
+      - SSL_CERT=/etc/ssl/certs/server.crt
+      - SSL_KEY=/etc/ssl/private/server.key{{else}}
+    entrypoint: 'sh -c "/bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880"'
+    environment:
+      - TZ="China/Shanghai"{{end}}
     volumes:
       - /var/www/goaccess:/var/www/goaccess:rw{{ if .GoAccess.HasGeoFile }}
-      - ./geoip:/data/geoip:ro{{ end }}
-      - /etc/letsencrypt:/etc/letsencrypt
+      - ./geoip:/data/geoip:ro{{ end }}{{if .SSL.Enabled}}
+      - {{.SSL.CertPath}}:/etc/ssl/certs/server.crt:ro
+      - {{.SSL.KeyPath}}:/etc/ssl/private/server.key:ro{{end}}
       - ./goaccess.conf:/etc/goaccess/goaccess.conf
       - ./nginx/logs:/data/logs
       - ./manage_static:/data/static

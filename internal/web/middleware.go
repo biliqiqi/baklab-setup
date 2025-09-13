@@ -18,11 +18,12 @@ import (
 // SetupMiddleware setup中间件
 type SetupMiddleware struct {
 	setupService *services.SetupService
+	devMode      bool
 	logFile      *os.File
 }
 
 // NewSetupMiddleware 创建中间件实例
-func NewSetupMiddleware(setupService *services.SetupService) *SetupMiddleware {
+func NewSetupMiddleware(setupService *services.SetupService, devMode bool) *SetupMiddleware {
 	// 创建日志目录
 	logDir := "./logs"
 	if err := os.MkdirAll(logDir, 0755); err != nil {
@@ -39,6 +40,7 @@ func NewSetupMiddleware(setupService *services.SetupService) *SetupMiddleware {
 
 	return &SetupMiddleware{
 		setupService: setupService,
+		devMode:      devMode,
 		logFile:      logFile,
 	}
 }
@@ -48,6 +50,12 @@ func (m *SetupMiddleware) SetupAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 记录所有API访问
 		m.logAPIAccess(r)
+
+		// 开发模式下跳过token验证
+		if m.devMode {
+			next.ServeHTTP(w, r)
+			return
+		}
 
 		// 只跳过静态文件和首页
 		if strings.HasPrefix(r.URL.Path, "/static/") || r.URL.Path == "/" {

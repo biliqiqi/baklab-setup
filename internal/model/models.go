@@ -61,6 +61,13 @@ type GoAccessConfig struct {
 	FileSize         int64  `json:"file_size"`            // 文件大小
 }
 
+// SSLConfig SSL证书配置
+type SSLConfig struct {
+	Enabled  bool   `json:"enabled"`                                      // 是否启用HTTPS
+	CertPath string `json:"cert_path" validate:"required_if=Enabled true"` // 证书文件路径（启用HTTPS时必须）
+	KeyPath  string `json:"key_path" validate:"required_if=Enabled true"`  // 私钥文件路径（启用HTTPS时必须）
+}
+
 // AppConfig 应用配置
 type AppConfig struct {
 	DomainName        string   `json:"domain_name" validate:"required"`
@@ -93,12 +100,14 @@ type AdminUserConfig struct {
 
 // SetupConfig 完整的setup配置
 type SetupConfig struct {
-	Database  DatabaseConfig  `json:"database"`
-	Redis     RedisConfig     `json:"redis"`
-	SMTP      SMTPConfig      `json:"smtp"`
-	App       AppConfig       `json:"app"`
-	AdminUser AdminUserConfig `json:"admin_user"`
-	GoAccess  GoAccessConfig  `json:"goaccess"`
+	Database    DatabaseConfig  `json:"database"`
+	Redis       RedisConfig     `json:"redis"`
+	SMTP        SMTPConfig      `json:"smtp"`
+	App         AppConfig       `json:"app"`
+	AdminUser   AdminUserConfig `json:"admin_user"`
+	GoAccess    GoAccessConfig  `json:"goaccess"`
+	SSL         SSLConfig       `json:"ssl"`
+	CurrentStep string          `json:"current_step,omitempty"` // 当前步骤，用于递增验证
 }
 
 // SetupToken 访问令牌

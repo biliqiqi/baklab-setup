@@ -26,13 +26,19 @@ import (
 type SetupHandlers struct {
 	setupService *services.SetupService
 	i18nManager  *i18n.I18nManager
+	devMode      bool
+	certPath     string
+	keyPath      string
 }
 
 // NewSetupHandlers 创建处理程序实例
-func NewSetupHandlers(setupService *services.SetupService, i18nManager *i18n.I18nManager) *SetupHandlers {
+func NewSetupHandlers(setupService *services.SetupService, i18nManager *i18n.I18nManager, devMode bool, certPath, keyPath string) *SetupHandlers {
 	return &SetupHandlers{
 		setupService: setupService,
 		i18nManager:  i18nManager,
+		devMode:      devMode,
+		certPath:     certPath,
+		keyPath:      keyPath,
 	}
 }
 
@@ -62,7 +68,14 @@ func (h *SetupHandlers) localizeMessage(r *http.Request, messageKey string, data
 
 // IndexHandler 主页处理程序
 func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
-	// 检查是否有有效的token
+	// 开发模式下跳过token验证
+	if h.devMode {
+		// 渲染主页
+		h.renderSetupPage(w, r)
+		return
+	}
+
+	// 生产模式下检查token
 	token := r.Header.Get("Setup-Token")
 	if token == "" {
 		token = r.URL.Query().Get("token")
@@ -81,6 +94,7 @@ func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	
 	// 检查setup是否已完成
 	completed, err := h.setupService.IsSetupCompleted()
 	if err != nil {
@@ -816,6 +830,23 @@ func validateJWTKeyFile(keyBytes []byte) error {
 		
 	default:
 		return fmt.Errorf("unsupported PEM block type: %s. Expected 'PRIVATE KEY' (PKCS#8) or 'RSA PRIVATE KEY' (PKCS#1)", block.Type)
+	}
+}
+
+// GetCurrentCertPathsHandler 获取当前设置程序使用的证书路径
+func (h *SetupHandlers) GetCurrentCertPathsHandler(w http.ResponseWriter, r *http.Request) {
+	response := map[string]interface{}{
+		"success": true,
+		"data": map[string]string{
+			"cert_path": h.certPath,
+			"key_path":  h.keyPath,
+		},
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
 	}
 }
 

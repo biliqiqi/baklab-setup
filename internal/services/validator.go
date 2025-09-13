@@ -265,21 +265,49 @@ func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.Connec
 	return result
 }
 
-// ValidateConfig 验证完整配置
+// ValidateConfig 递增验证配置（根据当前步骤只验证已提交的部分）
 func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	// 验证数据库配置
-	errors = append(errors, v.validateDatabaseConfig(cfg.Database)...)
+	// 定义步骤顺序
+	stepOrder := []string{"welcome", "database", "redis", "app", "ssl", "goaccess", "admin", "review", "complete"}
+	currentStepIndex := -1
+	
+	// 找到当前步骤的索引
+	for i, step := range stepOrder {
+		if step == cfg.CurrentStep {
+			currentStepIndex = i
+			break
+		}
+	}
+	
+	// 如果没找到当前步骤，默认验证所有（向后兼容）
+	if currentStepIndex == -1 {
+		currentStepIndex = len(stepOrder) - 1
+	}
 
-	// 验证Redis配置
-	errors = append(errors, v.validateRedisConfig(cfg.Redis)...)
+	// 根据步骤递增验证
+	if currentStepIndex >= 1 { // database
+		errors = append(errors, v.validateDatabaseConfig(cfg.Database)...)
+	}
 
-	// 验证应用配置
-	errors = append(errors, v.validateAppConfig(cfg.App)...)
+	if currentStepIndex >= 2 { // redis
+		errors = append(errors, v.validateRedisConfig(cfg.Redis)...)
+	}
 
-	// 验证管理员用户配置
-	errors = append(errors, v.validateAdminUserConfig(cfg.AdminUser)...)
+	if currentStepIndex >= 3 { // app
+		errors = append(errors, v.validateAppConfig(cfg.App)...)
+	}
+
+	if currentStepIndex >= 4 { // ssl
+		errors = append(errors, v.validateSSLConfig(cfg.SSL)...)
+	}
+
+	// goaccess 不需要强制验证，跳过
+
+	if currentStepIndex >= 6 { // admin
+		errors = append(errors, v.validateAdminUserConfig(cfg.AdminUser)...)
+	}
 
 	return errors
 }
@@ -595,4 +623,28 @@ func (v *ValidatorService) TestAllConnections(cfg *model.SetupConfig) []model.Co
 	}
 
 	return results
+}
+
+// validateSSLConfig 验证SSL配置
+func (v *ValidatorService) validateSSLConfig(cfg model.SSLConfig) []model.ValidationError {
+	var errors []model.ValidationError
+
+	// 如果启用SSL，验证证书和私钥路径
+	if cfg.Enabled {
+		if cfg.CertPath == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "ssl.cert_path",
+				Message: "key:validation.ssl.cert_path_required",
+			})
+		}
+
+		if cfg.KeyPath == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "ssl.key_path",
+				Message: "key:validation.ssl.key_path_required",
+			})
+		}
+	}
+
+	return errors
 }

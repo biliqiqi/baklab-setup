@@ -29,6 +29,7 @@
       "database": "数据库",
       "redis": "Redis缓存",
       "application": "应用程序",
+      "ssl": "SSL/HTTPS",
       "goaccess": "分析服务",
       "admin_user": "管理员用户", 
       "review": "检查配置",
@@ -180,6 +181,25 @@
       
       "jwt_generation_title": "如何生成 JWT 私钥",
       "jwt_generation_commands": "<strong>Ed25519（推荐）：</strong><br><code>openssl genpkey -algorithm Ed25519 -out jwt.pem</code><br><br><strong>RSA-3072：</strong><br><code>openssl genrsa -out jwt.pem 3072</code><br><br><strong>设置正确的文件权限：</strong><br><code>chmod 600 jwt.pem</code>"
+    },
+    
+    "ssl": {
+      "title": "SSL/HTTPS 配置",
+      "description": "配置 SSL 证书以启用 HTTPS 部署。您可以选择禁用 HTTPS（仅使用 HTTP）或提供证书文件路径以启用安全连接。",
+      
+      "enable_label": "启用 HTTPS",
+      "enable_help": "启用 SSL/TLS 加密以确保安全连接。需要有效的证书文件。",
+      
+      "use_setup_cert_label": "使用与设置程序相同的证书",
+      "use_setup_cert_help": "自动填入当前设置程序正在使用的证书路径",
+      
+      "cert_path_label": "证书文件路径",
+      "cert_path_help": "SSL 证书文件的完整路径（例如：/etc/ssl/certs/domain.crt 或 /etc/letsencrypt/live/domain.com/fullchain.pem）",
+      "cert_path_required": "启用 SSL 时证书路径为必填项",
+      
+      "key_path_label": "私钥文件路径",
+      "key_path_help": "SSL 私钥文件的完整路径（例如：/etc/ssl/private/domain.key 或 /etc/letsencrypt/live/domain.com/privkey.pem）",
+      "key_path_required": "启用 SSL 时私钥路径为必填项"
     },
     
     "goaccess": {
