@@ -23,6 +23,7 @@
   "setup": {
     "title": "BakLab Setup",
     "subtitle": "Configure your BakLab application for production deployment",
+    "page_title": "BakLab Setup",
     
     "steps": {
       "welcome": "Welcome",
