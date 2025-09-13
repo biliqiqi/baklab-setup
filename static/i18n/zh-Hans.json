@@ -283,10 +283,10 @@
     "complete": {
       "title": "设置完成！",
       "emoji": "🎉",
-      "description": "您的 BakLab 应用程序已成功配置。配置文件已生成并准备好部署。",
-      "ready_notice": "准备部署！",
-      "ready_description": "您的配置已生成并验证。点击\"部署应用程序\"自动启动您的 BakLab 服务。",
-      "deploy_button": "🚀 部署应用程序",
+      "description": "您的 BakLab 应用程序已成功配置。您可以使用下面的按钮自动部署，或使用下方显示的命令手动部署。",
+      "ready_notice": "配置文件已生成在 <code>{{outputPath}}</code>",
+      "ready_description": "手动部署命令: <code>cd {{outputPath}} && \\\ndocker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
+      "deploy_button": "部署应用程序",
       "skip_button": "跳过部署"
     },
     

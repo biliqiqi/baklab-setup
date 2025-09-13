@@ -1432,17 +1432,17 @@ class SetupApp {
     
     renderCompleteStep(container) {
         container.innerHTML = `
-            <div class="form-section" style="text-align: center;">
-                <div style="font-size: 4rem; margin-bottom: 1rem;" data-i18n="setup.complete.emoji"></div>
-                <h3 data-i18n="setup.complete.title"></h3>
+            <div class="form-section">
+                <div style="font-size: 4rem; margin-bottom: 1rem; text-align: center;" data-i18n="setup.complete.emoji"></div>
+                <h3 style="text-align: center;" data-i18n="setup.complete.title"></h3>
                 <p style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;" data-i18n="setup.complete.description"></p>
                 
-                <div class="alert alert-info">
-                    <strong data-i18n="setup.complete.ready_notice"></strong><br>
-                    <span data-i18n="setup.complete.ready_description"></span>
+                <div style="background: var(--info-bg, #e3f2fd); border: 1px solid var(--info-border, #1976d2); border-radius: 4px; padding: 1rem; margin: 2rem 0;">
+                    <p style="margin: 0 0 0.5rem 0; color: var(--gray-700); font-weight: 600;" data-i18n-html="setup.complete.ready_notice" id="ready-notice"></p>
+                    <p style="margin: 0; color: var(--gray-600); line-height: 1.6;" data-i18n-html="setup.complete.ready_description" id="ready-description"></p>
                 </div>
                 
-                <div class="btn-group">
+                <div class="btn-group" style="text-align: center;">
                     <button class="btn btn-success btn-lg" onclick="app.startDeployment()" data-i18n="setup.complete.deploy_button">
                     </button>
                     <button class="btn btn-secondary" onclick="app.completeSetup()" data-i18n="setup.complete.skip_button">
@@ -1450,6 +1450,36 @@ class SetupApp {
                 </div>
             </div>
         `;
+        
+        // 应用翻译，包含动态路径参数
+        setTimeout(() => {
+            if (window.i18n) {
+                const outputPath = this.outputPath || './output';
+                const params = { outputPath: outputPath };
+                
+                // 手动设置包含路径的翻译内容
+                const readyNotice = document.getElementById('ready-notice');
+                const readyDescription = document.getElementById('ready-description');
+                
+                if (readyNotice) {
+                    const noticeText = window.i18n.t('setup.complete.ready_notice', params);
+                    readyNotice.innerHTML = noticeText;
+                    // 移除 data-i18n-html 属性，防止被 applyTranslations 覆盖
+                    readyNotice.removeAttribute('data-i18n-html');
+                }
+                if (readyDescription) {
+                    const descText = window.i18n.t('setup.complete.ready_description', params);
+                    // 为长代码命令添加特殊样式处理
+                    const processedText = descText.replace(/<code>([^<]*cd [^<]*)<\/code>/g, '<code class="complete-step-code">$1</code>');
+                    readyDescription.innerHTML = processedText;
+                    // 移除 data-i18n-html 属性，防止被 applyTranslations 覆盖
+                    readyDescription.removeAttribute('data-i18n-html');
+                }
+                
+                // 应用其他翻译
+                window.i18n.applyTranslations();
+            }
+        }, 50);
     }
     
     renderCompleted() {
@@ -2020,7 +2050,12 @@ class SetupApp {
             await this.saveConfig();
             
             // 配置验证通过后，生成配置文件
-            await this.api('POST', '/api/generate');
+            const response = await this.api('POST', '/api/generate');
+            
+            // 保存输出路径信息
+            if (response.data && response.data.output_path) {
+                this.outputPath = response.data.output_path;
+            }
             
             // 清除本地缓存（配置已成功保存到后端）
             this.clearLocalCache();

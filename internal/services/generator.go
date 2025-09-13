@@ -32,6 +32,15 @@ func (g *GeneratorService) SetOutputDir(dir string) {
 	g.outputDir = dir
 }
 
+// GetAbsoluteOutputDir 获取输出目录的绝对路径
+func (g *GeneratorService) GetAbsoluteOutputDir() (string, error) {
+	absPath, err := filepath.Abs(g.outputDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to get absolute path for output directory: %w", err)
+	}
+	return absPath, nil
+}
+
 // ClearOutputDir 清空输出目录
 func (g *GeneratorService) ClearOutputDir() error {
 	// 检查目录是否存在
