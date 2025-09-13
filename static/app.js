@@ -642,10 +642,10 @@ class SetupApp {
                 <h4 style="margin: 2rem 0 1rem 0; color: var(--gray-700);" data-i18n="setup.app.jwt_section_title"></h4>
                 <p style="margin-bottom: 1rem; color: var(--gray-600);" data-i18n="setup.app.jwt_section_description"></p>
                 
-                <div class="info-box" style="background: var(--info-bg, #e3f2fd); border: 1px solid var(--info-border, #1976d2); border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem;">
-                    <h5 style="margin: 0 0 0.5rem 0; color: var(--info-text, #1565c0);" data-i18n="setup.app.jwt_generation_title"></h5>
-                    <div id="jwt-generation-commands" data-i18n-html="setup.app.jwt_generation_commands"></div>
-                </div>
+                <details style="margin-bottom: 1.5rem;">
+                    <summary style="color: var(--gray-600); font-size: 0.9rem; margin-bottom: 0.75rem;" data-i18n="setup.app.jwt_generation_title"></summary>
+                    <div style="background: var(--info-bg, #e3f2fd); border: 1px solid var(--info-border, #1976d2); border-radius: 4px; padding: 1rem;" id="jwt-generation-commands" data-i18n-html="setup.app.jwt_generation_commands"></div>
+                </details>
                 
                 <div class="form-group">
                     <label class="radio-group-label" data-i18n="setup.app.jwt_method_label"></label>
