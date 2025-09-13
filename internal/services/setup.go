@@ -199,6 +199,11 @@ func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 	return nil
 }
 
+// GetOutputDirPath 获取输出目录的绝对路径
+func (s *SetupService) GetOutputDirPath() (string, error) {
+	return s.generator.GetAbsoluteOutputDir()
+}
+
 // StartDeployment 启动部署流程（带实时日志）
 func (s *SetupService) StartDeployment(deploymentID string) error {
 	// 创建部署状态

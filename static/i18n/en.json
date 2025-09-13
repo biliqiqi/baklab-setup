@@ -283,10 +283,10 @@
     "complete": {
       "title": "Setup Complete!",
       "emoji": "🎉",
-      "description": "Your BakLab application has been successfully configured. The configuration files have been generated and are ready for deployment.",
-      "ready_notice": "Ready for Deployment!",
-      "ready_description": "Your configuration has been generated and validated. Click \"Deploy Application\" to automatically start your BakLab services.",
-      "deploy_button": "🚀 Deploy Application",
+      "description": "Your BakLab application has been successfully configured. You can deploy automatically using the button below, or deploy manually using the commands shown below.",
+      "ready_notice": "Configuration files generated in <code>{{outputPath}}</code>",
+      "ready_description": "Manual deployment: <code>cd {{outputPath}} && \\\ndocker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
+      "deploy_button": "Deploy Application",
       "skip_button": "Skip Deployment"
     },
     

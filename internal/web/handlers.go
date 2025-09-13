@@ -325,9 +325,19 @@ func (h *SetupHandlers) GenerateConfigHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// 获取输出目录的绝对路径
+	outputPath, err := h.setupService.GetOutputDirPath()
+	if err != nil {
+		log.Printf("Warning: failed to get output directory path: %v", err)
+		outputPath = "./output" // fallback to relative path
+	}
+
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Message: h.localizeMessage(r, "messages.configuration_files_generated_successfully"),
+		Data: map[string]interface{}{
+			"output_path": outputPath,
+		},
 	}, http.StatusOK)
 }
 
