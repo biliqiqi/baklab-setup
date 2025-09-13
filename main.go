@@ -32,7 +32,8 @@ var (
 	staticDir = flag.String("static", "./static", "Directory containing static files")
 	
 	// 强制要求的 HTTPS 参数
-	certDir  = flag.String("cert-dir", "", "TLS certificate directory (REQUIRED - contains server.crt and server.key)")
+	certFile = flag.String("cert", "", "TLS certificate file path (REQUIRED)")
+	keyFile  = flag.String("key", "", "TLS private key file path (REQUIRED)")
 	domain   = flag.String("domain", "", "Domain name for HTTPS access (REQUIRED)")
 	
 	// 安全选项
@@ -43,49 +44,26 @@ func main() {
 	flag.Parse()
 
 	// 验证必需的 HTTPS 参数
-	if *certDir == "" {
-		log.Fatal("HTTPS certificate directory is required. Use -cert-dir flag.")
+	if *certFile == "" {
+		log.Fatal("TLS certificate file is required. Use -cert flag.")
+	}
+	if *keyFile == "" {
+		log.Fatal("TLS private key file is required. Use -key flag.")
 	}
 	if *domain == "" {
 		log.Fatal("Domain name is required. Use -domain flag.")
 	}
 
 	// 验证证书文件
-	certPath := filepath.Join(*certDir, "server.crt")
-	keyPath := filepath.Join(*certDir, "server.key")
+	certPath := *certFile
+	keyPath := *keyFile
 	
 	if _, err := os.Stat(certPath); os.IsNotExist(err) {
-		// 尝试其他常见证书文件名
-		altCertNames := []string{"tls.crt", "cert.pem", "certificate.crt", "fullchain.pem"}
-		found := false
-		for _, name := range altCertNames {
-			altPath := filepath.Join(*certDir, name)
-			if _, err := os.Stat(altPath); err == nil {
-				certPath = altPath
-				found = true
-				break
-			}
-		}
-		if !found {
-			log.Fatalf("Certificate file not found in %s\n   Expected: server.crt, tls.crt, cert.pem, certificate.crt, or fullchain.pem", *certDir)
-		}
+		log.Fatalf("Certificate file not found: %s", certPath)
 	}
 	
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-		// 尝试其他常见密钥文件名
-		altKeyNames := []string{"tls.key", "cert.key", "private.key", "privkey.pem"}
-		found := false
-		for _, name := range altKeyNames {
-			altPath := filepath.Join(*certDir, name)
-			if _, err := os.Stat(altPath); err == nil {
-				keyPath = altPath
-				found = true
-				break
-			}
-		}
-		if !found {
-			log.Fatalf("Private key file not found in %s\n   Expected: server.key, tls.key, cert.key, private.key, or privkey.pem", *certDir)
-		}
+		log.Fatalf("Private key file not found: %s", keyPath)
 	}
 
 	log.Printf("Starting BakLab HTTPS-Only Setup Service")
@@ -226,8 +204,6 @@ func main() {
 		server.Shutdown(context.Background())
 	}()
 
-	log.Printf("HTTPS setup server running on https://%s:%s", *domain, *port)
-	log.Printf("Access the setup interface at the URL above")
 	log.Printf("Press Ctrl+C to stop the server")
 
 	if err := server.ListenAndServeTLS(certPath, keyPath); err != nil && err != http.ErrServerClosed {
@@ -260,8 +236,6 @@ func setupStrictCORS(domain, port string) func(http.Handler) http.Handler {
 		fmt.Sprintf("https://%s:%s", domain, port),
 		fmt.Sprintf("https://%s", domain), // 支持不带端口的访问
 	}
-	
-	log.Printf("CORS: Strict mode - Only allowing %v", allowedOrigins)
 	
 	return cors.Handler(cors.Options{
 		AllowedOrigins: allowedOrigins,
