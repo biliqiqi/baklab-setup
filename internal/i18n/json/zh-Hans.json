@@ -57,6 +57,8 @@
     "validation.goaccess.invalid_file_type": "请选择有效的 .mmdb 文件",
     "validation.goaccess.file_too_large": "文件大小过大。最大允许大小为100MB",
     "validation.goaccess.geo_file_required": "启用 GoAccess 时必须上传 GeoIP 数据库文件",
+    "validation.ssl.cert_path_required": "启用 SSL 时证书路径为必填项",
+    "validation.ssl.key_path_required": "启用 SSL 时私钥路径为必填项",
     "messages.database_connection_successful": "数据库连接成功",
     "messages.redis_connection_successful": "Redis连接成功",
     "messages.smtp_connection_successful": "SMTP连接成功",

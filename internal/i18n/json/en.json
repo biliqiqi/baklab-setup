@@ -57,6 +57,8 @@
     "validation.goaccess.invalid_file_type": "Please select a valid .mmdb file",
     "validation.goaccess.file_too_large": "File size too large. Maximum allowed size is 100MB",
     "validation.goaccess.geo_file_required": "GeoIP database file is required when GoAccess is enabled",
+    "validation.ssl.cert_path_required": "Certificate path is required when SSL is enabled",
+    "validation.ssl.key_path_required": "Private key path is required when SSL is enabled",
     "messages.database_connection_successful": "Database connection successful",
     "messages.redis_connection_successful": "Redis connection successful",
     "messages.smtp_connection_successful": "SMTP connection successful",

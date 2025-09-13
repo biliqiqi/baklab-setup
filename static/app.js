@@ -61,6 +61,11 @@ class SetupApp {
                 enabled: false,
                 geo_db_path: './geoip/GeoLite2-City.mmdb',
                 has_geo_file: false
+            },
+            ssl: {
+                enabled: false,
+                cert_path: '',
+                key_path: ''
             }
         };
         
@@ -69,6 +74,7 @@ class SetupApp {
             { key: 'database', titleKey: 'setup.steps.database', handler: this.renderDatabaseStep },
             { key: 'redis', titleKey: 'setup.steps.redis', handler: this.renderRedisStep },
             { key: 'app', titleKey: 'setup.steps.application', handler: this.renderAppStep },
+            { key: 'ssl', titleKey: 'setup.steps.ssl', handler: this.renderSSLStep },
             { key: 'goaccess', titleKey: 'setup.steps.goaccess', handler: this.renderGoAccessStep },
             { key: 'admin', titleKey: 'setup.steps.admin_user', handler: this.renderAdminStep },
             { key: 'review', titleKey: 'setup.steps.review', handler: this.renderReviewStep },
@@ -755,6 +761,139 @@ class SetupApp {
         // JWT key 路径输入框变化时清除验证错误
         document.getElementById('jwt-key-path').addEventListener('input', (e) => {
             e.target.setCustomValidity('');
+        });
+    }
+    
+    renderSSLStep(container) {
+        container.innerHTML = `
+            <form id="ssl-form" class="form-section" novalidate>
+                <h3 data-i18n="setup.ssl.title"></h3>
+                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.ssl.description"></p>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="ssl-enabled" name="enabled" ${this.config.ssl.enabled ? 'checked' : ''}>
+                        <span data-i18n="setup.ssl.enable_label"></span>
+                    </label>
+                    <div class="form-help" data-i18n="setup.ssl.enable_help"></div>
+                </div>
+
+                <div id="ssl-config" style="display: ${this.config.ssl.enabled ? 'block' : 'none'};">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="ssl-use-setup-cert" name="use_setup_cert">
+                            <span data-i18n="setup.ssl.use_setup_cert_label"></span>
+                        </label>
+                        <div class="form-help" data-i18n="setup.ssl.use_setup_cert_help"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ssl-cert-path" data-i18n="setup.ssl.cert_path_label"></label>
+                        <input type="text" id="ssl-cert-path" name="cert_path" value="${this.config.ssl.cert_path}" 
+                               placeholder="/path/to/certificate.crt" required>
+                        <div class="invalid-feedback" style="display: none;"></div>
+                        <div class="form-help" data-i18n="setup.ssl.cert_path_help"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ssl-key-path" data-i18n="setup.ssl.key_path_label"></label>
+                        <input type="text" id="ssl-key-path" name="key_path" value="${this.config.ssl.key_path}" 
+                               placeholder="/path/to/private.key" required>
+                        <div class="invalid-feedback" style="display: none;"></div>
+                        <div class="form-help" data-i18n="setup.ssl.key_path_help"></div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
+                </div>
+            </form>
+        `;
+
+        // SSL 启用状态切换
+        document.getElementById('ssl-enabled').addEventListener('change', (e) => {
+            const configDiv = document.getElementById('ssl-config');
+            const certPath = document.getElementById('ssl-cert-path');
+            const keyPath = document.getElementById('ssl-key-path');
+            
+            if (e.target.checked) {
+                configDiv.style.display = 'block';
+                certPath.required = true;
+                keyPath.required = true;
+            } else {
+                configDiv.style.display = 'none';
+                certPath.required = false;
+                keyPath.required = false;
+                // 清除验证错误
+                this.clearFormErrors(document.getElementById('ssl-form'));
+            }
+        });
+
+        // 使用设置程序证书切换
+        document.getElementById('ssl-use-setup-cert').addEventListener('change', async (e) => {
+            const certPath = document.getElementById('ssl-cert-path');
+            const keyPath = document.getElementById('ssl-key-path');
+            
+            if (e.target.checked) {
+                // 获取当前设置程序使用的证书路径
+                try {
+                    const response = await fetch('/api/current-cert-paths', {
+                        method: 'GET',
+                        headers: {
+                            'Setup-Token': this.token
+                        }
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        certPath.value = result.data.cert_path;
+                        keyPath.value = result.data.key_path;
+                        certPath.readOnly = true;
+                        keyPath.readOnly = true;
+                    }
+                } catch (error) {
+                    console.error('Failed to get current cert paths:', error);
+                    e.target.checked = false; // 取消勾选
+                }
+            } else {
+                certPath.readOnly = false;
+                keyPath.readOnly = false;
+            }
+        });
+
+        // 表单提交处理
+        document.getElementById('ssl-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const sslConfig = {
+                enabled: formData.get('enabled') === 'on',
+                cert_path: formData.get('cert_path') || '',
+                key_path: formData.get('key_path') || ''
+            };
+
+            // 验证逻辑
+            let isValid = true;
+            this.clearFormErrors(document.getElementById('ssl-form'));
+
+            if (sslConfig.enabled) {
+                if (!sslConfig.cert_path.trim()) {
+                    const message = window.i18n ? window.i18n.t('setup.ssl.cert_path_required') : 'Certificate path is required when SSL is enabled';
+                    this.showFieldError(document.getElementById('ssl-cert-path'), message);
+                    isValid = false;
+                }
+                if (!sslConfig.key_path.trim()) {
+                    const message = window.i18n ? window.i18n.t('setup.ssl.key_path_required') : 'Private key path is required when SSL is enabled';
+                    this.showFieldError(document.getElementById('ssl-key-path'), message);
+                    isValid = false;
+                }
+            }
+
+            if (isValid) {
+                this.config.ssl = sslConfig;
+                await this.saveConfig();
+                this.nextStep();
+            }
         });
     }
     
@@ -1715,7 +1854,12 @@ class SetupApp {
     // 提交最终配置到后端（只在review步骤使用）
     async saveConfig() {
         try {
-            await this.api('POST', '/api/config', this.config);
+            // 传递当前步骤信息以支持递增验证
+            const configWithStep = {
+                ...this.config,
+                current_step: this.steps[this.currentStep].key
+            };
+            await this.api('POST', '/api/config', configWithStep);
         } catch (error) {
             this.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_generate', {error: error.message}) : 'Failed to save configuration: ' + error.message);
             throw error;

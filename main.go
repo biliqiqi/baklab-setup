@@ -26,6 +26,7 @@ import (
 	"github.com/biliqiqi/baklab-setup/internal/web"
 )
 
+
 var (
 	port     = flag.String("port", "8443", "HTTPS port to run the setup server on")
 	dataDir  = flag.String("data", "./data", "Directory to store setup data")
@@ -43,6 +44,12 @@ var (
 func main() {
 	flag.Parse()
 
+	// 检查开发模式环境变量
+	devMode := os.Getenv("BAKLAB_DEV_MODE") == "true" || os.Getenv("BAKLAB_DEV") == "1"
+	if devMode {
+		log.Printf("Development mode enabled (environment variable detected)")
+	}
+
 	// 验证必需的 HTTPS 参数
 	if *certFile == "" {
 		log.Fatal("TLS certificate file is required. Use -cert flag.")
@@ -54,9 +61,15 @@ func main() {
 		log.Fatal("Domain name is required. Use -domain flag.")
 	}
 
-	// 验证证书文件
-	certPath := *certFile
-	keyPath := *keyFile
+	// 验证证书文件并转换为绝对路径
+	certPath, err := filepath.Abs(*certFile)
+	if err != nil {
+		log.Fatalf("Failed to get absolute path for certificate: %v", err)
+	}
+	keyPath, err := filepath.Abs(*keyFile)
+	if err != nil {
+		log.Fatalf("Failed to get absolute path for private key: %v", err)
+	}
 	
 	if _, err := os.Stat(certPath); os.IsNotExist(err) {
 		log.Fatalf("Certificate file not found: %s", certPath)
@@ -82,9 +95,9 @@ func main() {
 	// 初始化i18n管理器
 	i18nManager := i18n.NewI18nManager(language.English)
 
-	// 创建处理器
-	handlers := web.NewSetupHandlers(setupService, i18nManager)
-	middlewares := web.NewSetupMiddleware(setupService)
+	// 创建处理器，传递开发模式标志
+	handlers := web.NewSetupHandlers(setupService, i18nManager, devMode, certPath, keyPath)
+	middlewares := web.NewSetupMiddleware(setupService, devMode)
 
 	// 设置路由
 	r := chi.NewRouter()
@@ -123,6 +136,7 @@ func main() {
 		r.Post("/validate", handlers.ValidateConfigHandler)
 		r.Post("/test-connections", handlers.TestConnectionsHandler)
 		r.Post("/generate", handlers.GenerateConfigHandler)
+		r.Get("/current-cert-paths", handlers.GetCurrentCertPathsHandler)
 
 		// 文件上传路由
 		r.Post("/upload/geo-file", handlers.UploadGeoFileHandler)

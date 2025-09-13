@@ -29,6 +29,7 @@
       "database": "Database", 
       "redis": "Redis",
       "application": "Application",
+      "ssl": "SSL/HTTPS",
       "goaccess": "Analytics",
       "admin_user": "Admin User",
       "review": "Review",
@@ -180,6 +181,25 @@
       
       "jwt_generation_title": "How to Generate JWT Private Key",
       "jwt_generation_commands": "<strong>Ed25519 (Recommended):</strong><br><code>openssl genpkey -algorithm Ed25519 -out jwt.pem</code><br><br><strong>RSA-3072:</strong><br><code>openssl genrsa -out jwt.pem 3072</code><br><br><strong>Set proper permissions:</strong><br><code>chmod 600 jwt.pem</code>"
+    },
+    
+    "ssl": {
+      "title": "SSL/HTTPS Configuration",
+      "description": "Configure SSL certificates for HTTPS deployment. You can either disable HTTPS (HTTP only) or provide certificate file paths for secure connections.",
+      
+      "enable_label": "Enable HTTPS",
+      "enable_help": "Enable SSL/TLS encryption for secure connections. Requires valid certificate files.",
+      
+      "use_setup_cert_label": "Use same certificates as setup program",
+      "use_setup_cert_help": "Automatically fill in the certificate paths currently used by this setup program",
+      
+      "cert_path_label": "Certificate File Path",
+      "cert_path_help": "Full path to SSL certificate file (e.g., /etc/ssl/certs/domain.crt or /etc/letsencrypt/live/domain.com/fullchain.pem)",
+      "cert_path_required": "Certificate path is required when SSL is enabled",
+      
+      "key_path_label": "Private Key File Path", 
+      "key_path_help": "Full path to SSL private key file (e.g., /etc/ssl/private/domain.key or /etc/letsencrypt/live/domain.com/privkey.pem)",
+      "key_path_required": "Private key path is required when SSL is enabled"
     },
     
     "goaccess": {
