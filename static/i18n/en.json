@@ -22,7 +22,7 @@
   
   "setup": {
     "title": "BakLab Setup",
-    "subtitle": "Configure your BakLab application for production deployment",
+    "subtitle": "Configure your BakLab application for production",
     "page_title": "BakLab Setup",
     
     "steps": {
@@ -34,30 +34,20 @@
       "goaccess": "Analytics",
       "admin_user": "Admin User",
       "review": "Review",
-      "complete": "Complete"
+      "config_complete": "Configuration Complete"
     },
     
     "init": {
       "welcome_title": "Welcome to BakLab Setup",
-      "welcome_description": "This setup wizard will help you configure your BakLab application for production deployment. Click the button below to generate a secure setup token and begin the configuration process.",
+      "welcome_description": "This setup wizard will help you configure your BakLab application for production. Click the button below to generate a secure setup token and begin the configuration process.",
       "language_label": "Setup Interface Language",
-      "language_description": "Choose the language for this setup wizard. This only affects the setup interface, not your deployed application.",
-      "existing_deployment_warning": "⚠️ Existing Deployment Detected",
-      "existing_deployment_details": "Configuration files already exist in the config/ directory. Proceeding will overwrite the existing deployment configuration.",
-      "existing_deployment_effects": "This will:",
-      "existing_deployment_list": [
-        "Replace all configuration files (.env, docker-compose.yml, etc.)",
-        "Generate new security keys and tokens", 
-        "Not affect running services (you'll need to restart them manually)"
-      ],
-      "backup_reminder": "Make sure to backup your current configuration if needed.",
-      "initialize_button": "Start",
-      "proceed_override": "Proceed with Override"
+      "language_description": "Choose the language for this setup wizard. This only affects the setup interface, not your application.",
+      "initialize_button": "Initialize Setup"
     },
     
     "database": {
       "title": "Database Configuration",
-      "description": "Configure your PostgreSQL database connection settings. Connection will be tested after Docker deployment.",
+      "description": "Configure your PostgreSQL database connection settings.",
       
       "service_type_label": "Service Type",
       "service_type_docker": "Docker Compose",
@@ -96,7 +86,7 @@
     
     "redis": {
       "title": "Redis Configuration",
-      "description": "Configure your Redis cache server settings. Connection will be tested after Docker deployment.",
+      "description": "Configure your Redis cache server settings.",
       
       "service_type_label": "Service Type",
       "service_type_docker": "Docker Compose",
@@ -186,7 +176,7 @@
     
     "ssl": {
       "title": "SSL/HTTPS Configuration",
-      "description": "Configure SSL certificates for HTTPS deployment. You can either disable HTTPS (HTTP only) or provide certificate file paths for secure connections.",
+      "description": "Configure SSL certificates for HTTPS. You can either disable HTTPS (HTTP only) or provide certificate file paths for secure connections.",
       
       "enable_label": "Enable HTTPS",
       "enable_help": "Enable SSL/TLS encryption for secure connections. Requires valid certificate files.",
@@ -249,7 +239,7 @@
     
     "review": {
       "title": "Review Configuration",
-      "description": "Please review your configuration before generating the deployment files.",
+      "description": "Please review your configuration before generating the configuration files.",
       "generate_button": "Generate Config",
       
       "sections": {
@@ -280,31 +270,17 @@
       }
     },
     
-    "complete": {
-      "title": "Setup Complete!",
-      "emoji": "🎉",
-      "description": "Your BakLab application has been successfully configured. You can deploy automatically using the button below, or deploy manually using the commands shown below.",
+    "config_complete": {
+      "title": "Configuration Complete!",
+      "description": "Your BakLab application has been successfully configured. You can now manually deploy using the generated configuration files.",
       "ready_notice": "Configuration files generated in <code>{{outputPath}}</code>",
-      "ready_description": "Manual deployment: <code>cd {{outputPath}} && \\\ndocker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
-      "deploy_button": "Deploy Application",
-      "skip_button": "Skip Deployment"
-    },
-    
-    "deployment": {
-      "title": "🚀 Deploying Application",
-      "deployment_id": "Deployment ID: {{id}}",
-      "initializing": "Initializing deployment...",
-      "logs_title": "Deployment Logs",
-      "scroll_button": "📜 Scroll to Bottom",
-      "test_button": "🔍 Test Services",
-      "complete_button": "✅ Complete Setup",
-      "success": "🎉 Deployment completed successfully!",
-      "timeout": "⏰ Deployment timed out, but services may still be starting..."
+      "ready_description": "Manual deployment: <code>cd {{outputPath}} && docker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
+      "complete_button": "Complete Setup"
     },
     
     "completed": {
-      "title": "✅ Setup Complete!",
-      "description": "Your BakLab application has been successfully configured and deployed.",
+      "title": "Setup Complete!",
+      "description": "Your BakLab application has been successfully configured.",
       "congratulations": "Congratulations! Your BakLab instance is now ready for use. The setup service remains available for future configuration updates.",
       
       "next_steps": "Next Steps",
@@ -325,11 +301,6 @@
     "config_saved": "Configuration saved successfully",
     "config_generated": "Configuration files generated successfully",
     "setup_completed": "Setup completed successfully! You can now start the main application.",
-    "deployment_started": "Deployment started",
-    "connection_connected": "Connected to deployment log stream",
-    "connection_lost": "Connection to deployment logs lost",
-    "testing_services": "Testing deployed services...",
-    "services_ok": "✅ All services are responding correctly",
     "validation_failed": "Configuration validation failed",
     "fix_errors": "Please fix the validation errors below and try again.",
     
@@ -341,7 +312,6 @@
       "failed_test_connections": "Connection test failed: {{error}}",
       "failed_tests": "Connection tests failed: {{error}}",
       "failed_generate": "Failed to generate configuration: {{error}}",
-      "failed_deploy": "Failed to start deployment: {{error}}",
       "failed_complete": "Failed to complete setup: {{error}}"
     }
   }

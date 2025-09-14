@@ -142,10 +142,6 @@ func main() {
 		r.Post("/upload/geo-file", handlers.UploadGeoFileHandler)
 		r.Post("/upload/jwt-key-file", handlers.UploadJWTKeyFileHandler)
 
-		// 部署相关路由
-		r.Post("/deploy", handlers.StartDeploymentHandler)
-		r.Get("/deploy/status", handlers.DeploymentStatusHandler)
-		r.Get("/deploy/logs/{deploymentId}", handlers.DeploymentLogsHandler)
 
 		r.Post("/complete", handlers.CompleteSetupHandler)
 	})

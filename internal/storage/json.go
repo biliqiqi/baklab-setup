@@ -14,10 +14,8 @@ import (
 
 // JSONStorage JSON文件存储实现
 type JSONStorage struct {
-	dataDir          string
-	mu               sync.RWMutex
-	deploymentStatus *model.DeploymentStatus
-	deploymentMu     sync.RWMutex
+	dataDir string
+	mu      sync.RWMutex
 }
 
 // NewJSONStorage 创建JSON存储实例
@@ -206,82 +204,16 @@ func (s *JSONStorage) CleanupTempFiles() error {
 	return nil
 }
 
-// SaveDeploymentStatus 保存部署状态
-func (s *JSONStorage) SaveDeploymentStatus(status *model.DeploymentStatus) error {
-	s.deploymentMu.Lock()
-	defer s.deploymentMu.Unlock()
-
-	s.deploymentStatus = status
-
-	data, err := json.MarshalIndent(status, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal deployment status: %w", err)
-	}
-
-	filePath := filepath.Join(s.dataDir, "deployment-status.json")
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write deployment status: %w", err)
-	}
-
-	return nil
-}
-
-// GetDeploymentStatus 获取部署状态
-func (s *JSONStorage) GetDeploymentStatus() (*model.DeploymentStatus, error) {
-	s.deploymentMu.RLock()
-	defer s.deploymentMu.RUnlock()
-
-	if s.deploymentStatus != nil {
-		return s.deploymentStatus, nil
-	}
-
-	filePath := filepath.Join(s.dataDir, "deployment-status.json")
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("deployment not started")
-	}
-
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read deployment status: %w", err)
-	}
-
-	var status model.DeploymentStatus
-	if err := json.Unmarshal(data, &status); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal deployment status: %w", err)
-	}
-
-	s.deploymentStatus = &status
-	return &status, nil
-}
-
-// AppendDeploymentLog 追加部署日志
-func (s *JSONStorage) AppendDeploymentLog(entry model.DeploymentLogEntry) error {
-	s.deploymentMu.Lock()
-	defer s.deploymentMu.Unlock()
-
-	if s.deploymentStatus == nil {
-		return fmt.Errorf("deployment not initialized")
-	}
-
-	s.deploymentStatus.Logs = append(s.deploymentStatus.Logs, entry)
-
-	return nil
-}
-
 // ResetSetupState 重置setup状态，清理所有相关文件
 func (s *JSONStorage) ResetSetupState() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	s.deploymentMu.Lock()
-	defer s.deploymentMu.Unlock()
 
 	// 清理所有setup相关文件
 	filesToRemove := []string{
 		"setup-state.json",
 		"config-draft.json",
 		"tokens.json",
-		"deployment-status.json",
 	}
 
 	for _, filename := range filesToRemove {
@@ -290,9 +222,6 @@ func (s *JSONStorage) ResetSetupState() error {
 			log.Printf("Warning: failed to remove %s: %v", filename, err)
 		}
 	}
-
-	// 清理内存中的部署状态
-	s.deploymentStatus = nil
 
 	log.Printf("Setup state has been reset")
 	return nil

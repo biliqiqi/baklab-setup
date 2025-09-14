@@ -22,7 +22,7 @@ class SetupI18n {
         await this.detectLanguage();
         await this.loadTranslations();
         this.applyTranslations();
-        
+
         document.addEventListener('languageChanged', () => {
             this.applyTranslations();
         });
@@ -49,21 +49,31 @@ class SetupI18n {
     }
 
     async loadTranslations() {
+        let currentLangLoaded = false;
+
         try {
             const response = await fetch(`/static/i18n/${this.currentLanguage}.json`);
             if (response.ok) {
-                this.translations[this.currentLanguage] = await response.json();
+                const data = await response.json();
+                this.translations[this.currentLanguage] = data;
+                currentLangLoaded = true;
             } else {
-                this.loadBuiltinTranslations();
+                console.warn('Failed to fetch translations for', this.currentLanguage, 'status:', response.status);
             }
 
             if (this.currentLanguage !== this.fallbackLanguage) {
                 const fallbackResponse = await fetch(`/static/i18n/${this.fallbackLanguage}.json`);
                 if (fallbackResponse.ok) {
-                    this.translations[this.fallbackLanguage] = await fallbackResponse.json();
+                    const fallbackData = await fallbackResponse.json();
+                    this.translations[this.fallbackLanguage] = fallbackData;
                 } else {
-                    this.loadBuiltinTranslations();
+                    console.warn('Failed to fetch fallback translations for', this.fallbackLanguage, 'status:', fallbackResponse.status);
                 }
+            }
+
+            // 只有在当前语言加载失败时才使用builtin
+            if (!currentLangLoaded) {
+                this.loadBuiltinTranslations();
             }
         } catch (error) {
             console.warn('Failed to load translations:', error);
@@ -74,11 +84,11 @@ class SetupI18n {
         this.translations = {
             'en': {
                 common: { next: "Next", previous: "Previous", save: "Save", cancel: "Cancel", loading: "Loading..." },
-                setup: { title: "BakLab Setup", page_title: "BakLab Setup", welcome: "Welcome to BakLab Setup" }
+                setup: { title: "BakLab Setup", page_title: "BakLab Setup", welcome: "Welcome to BakLab Setup" },
             },
             'zh-Hans': {
                 common: { next: "下一步", previous: "上一步", save: "保存", cancel: "取消", loading: "加载中..." },
-                setup: { title: "BakLab 设置", page_title: "BakLab 设置", welcome: "欢迎使用 BakLab 设置向导" }
+                setup: { title: "BakLab 设置", page_title: "BakLab 设置", welcome: "欢迎使用 BakLab 设置向导" },
             }
         };
     }
@@ -217,13 +227,13 @@ class SetupI18n {
     applyTranslations() {
         // 更新页面标题
         document.title = this.t('setup.page_title');
-        
+
         // 处理带有data-i18n属性的元素
         document.querySelectorAll('[data-i18n]').forEach(element => {
             const key = element.getAttribute('data-i18n');
             const paramsAttr = element.getAttribute('data-i18n-params');
             const params = paramsAttr ? JSON.parse(paramsAttr) : {};
-            
+
             element.textContent = this.t(key, params);
         });
 
@@ -232,7 +242,7 @@ class SetupI18n {
             const key = element.getAttribute('data-i18n-html');
             const paramsAttr = element.getAttribute('data-i18n-params');
             const params = paramsAttr ? JSON.parse(paramsAttr) : {};
-            
+
             element.innerHTML = this.t(key, params);
         });
 
@@ -241,7 +251,7 @@ class SetupI18n {
             const key = element.getAttribute('data-i18n-placeholder');
             const paramsAttr = element.getAttribute('data-i18n-params');
             const params = paramsAttr ? JSON.parse(paramsAttr) : {};
-            
+
             element.placeholder = this.t(key, params);
         });
 
@@ -250,7 +260,7 @@ class SetupI18n {
             const key = element.getAttribute('data-i18n-title');
             const paramsAttr = element.getAttribute('data-i18n-params');
             const params = paramsAttr ? JSON.parse(paramsAttr) : {};
-            
+
             element.title = this.t(key, params);
         });
 
@@ -259,10 +269,11 @@ class SetupI18n {
             const key = element.getAttribute('data-i18n-value');
             const paramsAttr = element.getAttribute('data-i18n-params');
             const params = paramsAttr ? JSON.parse(paramsAttr) : {};
-            
+
             element.value = this.t(key, params);
         });
     }
+
 
     // 获取当前语言
     getCurrentLanguage() {

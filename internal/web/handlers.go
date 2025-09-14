@@ -1,9 +1,7 @@
 package web
 
 import (
-	"crypto/rand"
 	"crypto/x509"
-	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -13,12 +11,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/biliqiqi/baklab-setup/internal/i18n"
 	"github.com/biliqiqi/baklab-setup/internal/model"
 	"github.com/biliqiqi/baklab-setup/internal/services"
-	"github.com/go-chi/chi/v5"
 	"golang.org/x/text/language"
 )
 
@@ -408,187 +404,6 @@ func (h *SetupHandlers) writeJSONResponse(w http.ResponseWriter, response model.
 	}
 }
 
-// StartDeploymentHandler 启动部署
-func (h *SetupHandlers) StartDeploymentHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// 生成部署ID
-	deploymentID, err := generateDeploymentID()
-	if err != nil {
-		h.writeJSONResponse(w, model.SetupResponse{
-			Success: false,
-			Message: h.localizeMessage(r, "messages.failed_generate_deployment_id"),
-		}, http.StatusInternalServerError)
-		return
-	}
-
-	// 启动部署（异步）
-	go func() {
-		if err := h.setupService.StartDeployment(deploymentID); err != nil {
-			log.Printf("Deployment failed: %v", err)
-		}
-	}()
-
-	h.writeJSONResponse(w, model.SetupResponse{
-		Success: true,
-		Message: h.localizeMessage(r, "messages.deployment_started"),
-		Data: map[string]interface{}{
-			"deployment_id": deploymentID,
-		},
-	}, http.StatusOK)
-}
-
-// DeploymentStatusHandler 获取部署状态
-func (h *SetupHandlers) DeploymentStatusHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	status, err := h.setupService.GetDeploymentStatus()
-	if err != nil {
-		h.writeJSONResponse(w, model.SetupResponse{
-			Success: false,
-			Message: h.localizeMessage(r, "messages.failed_get_deployment_status"),
-		}, http.StatusInternalServerError)
-		return
-	}
-
-	h.writeJSONResponse(w, model.SetupResponse{
-		Success: true,
-		Data:    status,
-	}, http.StatusOK)
-}
-
-// DeploymentLogsHandler SSE流式输出部署日志
-func (h *SetupHandlers) DeploymentLogsHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// 获取部署ID
-	deploymentID := chi.URLParam(r, "deploymentId")
-	if deploymentID == "" {
-		http.Error(w, h.localizeMessage(r, "messages.deployment_id_required"), http.StatusBadRequest)
-		return
-	}
-
-	// 设置SSE头
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		http.Error(w, h.localizeMessage(r, "messages.streaming_unsupported"), http.StatusInternalServerError)
-		return
-	}
-
-	// 发送初始连接事件
-	fmt.Fprintf(w, "data: {\"type\":\"connected\",\"message\":\"Log stream connected\"}\n\n")
-	flusher.Flush()
-
-	// 获取当前状态和日志
-	status, err := h.setupService.GetDeploymentStatus()
-	if err != nil {
-		fmt.Fprintf(w, "data: {\"type\":\"error\",\"message\":\"Failed to get deployment status\"}\n\n")
-		flusher.Flush()
-		return
-	}
-
-	// 发送现有日志
-	for _, entry := range status.Logs {
-		logData := map[string]interface{}{
-			"type":      "log",
-			"timestamp": entry.Timestamp.Format(time.RFC3339),
-			"level":     entry.Level,
-			"message":   entry.Message,
-		}
-		logJSON, _ := json.Marshal(logData)
-		fmt.Fprintf(w, "data: %s\n\n", logJSON)
-		flusher.Flush()
-	}
-
-	// 发送状态更新
-	statusData := map[string]interface{}{
-		"type":     "status",
-		"status":   status.Status,
-		"progress": status.Progress,
-		"message":  status.Message,
-	}
-	statusJSON, _ := json.Marshal(statusData)
-	fmt.Fprintf(w, "data: %s\n\n", statusJSON)
-	flusher.Flush()
-
-	// 如果部署已完成，关闭连接
-	if status.Status == "completed" || status.Status == "failed" || status.Status == "timeout" {
-		fmt.Fprintf(w, "data: {\"type\":\"finished\"}\n\n")
-		flusher.Flush()
-		return
-	}
-
-	// 轮询更新（简化实现）
-	ticker := time.NewTicker(2 * time.Second)
-	defer ticker.Stop()
-
-	lastLogCount := len(status.Logs)
-
-	for {
-		select {
-		case <-ticker.C:
-			currentStatus, err := h.setupService.GetDeploymentStatus()
-			if err != nil {
-				continue
-			}
-
-			// 发送新日志
-			if len(currentStatus.Logs) > lastLogCount {
-				for i := lastLogCount; i < len(currentStatus.Logs); i++ {
-					entry := currentStatus.Logs[i]
-					logData := map[string]interface{}{
-						"type":      "log",
-						"timestamp": entry.Timestamp.Format(time.RFC3339),
-						"level":     entry.Level,
-						"message":   entry.Message,
-					}
-					logJSON, _ := json.Marshal(logData)
-					fmt.Fprintf(w, "data: %s\n\n", logJSON)
-				}
-				lastLogCount = len(currentStatus.Logs)
-			}
-
-			// 发送状态更新
-			if currentStatus.Status != status.Status || currentStatus.Progress != status.Progress {
-				statusData := map[string]interface{}{
-					"type":     "status",
-					"status":   currentStatus.Status,
-					"progress": currentStatus.Progress,
-					"message":  currentStatus.Message,
-				}
-				statusJSON, _ := json.Marshal(statusData)
-				fmt.Fprintf(w, "data: %s\n\n", statusJSON)
-				status = currentStatus
-			}
-
-			flusher.Flush()
-
-			// 如果部署完成，结束流
-			if currentStatus.Status == "completed" || currentStatus.Status == "failed" || currentStatus.Status == "timeout" {
-				fmt.Fprintf(w, "data: {\"type\":\"finished\"}\n\n")
-				flusher.Flush()
-				return
-			}
-
-		case <-r.Context().Done():
-			return
-		}
-	}
-}
 
 // UploadGeoFileHandler 处理 GeoIP 数据库文件上传
 func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Request) {
@@ -804,14 +619,6 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 	}, http.StatusOK)
 }
 
-// generateDeploymentID 生成部署ID
-func generateDeploymentID() (string, error) {
-	bytes := make([]byte, 8)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
-}
 
 // validateJWTKeyFile 验证 JWT 私钥文件格式
 // 支持 RSA 和 Ed25519 私钥，格式要求与 BakLab JWT 模块一致

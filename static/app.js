@@ -4,7 +4,6 @@ class SetupApp {
         this.currentStep = 0;
         this.token = null;
         this.shouldAutoScroll = true;
-        this.deploymentEventSource = null;
         this.config = {
             database: {
                 service_type: 'docker',
@@ -78,7 +77,7 @@ class SetupApp {
             { key: 'goaccess', titleKey: 'setup.steps.goaccess', handler: this.renderGoAccessStep },
             { key: 'admin', titleKey: 'setup.steps.admin_user', handler: this.renderAdminStep },
             { key: 'review', titleKey: 'setup.steps.review', handler: this.renderReviewStep },
-            { key: 'complete', titleKey: 'setup.steps.complete', handler: this.renderCompleteStep }
+            { key: 'config_complete', titleKey: 'setup.steps.config_complete', handler: this.renderConfigCompleteStep }
         ];
         
         this.init();
@@ -93,7 +92,6 @@ class SetupApp {
             this.loadFromLocalCache();
             
             // 检查是否有已存在的配置文件
-            await this.checkExistingDeployment();
             
             // 检查URL中的token
             const urlParams = new URLSearchParams(window.location.search);
@@ -208,29 +206,11 @@ class SetupApp {
     }
     
     renderInitStep(container) {
-        const existingWarning = this.showExistingDeploymentWarning ? `
-            <div class="alert alert-warning">
-                <strong data-i18n="setup.init.existing_deployment_warning"></strong><br>
-                <span data-i18n="setup.init.existing_deployment_details"></span>
-                <br><br>
-                <strong data-i18n="setup.init.existing_deployment_effects"></strong>
-                <ul style="margin: 0.5rem 0 0 1.5rem;">
-                    <li data-i18n="setup.init.existing_deployment_list.0"></li>
-                    <li data-i18n="setup.init.existing_deployment_list.1"></li>
-                    <li data-i18n="setup.init.existing_deployment_list.2"></li>
-                </ul>
-                <br>
-                <strong data-i18n="setup.init.backup_reminder"></strong>
-            </div>
-        ` : '';
         
         container.innerHTML = `
             <div class="form-section">
                 <h3 data-i18n="setup.init.welcome_title"></h3>
                 <p style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;" data-i18n="setup.init.welcome_description"></p>
-                
-                ${existingWarning}
-                
                 <div class="form-group" style="margin-bottom: 2rem;">
                     <label class="form-label" data-i18n="setup.init.language_label"></label>
                     <p style="margin-bottom: 1rem; font-size: 0.875rem; color: var(--gray-600);" data-i18n="setup.init.language_description"></p>
@@ -239,7 +219,7 @@ class SetupApp {
                 
                 <div class="btn-group init-actions">
                     <button class="btn btn-primary" onclick="app.initializeSetup()">
-                        <span data-i18n="${this.showExistingDeploymentWarning ? 'setup.init.proceed_override' : 'setup.init.initialize_button'}"></span>
+                        <span data-i18n="setup.init.initialize_button"></span>
                     </button>
                 </div>
             </div>
@@ -1430,22 +1410,19 @@ class SetupApp {
         this.loadConfigReview();
     }
     
-    renderCompleteStep(container) {
+    renderConfigCompleteStep(container) {
         container.innerHTML = `
             <div class="form-section">
-                <div style="font-size: 4rem; margin-bottom: 1rem; text-align: center;" data-i18n="setup.complete.emoji"></div>
-                <h3 style="text-align: center;" data-i18n="setup.complete.title"></h3>
-                <p style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;" data-i18n="setup.complete.description"></p>
+                <h3 style="text-align: center;" data-i18n="setup.config_complete.title"></h3>
+                <p style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;" data-i18n="setup.config_complete.description"></p>
                 
                 <div style="background: var(--info-bg, #e3f2fd); border: 1px solid var(--info-border, #1976d2); border-radius: 4px; padding: 1rem; margin: 2rem 0;">
-                    <p style="margin: 0 0 0.5rem 0; color: var(--gray-700); font-weight: 600;" data-i18n-html="setup.complete.ready_notice" id="ready-notice"></p>
-                    <p style="margin: 0; color: var(--gray-600); line-height: 1.6;" data-i18n-html="setup.complete.ready_description" id="ready-description"></p>
+                    <p style="margin: 0 0 0.5rem 0; color: var(--gray-700); font-weight: 600;" data-i18n-html="setup.config_complete.ready_notice" id="ready-notice"></p>
+                    <p style="margin: 0; color: var(--gray-600); line-height: 1.6;" data-i18n-html="setup.config_complete.ready_description" id="ready-description"></p>
                 </div>
                 
                 <div class="btn-group" style="text-align: center;">
-                    <button class="btn btn-success btn-lg" onclick="app.startDeployment()" data-i18n="setup.complete.deploy_button">
-                    </button>
-                    <button class="btn btn-secondary" onclick="app.completeSetup()" data-i18n="setup.complete.skip_button">
+                    <button class="btn btn-success btn-lg" onclick="app.completeSetup()" data-i18n="setup.config_complete.complete_button">
                     </button>
                 </div>
             </div>
@@ -1462,13 +1439,13 @@ class SetupApp {
                 const readyDescription = document.getElementById('ready-description');
                 
                 if (readyNotice) {
-                    const noticeText = window.i18n.t('setup.complete.ready_notice', params);
+                    const noticeText = window.i18n.t('setup.config_complete.ready_notice', params);
                     readyNotice.innerHTML = noticeText;
                     // 移除 data-i18n-html 属性，防止被 applyTranslations 覆盖
                     readyNotice.removeAttribute('data-i18n-html');
                 }
                 if (readyDescription) {
-                    const descText = window.i18n.t('setup.complete.ready_description', params);
+                    const descText = window.i18n.t('setup.config_complete.ready_description', params);
                     // 为长代码命令添加特殊样式处理
                     const processedText = descText.replace(/<code>([^<]*cd [^<]*)<\/code>/g, '<code class="complete-step-code">$1</code>');
                     readyDescription.innerHTML = processedText;
@@ -1476,44 +1453,10 @@ class SetupApp {
                     readyDescription.removeAttribute('data-i18n-html');
                 }
                 
-                // 应用其他翻译
-                window.i18n.applyTranslations();
             }
         }, 50);
     }
     
-    renderCompleted() {
-        document.getElementById('app').innerHTML = `
-            <div class="container">
-                <div class="header">
-                    <h1>✅ Setup Complete!</h1>
-                    <p>Your BakLab application has been successfully configured and deployed.</p>
-                </div>
-                
-                <div class="setup-card">
-                    <div class="alert alert-success">
-                        <strong>Congratulations!</strong> Your BakLab instance is now ready for use.
-                        The setup service remains available for future configuration updates.
-                    </div>
-                    
-                    <h3>Next Steps</h3>
-                    <ul style="line-height: 1.8; color: var(--gray-700);">
-                        <li><strong>Access your application:</strong> Visit your domain to start using BakLab</li>
-                        <li><strong>Configuration updates:</strong> You can re-run setup anytime to update your configuration</li>
-                        <li><strong>Backups:</strong> Set up regular backups of your data and configuration</li>
-                        <li><strong>Monitoring:</strong> Monitor your services with <code>docker-compose ps</code></li>
-                        <li><strong>Logs:</strong> Check logs with <code>docker-compose logs -f</code></li>
-                    </ul>
-                    
-                    <div class="deployment-actions">
-                        <button class="btn btn-primary" onclick="app.currentStep = 0; app.render();">
-                            Run Setup Again
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
     
     // Step handlers
     async initializeSetup() {
@@ -1866,20 +1809,6 @@ class SetupApp {
         }
     }
     
-    // 检查是否有已存在的部署数据
-    async checkExistingDeployment() {
-        try {
-            // 检查是否有已存在的配置文件（简单检查）
-            const response = await fetch('/config/docker-compose.production.yml');
-            if (response.ok) {
-                // 有已存在的部署文件，显示警告
-                this.showExistingDeploymentWarning = true;
-            }
-        } catch (error) {
-            // 没有配置文件或无法访问，这是正常的
-            this.showExistingDeploymentWarning = false;
-        }
-    }
     
     // 提交最终配置到后端（只在review步骤使用）
     async saveConfig() {
@@ -1930,14 +1859,15 @@ class SetupApp {
                 </div>
             `;
             
-            // 应用翻译到新生成的内容
-            if (window.i18n) {
-                window.i18n.applyTranslations();
-            }
         } catch (error) {
             document.getElementById('config-review').innerHTML = `
                 <div class="alert alert-error">${window.i18n ? window.i18n.t('messages.failed_get_config') : 'Failed to load configuration'}: ${error.message}</div>
             `;
+        }
+
+        // 应用翻译到动态生成的内容
+        if (window.i18n) {
+            window.i18n.applyTranslations();
         }
     }
     
@@ -2078,180 +2008,6 @@ class SetupApp {
             } else {
                 this.showAlert('error', 'Failed to generate configuration: ' + error.message);
             }
-        }
-    }
-    
-    // Deployment functions
-    async startDeployment() {
-        try {
-            const result = await this.api('POST', '/api/deploy');
-            const deploymentId = result.data.deployment_id;
-            
-            this.showDeploymentView(deploymentId);
-            this.connectToDeploymentLogs(deploymentId);
-        } catch (error) {
-            this.showAlert('error', 'Failed to start deployment: ' + error.message);
-        }
-    }
-    
-    showDeploymentView(deploymentId) {
-        document.getElementById('app').innerHTML = `
-            <div class="container">
-                <div class="header">
-                    <h1>🚀 Deploying Application</h1>
-                    <p>Deployment ID: ${deploymentId}</p>
-                </div>
-                
-                <div class="setup-card">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="deployment-progress" style="width: 0%"></div>
-                    </div>
-                    <div class="progress-text" id="deployment-status">Initializing deployment...</div>
-                    
-                    <div class="log-container" id="deployment-logs">
-                        <div class="log-header">
-                            <h3>Deployment Logs</h3>
-                            <button class="btn btn-sm" onclick="this.scrollToBottom()" id="scroll-btn">
-                                📜 Scroll to Bottom
-                            </button>
-                        </div>
-                        <div class="log-output" id="log-output"></div>
-                    </div>
-                    
-                    <div class="deployment-actions" id="deployment-actions" style="display: none;">
-                        <button class="btn btn-success" onclick="app.testDeployedServices()" id="test-btn">
-                            🔍 Test Services
-                        </button>
-                        <button class="btn btn-primary" onclick="app.completeSetup()" id="complete-btn">
-                            ✅ Complete Setup
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    
-    connectToDeploymentLogs(deploymentId) {
-        const eventSource = new EventSource('/api/deploy/logs/' + deploymentId + '?token=' + this.token);
-        
-        eventSource.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            this.handleDeploymentEvent(data);
-        };
-        
-        eventSource.onerror = (error) => {
-            console.error('SSE connection error:', error);
-            this.addLogEntry('error', 'Connection to deployment logs lost');
-        };
-        
-        // Store for cleanup
-        this.deploymentEventSource = eventSource;
-    }
-    
-    handleDeploymentEvent(data) {
-        switch (data.type) {
-            case 'connected':
-                this.addLogEntry('info', 'Connected to deployment log stream');
-                break;
-                
-            case 'log':
-                this.addLogEntry(data.level, data.message, data.timestamp);
-                break;
-                
-            case 'status':
-                this.updateDeploymentStatus(data.status, data.progress, data.message);
-                break;
-                
-            case 'finished':
-                this.onDeploymentFinished();
-                break;
-                
-            case 'error':
-                this.addLogEntry('error', data.message);
-                break;
-        }
-    }
-    
-    addLogEntry(level, message, timestamp) {
-        const logOutput = document.getElementById('log-output');
-        const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
-        
-        const levelClass = {
-            'info': 'log-info',
-            'cmd': 'log-cmd', 
-            'stdout': 'log-stdout',
-            'stderr': 'log-stderr',
-            'success': 'log-success',
-            'error': 'log-error'
-        }[level] || 'log-info';
-        
-        const logEntry = document.createElement('div');
-        logEntry.className = `log-entry ${levelClass}`;
-        logEntry.innerHTML = `
-            <span class="log-time">[${time}]</span>
-            <span class="log-level">${level.toUpperCase()}</span>
-            <span class="log-message">${this.escapeHtml(message)}</span>
-        `;
-        
-        logOutput.appendChild(logEntry);
-        
-        // Auto-scroll to bottom
-        if (this.shouldAutoScroll) {
-            logOutput.scrollTop = logOutput.scrollHeight;
-        }
-    }
-    
-    updateDeploymentStatus(status, progress, message) {
-        const progressBar = document.getElementById('deployment-progress');
-        const statusText = document.getElementById('deployment-status');
-        
-        if (progressBar) {
-            progressBar.style.width = progress + '%';
-        }
-        
-        if (statusText) {
-            statusText.textContent = `${message} (${progress}%)`;
-        }
-        
-        // Show actions when deployment is complete
-        if (status === 'completed' || status === 'timeout') {
-            this.showDeploymentActions(status);
-        }
-    }
-    
-    onDeploymentFinished() {
-        if (this.deploymentEventSource) {
-            this.deploymentEventSource.close();
-            this.deploymentEventSource = null;
-        }
-        
-        this.addLogEntry('info', 'Deployment process finished');
-    }
-    
-    showDeploymentActions(status) {
-        const actionsDiv = document.getElementById('deployment-actions');
-        if (actionsDiv) {
-            actionsDiv.style.display = 'block';
-        }
-        
-        if (status === 'completed') {
-            this.addLogEntry('success', '🎉 Deployment completed successfully!');
-        } else if (status === 'timeout') {
-            this.addLogEntry('info', '⏰ Deployment timed out, but services may still be starting...');
-        }
-    }
-    
-    async testDeployedServices() {
-        try {
-            const result = await this.api('GET', '/api/deploy/status');
-            this.addLogEntry('info', 'Testing deployed services...');
-            
-            // Simulate service testing - in reality this would be a real health check
-            setTimeout(() => {
-                this.addLogEntry('success', '✅ All services are responding correctly');
-            }, 2000);
-        } catch (error) {
-            this.addLogEntry('error', 'Service test failed: ' + error.message);
         }
     }
     
