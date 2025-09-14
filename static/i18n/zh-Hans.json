@@ -22,7 +22,7 @@
   
   "setup": {
     "title": "BakLab 设置",
-    "subtitle": "配置您的 BakLab 应用程序用于生产部署",
+    "subtitle": "配置您的 BakLab 应用程序用于生产",
     "page_title": "BakLab 设置",
     
     "steps": {
@@ -34,30 +34,20 @@
       "goaccess": "分析服务",
       "admin_user": "管理员用户", 
       "review": "检查配置",
-      "complete": "完成"
+      "config_complete": "配置完成"
     },
     
     "init": {
       "welcome_title": "欢迎使用 BakLab 设置向导",
-      "welcome_description": "此设置向导将帮助您配置 BakLab 应用程序用于生产部署。点击下面的按钮生成安全设置令牌并开始配置过程。",
+      "welcome_description": "此设置向导将帮助您配置 BakLab 应用程序用于生产。点击下面的按钮生成安全设置令牌并开始配置过程。",
       "language_label": "设置向导界面语言",
-      "language_description": "选择此设置向导的显示语言。这仅影响设置向导界面，不会影响您部署的应用程序。",
-      "existing_deployment_warning": "⚠️ 检测到现有部署",
-      "existing_deployment_details": "配置文件已存在于 config/ 目录中。继续操作将覆盖现有的部署配置。",
-      "existing_deployment_effects": "这将会：",
-      "existing_deployment_list": [
-        "替换所有配置文件（.env、docker-compose.yml 等）",
-        "生成新的安全密钥和令牌",
-        "不会影响正在运行的服务（需要手动重启）"
-      ],
-      "backup_reminder": "如有需要，请确保备份当前配置。",
-      "initialize_button": "开始",
-      "proceed_override": "继续并覆盖"
+      "language_description": "选择此设置向导的显示语言。这仅影响设置向导界面，不会影响您的应用程序。",
+      "initialize_button": "初始化设置"
     },
     
     "database": {
       "title": "数据库配置",
-      "description": "配置您的 PostgreSQL 数据库连接设置。连接将在 Docker 部署后进行测试。",
+      "description": "配置您的 PostgreSQL 数据库连接设置。连接将在 Docker 配置验证。",
       
       "service_type_label": "服务类型",
       "service_type_docker": "Docker Compose",
@@ -96,7 +86,7 @@
     
     "redis": {
       "title": "Redis 配置",
-      "description": "配置您的 Redis 缓存服务器设置。连接将在 Docker 部署后进行测试。",
+      "description": "配置您的 Redis 缓存服务器设置。连接将在 Docker 配置验证。",
       
       "service_type_label": "服务类型",
       "service_type_docker": "Docker Compose",
@@ -186,7 +176,7 @@
     
     "ssl": {
       "title": "SSL/HTTPS 配置",
-      "description": "配置 SSL 证书以启用 HTTPS 部署。您可以选择禁用 HTTPS（仅使用 HTTP）或提供证书文件路径以启用安全连接。",
+      "description": "配置 SSL 证书以启用 HTTPS。您可以选择禁用 HTTPS（仅使用 HTTP）或提供证书文件路径以启用安全连接。",
       
       "enable_label": "启用 HTTPS",
       "enable_help": "启用 SSL/TLS 加密以确保安全连接。需要有效的证书文件。",
@@ -249,7 +239,7 @@
     
     "review": {
       "title": "检查配置",
-      "description": "请在生成部署文件之前检查您的配置。",
+      "description": "请在生成配置文件之前检查您的配置。",
       "generate_button": "生成配置",
       
       "sections": {
@@ -280,31 +270,18 @@
       }
     },
     
-    "complete": {
-      "title": "设置完成！",
-      "emoji": "🎉",
-      "description": "您的 BakLab 应用程序已成功配置。您可以使用下面的按钮自动部署，或使用下方显示的命令手动部署。",
+    "config_complete": {
+      "title": "配置完成！",
+      "description": "您的 BakLab 应用程序已成功配置。您现在可以使用生成的配置文件手动部署。",
       "ready_notice": "配置文件已生成在 <code>{{outputPath}}</code>",
-      "ready_description": "手动部署命令: <code>cd {{outputPath}} && \\\ndocker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
-      "deploy_button": "部署应用程序",
-      "skip_button": "跳过部署"
+      "ready_description": "手动部署命令: <code>cd {{outputPath}} && docker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
+      "complete_button": "完成设置"
     },
     
-    "deployment": {
-      "title": "🚀 正在部署应用程序",
-      "deployment_id": "部署ID：{{id}}",
-      "initializing": "正在初始化部署...",
-      "logs_title": "部署日志",
-      "scroll_button": "📜 滚动到底部",
-      "test_button": "🔍 测试服务",
-      "complete_button": "✅ 完成设置",
-      "success": "🎉 部署成功完成！",
-      "timeout": "⏰ 部署超时，但服务可能仍在启动中..."
-    },
     
     "completed": {
-      "title": "✅ 设置完成！",
-      "description": "您的 BakLab 应用程序已成功配置和部署。",
+      "title": "设置完成！",
+      "description": "您的 BakLab 应用程序已成功配置。",
       "congratulations": "恭喜！您的 BakLab 实例现在已准备就绪。设置服务仍可用于未来的配置更新。",
       
       "next_steps": "下一步",
@@ -325,11 +302,6 @@
     "config_saved": "配置保存成功",
     "config_generated": "配置文件生成成功",
     "setup_completed": "设置完成成功！现在可以启动主应用程序。",
-    "deployment_started": "部署已启动", 
-    "connection_connected": "已连接到部署日志流",
-    "connection_lost": "与部署日志的连接丢失",
-    "testing_services": "正在测试已部署的服务...",
-    "services_ok": "✅ 所有服务都正常响应",
     "validation_failed": "配置验证失败",
     "fix_errors": "请修复下面的验证错误，然后重试。",
     
@@ -341,7 +313,6 @@
       "failed_test_connections": "连接测试失败：{{error}}",
       "failed_tests": "连接测试失败：{{error}}",
       "failed_generate": "生成配置失败：{{error}}",
-      "failed_deploy": "启动部署失败：{{error}}",
       "failed_complete": "完成设置失败：{{error}}"
     }
   }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -732,77 +731,6 @@ func (g *GeneratorService) generateSecretKey(length int) string {
 	return hex.EncodeToString(bytes)
 }
 
-// LogWriter 实时日志写入器
-type LogWriter struct {
-	level   string
-	onWrite func(model.DeploymentLogEntry)
-}
-
-func (w *LogWriter) Write(p []byte) (n int, err error) {
-	message := strings.TrimSpace(string(p))
-	if message != "" {
-		entry := model.DeploymentLogEntry{
-			Timestamp: time.Now(),
-			Level:     w.level,
-			Message:   message,
-		}
-		w.onWrite(entry)
-	}
-	return len(p), nil
-}
-
-// StartDockerCompose 启动 Docker Compose（带实时日志）
-func (g *GeneratorService) StartDockerCompose(onLog func(model.DeploymentLogEntry)) error {
-	composeFile := filepath.Join(g.outputDir, "docker-compose.production.yml")
-	if _, err := os.Stat(composeFile); os.IsNotExist(err) {
-		return fmt.Errorf("docker-compose.production.yml not found in %s, please generate configuration first", g.outputDir)
-	}
-
-	// 记录命令开始
-	onLog(model.DeploymentLogEntry{
-		Timestamp: time.Now(),
-		Level:     "info",
-		Message:   "Starting Docker Compose deployment...",
-	})
-
-	// 构建命令
-	cmdArgs := []string{"-f", composeFile, "up", "-d"}
-	onLog(model.DeploymentLogEntry{
-		Timestamp: time.Now(),
-		Level:     "cmd",
-		Message:   fmt.Sprintf("docker-compose %s", strings.Join(cmdArgs, " ")),
-	})
-
-	// 创建命令
-	cmd := exec.Command("docker-compose", cmdArgs...)
-	// 工作目录设为setup根目录，这样docker-compose.yml中的相对路径才能正确工作
-	cmd.Dir = "./"
-	cmd.Env = append(os.Environ(), "COMPOSE_PROJECT_NAME=baklab")
-
-	// 设置实时输出
-	stdoutWriter := &LogWriter{level: "stdout", onWrite: onLog}
-	stderrWriter := &LogWriter{level: "stderr", onWrite: onLog}
-	cmd.Stdout = stdoutWriter
-	cmd.Stderr = stderrWriter
-
-	// 执行命令
-	if err := cmd.Run(); err != nil {
-		onLog(model.DeploymentLogEntry{
-			Timestamp: time.Now(),
-			Level:     "error",
-			Message:   fmt.Sprintf("docker-compose failed: %v", err),
-		})
-		return fmt.Errorf("docker-compose failed: %w", err)
-	}
-
-	onLog(model.DeploymentLogEntry{
-		Timestamp: time.Now(),
-		Level:     "success",
-		Message:   "Docker Compose started successfully",
-	})
-
-	return nil
-}
 
 // generateAdditionalConfigs 生成其他必要的配置文件
 func (g *GeneratorService) generateAdditionalConfigs(cfg *model.SetupConfig) error {

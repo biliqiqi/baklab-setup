@@ -133,23 +133,6 @@ type ValidationError struct {
 	Message string `json:"message"`
 }
 
-// DeploymentStatus 部署状态
-type DeploymentStatus struct {
-	ID       string               `json:"id"`
-	Status   string               `json:"status"` // "preparing", "running", "completed", "failed"
-	Progress int                  `json:"progress"`
-	Message  string               `json:"message"`
-	Logs     []DeploymentLogEntry `json:"logs"`
-	StartAt  time.Time            `json:"start_at"`
-	EndAt    *time.Time           `json:"end_at,omitempty"`
-}
-
-// DeploymentLogEntry 部署日志条目
-type DeploymentLogEntry struct {
-	Timestamp time.Time `json:"timestamp"`
-	Level     string    `json:"level"` // "info", "cmd", "stdout", "stderr", "success", "error"
-	Message   string    `json:"message"`
-}
 
 // SetupResponse 通用API响应
 type SetupResponse struct {
