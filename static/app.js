@@ -4,6 +4,17 @@ class SetupApp {
         this.currentStep = 0;
         this.token = null;
         this.shouldAutoScroll = true;
+
+        // 统一的请求锁机制
+        this.requestLocks = {
+            initialize: false,
+            complete: false,
+            generateConfig: false,
+            testDatabase: false,
+            testRedis: false,
+            saveConfig: false,
+            geoFileUpload: false
+        };
         this.config = {
             database: {
                 service_type: 'docker',
@@ -135,6 +146,37 @@ class SetupApp {
         
         return result;
     }
+
+    // 通用的请求锁管理
+    acquireLock(lockName) {
+        if (this.requestLocks[lockName]) {
+            console.log(`Request ${lockName} is already in progress`);
+            return false;
+        }
+        this.requestLocks[lockName] = true;
+        return true;
+    }
+
+    releaseLock(lockName) {
+        this.requestLocks[lockName] = false;
+    }
+
+    // 带锁保护的API调用包装器
+    async protectedApiCall(lockName, apiCall, ...args) {
+        if (!this.acquireLock(lockName)) {
+            return null; // 请求被阻止
+        }
+
+        try {
+            const result = await apiCall.apply(this, args);
+            return result;
+        } catch (error) {
+            this.showAlert('error', error.message);
+            throw error; // 继续抛出错误供调用者处理
+        } finally {
+            this.releaseLock(lockName);
+        }
+    }
     
     render() {
         // Set favicon dynamically
@@ -210,7 +252,6 @@ class SetupApp {
                 <p style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;" data-i18n="setup.init.welcome_description"></p>
                 <div class="form-group" style="margin-bottom: 2rem;">
                     <label class="form-label" data-i18n="setup.init.language_label"></label>
-                    <p style="margin-bottom: 1rem; font-size: 0.875rem; color: var(--gray-600);" data-i18n="setup.init.language_description"></p>
                     <div class="language-switcher-container" id="language-switcher"></div>
                 </div>
                 
@@ -236,14 +277,12 @@ class SetupApp {
                             <input type="radio" name="db-service-type" value="docker" ${this.config.database.service_type === 'docker' ? 'checked' : ''}>
                             <div>
                                 <span data-i18n="setup.database.service_type_docker"></span>
-                                <div class="radio-help" data-i18n="setup.database.service_type_docker_help"></div>
                             </div>
                         </label>
                         <label class="radio-option">
                             <input type="radio" name="db-service-type" value="external" ${this.config.database.service_type === 'external' ? 'checked' : ''}>
                             <div>
                                 <span data-i18n="setup.database.service_type_external"></span>
-                                <div class="radio-help" data-i18n="setup.database.service_type_external_help"></div>
                             </div>
                         </label>
                     </div>
@@ -341,7 +380,6 @@ class SetupApp {
                 <div id="db-test-connection-container" style="display: none;">
                     <div class="form-group">
                         <button type="button" id="db-test-btn" class="btn btn-outline-primary" onclick="app.testDatabaseConnection()" data-i18n="setup.database.test_connection"></button>
-                        <div class="form-help" data-i18n="setup.database.test_connection_help"></div>
                     </div>
                     <div id="db-connection-results" class="connection-results-container"></div>
                 </div>
@@ -401,14 +439,12 @@ class SetupApp {
                             <input type="radio" name="redis-service-type" value="docker" ${this.config.redis.service_type === 'docker' ? 'checked' : ''}>
                             <div>
                                 <span data-i18n="setup.redis.service_type_docker"></span>
-                                <div class="radio-help" data-i18n="setup.redis.service_type_docker_help"></div>
                             </div>
                         </label>
                         <label class="radio-option">
                             <input type="radio" name="redis-service-type" value="external" ${this.config.redis.service_type === 'external' ? 'checked' : ''}>
                             <div>
                                 <span data-i18n="setup.redis.service_type_external"></span>
-                                <div class="radio-help" data-i18n="setup.redis.service_type_external_help"></div>
                             </div>
                         </label>
                     </div>
@@ -469,7 +505,6 @@ class SetupApp {
                 <div id="redis-test-connection-container" style="display: none;">
                     <div class="form-group">
                         <button type="button" id="redis-test-btn" class="btn btn-outline-primary" onclick="app.testRedisConnection()" data-i18n="setup.redis.test_connection"></button>
-                        <div class="form-help" data-i18n="setup.redis.test_connection_help"></div>
                     </div>
                     <div id="redis-connection-results" class="connection-results-container"></div>
                 </div>
@@ -540,19 +575,16 @@ class SetupApp {
                     </div>
                     <div class="form-group">
                         <label for="app-brand"><span data-i18n="setup.app.brand_label"></span> <span data-i18n="common.required"></span></label>
-                        <input 
-                            type="text" 
-                            id="app-brand" 
+                        <input
+                            type="text"
+                            id="app-brand"
                             name="brand"
-                            value="${this.config.app.brand_name}" 
+                            value="${this.config.app.brand_name}"
                             data-i18n-placeholder="setup.app.brand_placeholder"
                             required
                             minlength="2"
                             maxlength="50"
-                            pattern="^[a-zA-Z0-9\\s\\-_]+$"
-                            data-i18n-title="setup.app.brand_error"
                         >
-                        <div class="invalid-feedback" data-i18n="setup.app.brand_error"></div>
                     </div>
                     <div class="form-group">
                         <label for="app-version" data-i18n="setup.app.version_label"></label>
@@ -659,7 +691,7 @@ class SetupApp {
                 
                 <div id="jwt-auto-config" style="display: ${!this.config.app.jwt_key_from_file ? 'block' : 'none'};">
                     <div class="info-box">
-                        <p data-i18n="setup.app.jwt_auto_description"></p>
+                        <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 0;" data-i18n="setup.app.jwt_auto_description"></p>
                     </div>
                 </div>
                 
@@ -720,7 +752,6 @@ class SetupApp {
                         <input type="checkbox" id="ssl-enabled" name="enabled" ${this.config.ssl.enabled ? 'checked' : ''}>
                         <span data-i18n="setup.ssl.enable_label"></span>
                     </label>
-                    <div class="form-help" data-i18n="setup.ssl.enable_help"></div>
                 </div>
 
                 <div id="ssl-config" style="display: ${this.config.ssl.enabled ? 'block' : 'none'};">
@@ -853,7 +884,6 @@ class SetupApp {
                         <input type="checkbox" id="goaccess-enabled" name="enabled" ${this.config.goaccess.enabled ? 'checked' : ''}>
                         <span data-i18n="setup.goaccess.enable_label"></span>
                     </label>
-                    <div class="form-help" data-i18n="setup.goaccess.enable_help"></div>
                 </div>
                 
                 <div id="goaccess-config" style="display: ${this.config.goaccess.enabled ? 'block' : 'none'};">
@@ -864,7 +894,7 @@ class SetupApp {
                             <div class="file-upload-content">
                                 <div class="file-upload-icon">📁</div>
                                 <p data-i18n="setup.goaccess.geo_file_help"></p>
-                                <button type="button" class="btn-secondary" onclick="document.getElementById('goaccess-geo-file').click()">
+                                <button type="button" class="btn-secondary" id="geo-file-select-btn">
                                     <span data-i18n="setup.goaccess.select_file"></span>
                                 </button>
                             </div>
@@ -934,14 +964,41 @@ class SetupApp {
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadArea.classList.remove('drag-over');
+            // 检查是否有上传正在进行中
+            if (this.requestLocks.geoFileUpload) {
+                const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
+                alert(warningMsg);
+                return;
+            }
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 this.handleGeoFileSelect(files[0], fileInfo);
             }
         });
 
+        // 文件选择按钮点击事件
+        const selectBtn = container.querySelector('#geo-file-select-btn');
+        if (selectBtn) {
+            selectBtn.addEventListener('click', () => {
+                // 检查是否有上传正在进行中
+                if (this.requestLocks.geoFileUpload) {
+                    const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
+                    alert(warningMsg);
+                    return;
+                }
+                fileInput.click();
+            });
+        }
+
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
+                // 检查是否有上传正在进行中
+                if (this.requestLocks.geoFileUpload) {
+                    const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
+                    alert(warningMsg);
+                    e.target.value = ''; // 清空文件选择
+                    return;
+                }
                 this.handleGeoFileSelect(e.target.files[0], fileInfo);
             }
         });
@@ -960,110 +1017,137 @@ class SetupApp {
     }
 
     async handleGeoFileSelect(file, fileInfoDivParam) {
-        // 使用传入的参数或从DOM获取元素
+        // 声明所有需要的DOM元素引用
         const fileInfoDiv = fileInfoDivParam || document.getElementById('geo-file-info');
-        
-        if (!fileInfoDiv) {
-            console.error('fileInfoDiv is null in handleGeoFileSelect');
-            return;
-        }
-        
-        if (!file.name.endsWith('.mmdb')) {
-            const errorMsg = window.i18n ? window.i18n.t('setup.goaccess.invalid_file_type') : 
-                           'Please select a valid .mmdb file';
-            alert(errorMsg);
-            return;
-        }
-
-        const maxSize = 100 * 1024 * 1024; // 100MB
-        if (file.size > maxSize) {
-            const errorMsg = window.i18n ? window.i18n.t('setup.goaccess.file_too_large') : 
-                           'File size too large. Maximum allowed size is 100MB';
-            alert(errorMsg);
-            return;
-        }
-
-        // 清除文件上传错误状态
         const uploadArea = document.getElementById('geo-upload-area');
-        const formGroup = uploadArea.closest('.form-group');
-        if (formGroup) {
-            formGroup.classList.remove('error');
-            const errorMessage = formGroup.querySelector('.invalid-feedback');
-            if (errorMessage) {
-                errorMessage.style.display = 'none';
-                errorMessage.textContent = '';
-            }
-        }
-
-        // 隐藏上传区域，显示文件信息
-        const fileUploadContent = document.querySelector('#geo-upload-area .file-upload-content');
-        if (fileUploadContent) {
-            fileUploadContent.style.display = 'none';
-        }
-        
-        fileInfoDiv.style.display = 'block';
-        fileInfoDiv.querySelector('#geo-file-name').textContent = file.name;
-        fileInfoDiv.querySelector('#geo-file-size').textContent = this.formatFileSize(file.size);
-        
-        // 移除之前的进度信息（如果存在）
-        const existingProgress = fileInfoDiv.querySelector('#geo-upload-progress');
-        if (existingProgress) {
-            existingProgress.remove();
-        }
-        
-        // 添加上传进度信息
-        const uploadingText = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'Uploading...';
-        const progressElement = document.createElement('p');
-        progressElement.id = 'geo-upload-progress';
-        progressElement.textContent = uploadingText;
-        fileInfoDiv.appendChild(progressElement);
 
         try {
-            // 上传文件到服务器
-            const formData = new FormData();
-            formData.append('geo_file', file);
-
-            const response = await fetch('/api/upload/geo-file', {
-                method: 'POST',
-                headers: {
-                    'Setup-Token': this.token
-                },
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // 更新UI显示上传成功
-                const progressEl = fileInfoDiv.querySelector('#geo-upload-progress');
-                if (progressEl) {
-                    const successText = window.i18n ? window.i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
-                    progressEl.textContent = successText;
-                    progressEl.style.color = 'var(--success-color)';
+            const result = await this.protectedApiCall('geoFileUpload', async () => {
+                if (!fileInfoDiv) {
+                    console.error('fileInfoDiv is null in handleGeoFileSelect');
+                    return;
                 }
 
-                // 保存文件信息到配置中
-                this.config.goaccess.has_geo_file = true;
-                this.config.goaccess.geo_file_temp_path = result.data.temp_path;
-                this.config.goaccess.original_file_name = file.name;
-                this.config.goaccess.file_size = file.size;
-                
-                console.log('GeoIP file uploaded successfully:', result.data);
-            } else {
-                throw new Error(result.message || 'Upload failed');
-            }
+                if (!file.name.endsWith('.mmdb')) {
+                    const errorMsg = window.i18n ? window.i18n.t('setup.goaccess.invalid_file_type') :
+                                   'Please select a valid .mmdb file';
+                    alert(errorMsg);
+                    return;
+                }
+
+                const maxSize = 100 * 1024 * 1024; // 100MB
+                if (file.size > maxSize) {
+                    const errorMsg = window.i18n ? window.i18n.t('setup.goaccess.file_too_large') :
+                                   'File size too large. Maximum allowed size is 100MB';
+                    alert(errorMsg);
+                    return;
+                }
+
+                // 清除文件上传错误状态
+                if (uploadArea) {
+                    const formGroup = uploadArea.closest('.form-group');
+                    if (formGroup) {
+                        formGroup.classList.remove('error');
+                        const errorMessage = formGroup.querySelector('.invalid-feedback');
+                        if (errorMessage) {
+                            errorMessage.style.display = 'none';
+                            errorMessage.textContent = '';
+                        }
+                    }
+                }
+
+                // 隐藏上传区域，显示文件信息
+                const fileUploadContent = document.querySelector('#geo-upload-area .file-upload-content');
+                if (fileUploadContent) {
+                    fileUploadContent.style.display = 'none';
+                }
+
+                // 在上传过程中禁用拖拽区域
+                if (uploadArea) {
+                    uploadArea.style.pointerEvents = 'none';
+                    uploadArea.style.opacity = '0.6';
+                }
+
+                fileInfoDiv.style.display = 'block';
+                fileInfoDiv.querySelector('#geo-file-name').textContent = file.name;
+                fileInfoDiv.querySelector('#geo-file-size').textContent = this.formatFileSize(file.size);
+
+                // 移除之前的进度信息（如果存在）
+                const existingProgress = fileInfoDiv.querySelector('#geo-upload-progress');
+                if (existingProgress) {
+                    existingProgress.remove();
+                }
+
+                // 添加上传进度信息
+                const uploadingText = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'Uploading...';
+                const progressElement = document.createElement('p');
+                progressElement.id = 'geo-upload-progress';
+                progressElement.textContent = uploadingText;
+                fileInfoDiv.appendChild(progressElement);
+
+                // 上传文件到服务器
+                const formData = new FormData();
+                formData.append('geo_file', file);
+
+                const response = await fetch('/api/upload/geo-file', {
+                    method: 'POST',
+                    headers: {
+                        'Setup-Token': this.token
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // 更新UI显示上传成功
+                    const progressEl = fileInfoDiv.querySelector('#geo-upload-progress');
+                    if (progressEl) {
+                        const successText = window.i18n ? window.i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
+                        progressEl.textContent = successText;
+                        progressEl.style.color = 'var(--success-color)';
+                    }
+
+                    // 保存文件信息到配置中
+                    this.config.goaccess.has_geo_file = true;
+                    this.config.goaccess.geo_file_temp_path = result.data.temp_path;
+                    this.config.goaccess.original_file_name = file.name;
+                    this.config.goaccess.file_size = file.size;
+
+                    // 恢复上传区域交互性
+                    if (uploadArea) {
+                        uploadArea.style.pointerEvents = '';
+                        uploadArea.style.opacity = '';
+                    }
+
+                    console.log('GeoIP file uploaded successfully:', result.data);
+                    return result;
+                } else {
+                    throw new Error(result.message || 'Upload failed');
+                }
+            });
+
+            if (!result) return; // 被锁保护，忽略重复调用
         } catch (error) {
             console.error('File upload error:', error);
-            const progressEl = fileInfoDiv.querySelector('#geo-upload-progress');
-            if (progressEl) {
-                const failedText = window.i18n ? window.i18n.t('setup.app.jwt_upload_failed') : 'Upload failed';
-                progressEl.textContent = `${failedText}: ${error.message}`;
-                progressEl.style.color = 'var(--error-color)';
+            if (fileInfoDiv) {
+                const progressEl = fileInfoDiv.querySelector('#geo-upload-progress');
+                if (progressEl) {
+                    const failedText = window.i18n ? window.i18n.t('setup.app.jwt_upload_failed') : 'Upload failed';
+                    progressEl.textContent = `${failedText}: ${error.message}`;
+                    progressEl.style.color = 'var(--error-color)';
+                }
             }
-            
+
+            // 恢复上传区域交互性
+            if (uploadArea) {
+                uploadArea.style.pointerEvents = '';
+                uploadArea.style.opacity = '';
+            }
+
             // 重置文件选择状态和界面
             this.config.goaccess.has_geo_file = false;
-            
+
             // 显示上传区域，隐藏文件信息
             setTimeout(() => {
                 this.showGeoUploadArea();
@@ -1277,18 +1361,17 @@ class SetupApp {
     renderConfigCompleteStep(container) {
         container.innerHTML = `
             <div class="form-section">
-                <h3 style="text-align: center;" data-i18n="setup.config_complete.title"></h3>
+                <h3 style="text-align: center;">
+                    <span style="color: var(--success-color); margin-right: 0.5rem;">✓</span>
+                    <span data-i18n="setup.config_complete.title"></span>
+                </h3>
                 <p style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;" data-i18n="setup.config_complete.description"></p>
-                
+
                 <div style="background: var(--info-bg, #e3f2fd); border: 1px solid var(--info-border, #1976d2); border-radius: 4px; padding: 1rem; margin: 2rem 0;">
                     <p style="margin: 0 0 0.5rem 0; color: var(--gray-700); font-weight: 600;" data-i18n-html="setup.config_complete.ready_notice" id="ready-notice"></p>
                     <p style="margin: 0; color: var(--gray-600); line-height: 1.6;" data-i18n-html="setup.config_complete.ready_description" id="ready-description"></p>
                 </div>
-                
-                <div class="btn-group" style="text-align: center;">
-                    <button class="btn btn-success btn-lg" onclick="app.completeSetup()" data-i18n="setup.config_complete.complete_button">
-                    </button>
-                </div>
+
             </div>
         `;
         
@@ -1325,11 +1408,16 @@ class SetupApp {
     // Step handlers
     async initializeSetup() {
         try {
-            const result = await this.api('POST', '/api/initialize');
-            this.token = result.data.token;
-            this.nextStep();
+            const result = await this.protectedApiCall('initialize', async () => {
+                const apiResult = await this.api('POST', '/api/initialize');
+                this.token = apiResult.data.token;
+                this.nextStep();
+                return apiResult;
+            });
+
+            if (!result) return; // 被锁保护，忽略重复调用
         } catch (error) {
-            this.showAlert('error', error.message);
+            // 错误已在 protectedApiCall 中显示
         }
     }
     
@@ -1603,12 +1691,16 @@ class SetupApp {
     // 提交最终配置到后端（只在review步骤使用）
     async saveConfig() {
         try {
-            // 传递当前步骤信息以支持递增验证
-            const configWithStep = {
-                ...this.config,
-                current_step: this.steps[this.currentStep].key
-            };
-            await this.api('POST', '/api/config', configWithStep);
+            const result = await this.protectedApiCall('saveConfig', async () => {
+                // 传递当前步骤信息以支持递增验证
+                const configWithStep = {
+                    ...this.config,
+                    current_step: this.steps[this.currentStep].key
+                };
+                return await this.api('POST', '/api/config', configWithStep);
+            });
+
+            if (!result) return; // 被锁保护，忽略重复调用
         } catch (error) {
             this.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_generate', {error: error.message}) : 'Failed to save configuration: ' + error.message);
             throw error;
@@ -1662,11 +1754,11 @@ class SetupApp {
     }
     
     async testDatabaseConnection() {
-        await this.testConnection('database');
+        await this.protectedApiCall('testDatabase', () => this.testConnection('database'));
     }
-    
+
     async testRedisConnection() {
-        await this.testConnection('redis');
+        await this.protectedApiCall('testRedis', () => this.testConnection('redis'));
     }
     
     async testConnection(type) {
@@ -1766,24 +1858,27 @@ class SetupApp {
     
     async generateConfig() {
         try {
-            // 首先提交完整配置到后端进行验证
-            await this.saveConfig();
-            
-            // 配置验证通过后，生成配置文件
-            const response = await this.api('POST', '/api/generate');
-            
-            // 保存输出路径信息
-            if (response.data && response.data.output_path) {
-                this.outputPath = response.data.output_path;
-            }
-            
-            // 清除本地缓存（配置已成功保存到后端）
-            this.clearLocalCache();
-            
-            // 重置上传文件状态（因为临时文件在配置生成后被删除）
-            this.resetUploadStates();
-            
-            this.nextStep();
+            await this.protectedApiCall('generateConfig', async () => {
+                // 首先提交完整配置到后端进行验证
+                await this.saveConfig();
+
+                // 配置验证通过后，生成配置文件
+                const response = await this.api('POST', '/api/generate');
+
+                // 保存输出路径信息
+                if (response.data && response.data.output_path) {
+                    this.outputPath = response.data.output_path;
+                }
+
+                // 清除本地缓存（配置已成功保存到后端）
+                this.clearLocalCache();
+
+                // 重置上传文件状态（因为临时文件在配置生成后被删除）
+                this.resetUploadStates();
+
+                this.nextStep();
+                return response;
+            });
         } catch (error) {
             // 处理后端验证错误
             if (error.message && error.message.includes('validation')) {
@@ -1795,9 +1890,8 @@ class SetupApp {
                     // 如果解析失败，显示通用错误
                     this.showAlert('error', 'Configuration validation failed. Please check all fields and try again.');
                 }
-            } else {
-                this.showAlert('error', 'Failed to generate configuration: ' + error.message);
             }
+            // 其他错误已在 protectedApiCall 中处理
         }
     }
     
@@ -1988,19 +2082,21 @@ class SetupApp {
 
     async completeSetup() {
         try {
-            await this.api('POST', '/api/complete');
-            
-            // 清除本地缓存（设置已完成）
-            this.clearLocalCache();
-            
-            this.showAlert('success', window.i18n ? window.i18n.t('messages.setup_completed') : 'Setup completed successfully! Your BakLab application is ready to use.');
-            
-            // 延迟跳转到完成页面
-            setTimeout(() => {
-                this.renderCompleted();
-            }, 3000);
+            await this.protectedApiCall('complete', async () => {
+                await this.api('POST', '/api/complete');
+
+                // 清除本地缓存（设置已完成）
+                this.clearLocalCache();
+
+                this.showAlert('success', window.i18n ? window.i18n.t('messages.setup_completed') : 'Setup completed successfully! Your BakLab application is ready to use.');
+
+                // 延迟跳转到完成页面
+                setTimeout(() => {
+                    this.renderCompleted();
+                }, 3000);
+            });
         } catch (error) {
-            this.showAlert('error', 'Failed to complete setup: ' + error.message);
+            // 错误已在 protectedApiCall 中处理
         }
     }
     

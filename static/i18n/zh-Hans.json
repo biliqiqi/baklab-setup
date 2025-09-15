@@ -41,7 +41,6 @@
       "welcome_title": "欢迎使用 BakLab 设置向导",
       "welcome_description": "此设置向导将帮助您配置 BakLab 应用程序用于生产。点击下面的按钮生成安全设置令牌并开始配置过程。",
       "language_label": "设置向导界面语言",
-      "language_description": "选择此设置向导的显示语言。这仅影响设置向导界面，不会影响您的应用程序。",
       "initialize_button": "初始化设置"
     },
     
@@ -51,9 +50,7 @@
       
       "service_type_label": "服务类型",
       "service_type_docker": "Docker Compose",
-      "service_type_docker_help": "使用 Docker Compose 中的数据库服务",
       "service_type_external": "外部服务",
-      "service_type_external_help": "连接到现有的 PostgreSQL 服务器",
       
       "host_label": "主机地址",
       "host_placeholder": "localhost",
@@ -77,11 +74,10 @@
       
       "password_label": "密码",
       "password_placeholder": "输入数据库密码",
-      "password_help": "12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+      "password_help": "12-64个字符，包含多种类型（字母、数字、符号）",
       "password_error": "数据库密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
-      
-      "test_connection": "测试连接",
-      "test_connection_help": "使用当前设置测试数据库连接（仅适用于外部服务）"
+
+      "test_connection": "测试连接"
     },
     
     "redis": {
@@ -90,9 +86,7 @@
       
       "service_type_label": "服务类型",
       "service_type_docker": "Docker Compose",
-      "service_type_docker_help": "使用 Docker Compose 中的 Redis 服务",
       "service_type_external": "外部服务",
-      "service_type_external_help": "连接到现有的 Redis 服务器",
       
       "host_label": "主机地址",
       "host_placeholder": "localhost",
@@ -106,11 +100,10 @@
       
       "password_label": "密码",
       "password_placeholder": "输入 Redis 密码",
-      "password_help": "12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+      "password_help": "12-64个字符，包含多种类型（字母、数字、符号）",
       "password_error": "Redis 密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
-      
-      "test_connection": "测试连接",
-      "test_connection_help": "使用当前设置测试 Redis 连接（仅适用于外部服务）"
+
+      "test_connection": "测试连接"
     },
     
     "app": {
@@ -124,7 +117,6 @@
       
       "brand_label": "品牌名称",
       "brand_placeholder": "BakLab",
-      "brand_error": "品牌名称必须是2-50个字符，只能包含字母、数字、空格、连字符和下划线",
       
       "version_label": "应用程序版本",
       "version_help": "选择 BakLab 应用版本",
@@ -181,7 +173,6 @@
       "description": "配置 SSL 证书以启用 HTTPS。您可以选择禁用 HTTPS（仅使用 HTTP）或提供证书文件路径以启用安全连接。",
       
       "enable_label": "启用 HTTPS",
-      "enable_help": "启用 SSL/TLS 加密以确保安全连接。需要有效的证书文件。",
       
       "use_setup_cert_label": "使用与设置程序相同的证书",
       "use_setup_cert_help": "自动填入当前设置程序正在使用的证书路径",
@@ -200,7 +191,6 @@
       "description": "配置 GoAccess 实时网站分析。此服务提供详细的网站流量和访客行为分析。",
       
       "enable_label": "启用 GoAccess 分析",
-      "enable_help": "实时网站分析，支持地理数据可视化",
       
       "geo_file_label": "地理IP数据库文件",
       "geo_file_help": "拖拽 GeoLite2-City.mmdb 文件到此处或点击选择",
@@ -231,7 +221,7 @@
       
       "password_label": "密码", 
       "password_placeholder": "输入安全密码",
-      "password_help": "12-64个字符，包含小写、大写、数字和特殊字符（!@#$%^&*）",
+      "password_help": "12-64个字符，包含多种类型（字母、数字、符号）",
       "password_error": "密码必须是12-64个字符，包含小写、大写、数字和特殊字符（!@#$%^&*）",
       
       "password_confirm_label": "确认密码",
@@ -304,6 +294,7 @@
     "config_saved": "配置保存成功",
     "config_generated": "配置文件生成成功",
     "setup_completed": "设置完成成功！现在可以启动主应用程序。",
+    "setup_already_completed": "设置已经完成。",
     "validation_failed": "配置验证失败",
     "fix_errors": "请修复下面的验证错误，然后重试。",
     
