@@ -514,13 +514,16 @@ class SetupApp {
                     appPasswordField.setCustomValidity(errorMsg);
                     this.showCustomError(appPasswordField, errorMsg);
                 } else {
+                    // 只有当密码确实有效时才清除错误，但保持更友好的清除策略
                     appPasswordField.setCustomValidity('');
                     this.hideCustomError(appPasswordField);
                 }
-            } else {
+            } else if (appPassword === '') {
+                // 只有当密码为完全空白时才清除错误（用户删除了所有内容）
                 appPasswordField.setCustomValidity('');
                 this.hideCustomError(appPasswordField);
             }
+            // 如果密码有内容但不为空字符串，保持当前验证状态不变
         };
 
         // 为相关字段添加实时验证监听器
@@ -528,7 +531,8 @@ class SetupApp {
             const field = document.getElementById(id);
             if (field) {
                 field.addEventListener('input', validateDuplicates.bind(this));
-                field.addEventListener('blur', validateDuplicates.bind(this));
+                // 移除blur事件监听，避免点击空白处时错误消息被清除
+                // field.addEventListener('blur', validateDuplicates.bind(this));
             }
         });
 
@@ -681,16 +685,13 @@ class SetupApp {
                 
                 <div class="form-group">
                     <label for="redis-password"><span data-i18n="setup.redis.password_label"></span> <span data-i18n="common.required"></span></label>
-                    <input 
-                        type="password" 
-                        id="redis-password" 
+                    <input
+                        type="password"
+                        id="redis-password"
                         name="password"
-                        value="${this.config.redis.password}" 
+                        value="${this.config.redis.password}"
                         data-i18n-placeholder="setup.redis.password_placeholder"
                         required
-                        minlength="12"
-                        maxlength="64"
-                        pattern="^[A-Za-z\\d!@#$%^&*]{12,64}$"
                         data-i18n-title="setup.redis.password_error"
                     >
                     <div class="form-help" data-i18n="setup.redis.password_help"></div>
@@ -723,6 +724,11 @@ class SetupApp {
         // 初始化主机字段状态和样式
         this.updateRedisHostField(this.config.redis.service_type);
         this.updateRadioStyles('redis-service-type');
+
+        // 确保DOM渲染完成后再次设置验证规则
+        setTimeout(() => {
+            this.updateRedisHostField(this.config.redis.service_type);
+        }, 100);
         
         // 添加表单提交事件监听
         document.getElementById('redis-form').addEventListener('submit', (e) => {
@@ -1793,6 +1799,8 @@ class SetupApp {
                 passwordField.maxLength = 64;
                 passwordField.pattern = '^[A-Za-z\\d!@#$%^&*]{12,64}$';
             }
+            // Docker模式显示帮助文本
+            this.toggleHelpText('redis-password', true);
         } else {
             hostField.readOnly = false;
             hostField.style.backgroundColor = '';
@@ -1804,6 +1812,15 @@ class SetupApp {
                 passwordField.minLength = 1;
                 passwordField.maxLength = 128;
                 passwordField.pattern = '';  // 移除pattern限制
+                passwordField.removeAttribute('pattern');  // 完全移除pattern属性
+            }
+            // 外部服务模式隐藏帮助文本
+            this.toggleHelpText('redis-password', false);
+
+            // 清除所有自定义验证错误
+            if (passwordField) {
+                passwordField.setCustomValidity('');
+                this.hideCustomError(passwordField);
             }
         }
     }
