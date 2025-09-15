@@ -147,11 +147,13 @@
       "debug_help": "Only enable for development environments",
       
       "jwt_section_title": "JWT Key Configuration",
-      "jwt_section_description": "Configure JWT signing key for authentication tokens. BakLab supports RSA and Ed25519 private keys in PEM format. You can upload a key file or specify the host machine path for Docker volume mounting.",
-      
+      "jwt_section_description": "Configure JWT signing key for authentication tokens. BakLab supports RSA and Ed25519 private keys. You can auto-generate a secure key or specify a host machine path for Docker volume mounting.",
+
       "jwt_method_label": "JWT Key Method",
-      "jwt_method_upload": "Upload Key File",
+      "jwt_method_auto": "Auto-generate JWT key (Recommended)",
       "jwt_method_path": "Specify Host File Path",
+
+      "jwt_auto_description": "A secure Ed25519 private key will be automatically generated for JWT signing. This is the recommended and most secure option.",
       
       "jwt_file_label": "JWT Key File",
       "jwt_file_help": "Drop a JWT private key file here or click to select (.pem format only)",

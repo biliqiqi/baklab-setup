@@ -501,7 +501,8 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 	}, http.StatusOK)
 }
 
-// UploadJWTKeyFileHandler 处理 JWT key 文件上传
+// UploadJWTKeyFileHandler 处理 JWT key 文件上传 (已注释：改为自动生成JWT密钥)
+/*
 func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.Request) {
 	// 限制请求体大小为10MB（JWT key 文件通常很小）
 	maxSize := int64(10 * 1024 * 1024) // 10MB
@@ -618,6 +619,7 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 		},
 	}, http.StatusOK)
 }
+*/
 
 
 // validateJWTKeyFile 验证 JWT 私钥文件格式

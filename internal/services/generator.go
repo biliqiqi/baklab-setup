@@ -1,8 +1,11 @@
 package services
 
 import (
+	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/hex"
+	"encoding/pem"
 	"fmt"
 	"log"
 	"os"
@@ -341,10 +344,10 @@ services:
       TEST: $TEST
     volumes:
       - ./manage_static:/app/manage_static
-      {{ if .App.HasJWTKeyFile -}}
-      - ./keys:/app/keys
-      {{- else -}}
+      {{ if .App.JWTKeyFromFile -}}
       - {{ .App.JWTKeyFilePath }}:/app/keys/jwt-private.pem
+      {{- else -}}
+      - ./keys:/app/keys
       {{- end }}
     {{- if or (eq .Database.ServiceType "docker") (eq .Redis.ServiceType "docker") }}
     depends_on:
@@ -731,6 +734,29 @@ func (g *GeneratorService) generateSecretKey(length int) string {
 	return hex.EncodeToString(bytes)
 }
 
+// GenerateJWTKey 生成JWT私钥（Ed25519格式）
+func (g *GeneratorService) GenerateJWTKey() ([]byte, error) {
+	// 生成Ed25519私钥对
+	_, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate Ed25519 key: %w", err)
+	}
+
+	// 将私钥转换为PKCS#8格式
+	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal private key: %w", err)
+	}
+
+	// 编码为PEM格式
+	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	})
+
+	return privateKeyPEM, nil
+}
+
 
 // generateAdditionalConfigs 生成其他必要的配置文件
 func (g *GeneratorService) generateAdditionalConfigs(cfg *model.SetupConfig) error {
@@ -920,44 +946,34 @@ func (g *GeneratorService) createRequiredDirectories(cfg *model.SetupConfig) err
 	return nil
 }
 
-// HandleJWTKeyFile 处理JWT密钥文件
+// HandleJWTKeyFile 处理JWT密钥文件（自动生成或使用自定义路径）
 func (g *GeneratorService) HandleJWTKeyFile(cfg *model.SetupConfig) error {
-	// 如果用户上传了JWT密钥文件，需要复制到keys目录
-	if cfg.App.HasJWTKeyFile && cfg.App.JWTKeyTempPath != "" {
-		// 获取临时文件路径
-		tempPath := cfg.App.JWTKeyTempPath
-		if _, err := os.Stat(tempPath); os.IsNotExist(err) {
-			return fmt.Errorf("JWT key file no longer available. The uploaded file may have been cleared. Please re-upload your JWT key file and try again")
-		}
-
-		// 确保keys目录存在
-		keysDir := filepath.Join(g.outputDir, "keys")
-		if err := os.MkdirAll(keysDir, 0755); err != nil {
-			return fmt.Errorf("failed to create keys directory: %w", err)
-		}
-
-		// 生成标准的JWT密钥文件名
-		destPath := filepath.Join(keysDir, "jwt-private.pem")
-		
-		// 复制文件
-		if err := g.copyFile(tempPath, destPath); err != nil {
-			return fmt.Errorf("failed to copy JWT key file: %w", err)
-		}
-
-		// 设置正确的文件权限（600 - 只有所有者可读写）
-		if err := os.Chmod(destPath, 0600); err != nil {
-			return fmt.Errorf("failed to set JWT key file permissions: %w", err)
-		}
-
-		// 复制成功后删除临时文件
-		if err := os.Remove(tempPath); err != nil {
-			log.Printf("Warning: failed to remove temporary JWT key file %s: %v", tempPath, err)
-		} else {
-			log.Printf("Temporary JWT key file %s removed successfully", tempPath)
-		}
-
-		log.Printf("JWT key file copied to: %s", destPath)
+	// 确保keys目录存在
+	keysDir := filepath.Join(g.outputDir, "keys")
+	if err := os.MkdirAll(keysDir, 0755); err != nil {
+		return fmt.Errorf("failed to create keys directory: %w", err)
 	}
+
+	// 如果用户指定使用自定义文件路径，则不生成密钥文件
+	if cfg.App.JWTKeyFromFile && cfg.App.JWTKeyFilePath != "" {
+		log.Printf("Using custom JWT key file path: %s", cfg.App.JWTKeyFilePath)
+		return nil
+	}
+
+	// 否则自动生成JWT私钥
+	destPath := filepath.Join(keysDir, "jwt-private.pem")
+
+	jwtKeyPEM, err := g.GenerateJWTKey()
+	if err != nil {
+		return fmt.Errorf("failed to generate JWT key: %w", err)
+	}
+
+	// 写入密钥文件
+	if err := os.WriteFile(destPath, jwtKeyPEM, 0600); err != nil {
+		return fmt.Errorf("failed to write JWT key file: %w", err)
+	}
+
+	log.Printf("JWT key file automatically generated: %s", destPath)
 
 	return nil
 }

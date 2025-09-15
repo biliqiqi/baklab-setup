@@ -140,7 +140,7 @@ func main() {
 
 		// 文件上传路由
 		r.Post("/upload/geo-file", handlers.UploadGeoFileHandler)
-		r.Post("/upload/jwt-key-file", handlers.UploadJWTKeyFileHandler)
+		// r.Post("/upload/jwt-key-file", handlers.UploadJWTKeyFileHandler) // 已注释：改为自动生成JWT密钥
 
 
 		r.Post("/complete", handlers.CompleteSetupHandler)
