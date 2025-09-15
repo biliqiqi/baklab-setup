@@ -281,11 +281,11 @@ func (g *GeneratorService) GenerateDockerConfig(cfg *model.SetupConfig) error {
 services:
   webapp:
     image: ghcr.io/biliqiqi/baklab:$APP_VERSION
-    container_name: "webapp-app-1"
+    container_name: "baklab-webapp"
     restart: always
     environment:
       {{- if eq .Database.ServiceType "docker" }}
-      DB_CONTAINER_NAME: "local-webapp-db"
+      DB_CONTAINER_NAME: "baklab-db"
       DB_HOST: "db"
       DB_PORT: 5432
       {{- else }}
@@ -385,7 +385,7 @@ services:
         - HTTP_PROXY=${HOST_PROXY}
         - HTTPS_PROXY=${HOST_PROXY}
         - NO_PROXY=localhost,127.0.0.1
-    container_name: "local-webapp-db"
+    container_name: "baklab-db"
     restart: always
     volumes:
       - db-data:/var/lib/postgresql/data
@@ -422,7 +422,7 @@ services:
 {{ if eq .Redis.ServiceType "docker" }}
   redis-acl-generator:
     image: alpine:latest
-    container_name: "local-redis-acl-gen"
+    container_name: "baklab-redis-acl-gen"
     environment:
       - REDIS_USER=${REDIS_USER}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
@@ -441,7 +441,7 @@ services:
 
   redis:
     image: valkey/valkey:7.2-alpine
-    container_name: "local-redis"
+    container_name: "baklab-redis"
     depends_on:
       redis-acl-generator:
         condition: service_completed_successfully
@@ -464,7 +464,7 @@ services:
 {{ end }}
   nginx:
     image: nginx:1.25.2-alpine
-    container_name: "local-nginx"
+    container_name: "baklab-nginx"
     restart: always
     environment:
       - APP_LOCAL_HOST=webapp
@@ -491,7 +491,7 @@ services:
       start_period: 10s{{ if .GoAccess.Enabled }}
   goaccess:
     image: allinurl/goaccess:1.7.2
-    container_name: "local-goaccess"
+    container_name: "baklab-goaccess"
     restart: always{{if .SSL.Enabled}}
     entrypoint: 'sh -c "/bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880 --ssl-cert=$$SSL_CERT --ssl-key=$$SSL_KEY"'
     environment:
