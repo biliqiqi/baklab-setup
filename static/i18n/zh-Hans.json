@@ -67,15 +67,30 @@
       "name_help": "以字母开头，只能包含字母/数字/下划线（例如：baklab、my_app_db）",
       "name_error": "数据库名称必须以字母开头，只能包含字母、数字和下划线（最大63个字符）",
       
-      "username_label": "用户名",
-      "username_placeholder": "baklab",
-      "username_help": "PostgreSQL 用户名，以字母开头（例如：baklab、admin_user）",
-      "username_error": "用户名必须以字母开头，只能包含字母、数字和下划线（最大63个字符）",
-      
-      "password_label": "密码",
-      "password_placeholder": "输入数据库密码",
-      "password_help": "12-64个字符，包含多种类型（字母、数字、符号）",
-      "password_error": "数据库密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+      "super_user_title": "PostgreSQL 超级用户配置（仅Docker模式）",
+      "super_username_label": "超级用户名",
+      "super_username_placeholder": "baklab_super",
+      "super_username_help": "PostgreSQL 超级用户，用于Docker容器初始化（例如：baklab_super、postgres_admin）",
+      "super_username_error": "超级用户名必须以字母开头，只能包含字母、数字和下划线（最大63个字符）",
+
+      "super_password_label": "超级用户密码",
+      "super_password_placeholder": "输入超级用户密码",
+      "super_password_help": "PostgreSQL 超级用户的强密码（12-64个字符，包含多种类型）",
+      "super_password_error": "超级用户密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+
+      "app_user_title": "应用用户配置",
+      "app_username_label": "应用用户名",
+      "app_username_placeholder": "baklab",
+      "app_username_help": "PostgreSQL 应用用户，用于应用程序数据库访问（例如：baklab、app_user）",
+      "app_username_error": "应用用户名必须以字母开头，只能包含字母、数字和下划线（最大63个字符）",
+
+      "app_password_label": "应用用户密码",
+      "app_password_placeholder": "输入应用密码",
+      "app_password_help": "应用数据库用户的密码（12-64个字符，包含多种类型）",
+      "app_password_error": "应用密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+
+      "username_duplicate_error": "应用用户名必须与超级用户名不同",
+      "password_duplicate_error": "应用密码必须与超级用户密码不同",
 
       "test_connection": "测试连接"
     },

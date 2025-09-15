@@ -340,40 +340,85 @@ class SetupApp {
                     <div class="invalid-feedback" data-i18n="setup.database.name_error"></div>
                 </div>
                 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="db-user"><span data-i18n="setup.database.username_label"></span> <span data-i18n="common.required"></span></label>
-                        <input 
-                            type="text" 
-                            id="db-user" 
-                            name="username"
-                            value="${this.config.database.user}" 
-                            data-i18n-placeholder="setup.database.username_placeholder"
-                            required
-                            pattern="^[a-zA-Z][a-zA-Z0-9_]*$"
-                            minlength="1"
-                            maxlength="63"
-                            data-i18n-title="setup.database.username_error"
-                        >
-                        <div class="form-help" data-i18n="setup.database.username_help"></div>
-                        <div class="invalid-feedback" data-i18n="setup.database.username_error"></div>
+                <!-- 超级用户配置 -->
+                <div id="db-super-user-config" style="background: var(--gray-50); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h4 style="margin: 0 0 1rem 0; color: var(--gray-700); font-size: 1rem;" data-i18n="setup.database.super_user_title"></h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="db-super-user"><span data-i18n="setup.database.super_username_label"></span> <span data-i18n="common.required"></span></label>
+                            <input
+                                type="text"
+                                id="db-super-user"
+                                name="super_username"
+                                value="${this.config.database.super_user || 'baklab_super'}"
+                                data-i18n-placeholder="setup.database.super_username_placeholder"
+                                required
+                                pattern="^[a-zA-Z][a-zA-Z0-9_]*$"
+                                minlength="1"
+                                maxlength="63"
+                                data-i18n-title="setup.database.super_username_error"
+                            >
+                            <div class="form-help" data-i18n="setup.database.super_username_help"></div>
+                            <div class="invalid-feedback" data-i18n="setup.database.super_username_error"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="db-super-password"><span data-i18n="setup.database.super_password_label"></span> <span data-i18n="common.required"></span></label>
+                            <input
+                                type="password"
+                                id="db-super-password"
+                                name="super_password"
+                                value="${this.config.database.super_password || ''}"
+                                data-i18n-placeholder="setup.database.super_password_placeholder"
+                                required
+                                minlength="12"
+                                maxlength="64"
+                                pattern="^[A-Za-z\\d!@#$%^&*]{12,64}$"
+                                data-i18n-title="setup.database.super_password_error"
+                            >
+                            <div class="form-help" data-i18n="setup.database.super_password_help"></div>
+                            <div class="invalid-feedback" data-i18n="setup.database.super_password_error"></div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="db-password"><span data-i18n="setup.database.password_label"></span> <span data-i18n="common.required"></span></label>
-                        <input 
-                            type="password" 
-                            id="db-password" 
-                            name="password"
-                            value="${this.config.database.password}" 
-                            data-i18n-placeholder="setup.database.password_placeholder"
-                            required
-                            minlength="12"
-                            maxlength="64"
-                            pattern="^[A-Za-z\\d!@#$%^&*]{12,64}$"
-                            data-i18n-title="setup.database.password_error"
-                        >
-                        <div class="form-help" data-i18n="setup.database.password_help"></div>
-                        <div class="invalid-feedback" data-i18n="setup.database.password_error"></div>
+                </div>
+
+                <!-- 应用用户配置 -->
+                <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h4 style="margin: 0 0 1rem 0; color: var(--gray-700); font-size: 1rem;" data-i18n="setup.database.app_user_title"></h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="db-app-user"><span data-i18n="setup.database.app_username_label"></span> <span data-i18n="common.required"></span></label>
+                            <input
+                                type="text"
+                                id="db-app-user"
+                                name="app_username"
+                                value="${this.config.database.app_user || 'baklab'}"
+                                data-i18n-placeholder="setup.database.app_username_placeholder"
+                                required
+                                pattern="^[a-zA-Z][a-zA-Z0-9_]*$"
+                                minlength="1"
+                                maxlength="63"
+                                data-i18n-title="setup.database.app_username_error"
+                            >
+                            <div class="form-help" data-i18n="setup.database.app_username_help"></div>
+                            <div class="invalid-feedback" data-i18n="setup.database.app_username_error"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="db-app-password"><span data-i18n="setup.database.app_password_label"></span> <span data-i18n="common.required"></span></label>
+                            <input
+                                type="password"
+                                id="db-app-password"
+                                name="app_password"
+                                value="${this.config.database.app_password || ''}"
+                                data-i18n-placeholder="setup.database.app_password_placeholder"
+                                required
+                                minlength="12"
+                                maxlength="64"
+                                pattern="^[A-Za-z\\d!@#$%^&*]{12,64}$"
+                                data-i18n-title="setup.database.app_password_error"
+                            >
+                            <div class="form-help" data-i18n="setup.database.app_password_help"></div>
+                            <div class="invalid-feedback" data-i18n="setup.database.app_password_error"></div>
+                        </div>
                     </div>
                 </div>
                 
@@ -404,18 +449,97 @@ class SetupApp {
         this.updateDatabaseHostField(this.config.database.service_type);
         this.updateRadioStyles('db-service-type');
         
+        // 添加实时验证事件监听
+        const validateDuplicates = () => {
+            const superUser = document.getElementById('db-super-user').value;
+            const appUser = document.getElementById('db-app-user').value;
+            const superPassword = document.getElementById('db-super-password').value;
+            const appPassword = document.getElementById('db-app-password').value;
+            const appUserField = document.getElementById('db-app-user');
+            const appPasswordField = document.getElementById('db-app-password');
+
+            // 验证用户名重复 - 重复性验证优先级最高
+            if (superUser === appUser && superUser !== '' && appUser !== '') {
+                const errorMsg = window.i18n ? window.i18n.t('setup.database.username_duplicate_error') : 'Application username must be different from super user username';
+                appUserField.setCustomValidity(errorMsg);
+                // 显示自定义错误提示
+                this.showCustomError(appUserField, errorMsg);
+            } else {
+                appUserField.setCustomValidity('');
+                this.hideCustomError(appUserField);
+            }
+
+            // 验证密码重复 - 重复性验证优先级最高
+            if (superPassword === appPassword && superPassword !== '' && appPassword !== '') {
+                const errorMsg = window.i18n ? window.i18n.t('setup.database.password_duplicate_error') : 'Application password must be different from super user password';
+                appPasswordField.setCustomValidity(errorMsg);
+                // 显示自定义错误提示
+                this.showCustomError(appPasswordField, errorMsg);
+            } else if (appPassword && !this.validateDatabasePasswordStrength(appPassword)) {
+                // 密码强度验证
+                const errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                appPasswordField.setCustomValidity(errorMsg);
+                this.showCustomError(appPasswordField, errorMsg);
+            } else {
+                appPasswordField.setCustomValidity('');
+                this.hideCustomError(appPasswordField);
+            }
+        };
+
+        // 为相关字段添加实时验证监听器
+        ['db-super-user', 'db-app-user', 'db-super-password', 'db-app-password'].forEach(id => {
+            const field = document.getElementById(id);
+            if (field) {
+                field.addEventListener('input', validateDuplicates.bind(this));
+                field.addEventListener('blur', validateDuplicates.bind(this));
+            }
+        });
+
         // 添加表单提交事件监听
         document.getElementById('database-form').addEventListener('submit', (e) => {
             e.preventDefault();
             
             // 验证数据库密码强度
-            const password = document.getElementById('db-password').value;
-            const passwordField = document.getElementById('db-password');
-            
-            if (password && !this.validateDatabasePasswordStrength(password)) {
-                passwordField.setCustomValidity('Password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)');
+            const superPassword = document.getElementById('db-super-password').value;
+            const appPassword = document.getElementById('db-app-password').value;
+            const superPasswordField = document.getElementById('db-super-password');
+            const appPasswordField = document.getElementById('db-app-password');
+
+            // 验证超级用户密码
+            if (superPassword && !this.validateDatabasePasswordStrength(superPassword)) {
+                const errorMsg = window.i18n ? window.i18n.t('setup.database.super_password_error') : 'Super password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                superPasswordField.setCustomValidity(errorMsg);
             } else {
-                passwordField.setCustomValidity('');
+                superPasswordField.setCustomValidity('');
+            }
+
+            // 验证应用用户密码
+            if (appPassword && !this.validateDatabasePasswordStrength(appPassword)) {
+                const errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                appPasswordField.setCustomValidity(errorMsg);
+            } else {
+                appPasswordField.setCustomValidity('');
+            }
+
+            // 验证用户名和密码不重复
+            const superUser = document.getElementById('db-super-user').value;
+            const appUser = document.getElementById('db-app-user').value;
+            const appUserField = document.getElementById('db-app-user');
+
+            if (superUser === appUser && superUser !== '') {
+                const errorMsg = window.i18n ? window.i18n.t('setup.database.username_duplicate_error') : 'Application username must be different from super user username';
+                appUserField.setCustomValidity(errorMsg);
+            } else {
+                appUserField.setCustomValidity('');
+            }
+
+            if (superPassword === appPassword && superPassword !== '') {
+                const errorMsg = window.i18n ? window.i18n.t('setup.database.password_duplicate_error') : 'Application password must be different from super user password';
+                appPasswordField.setCustomValidity(errorMsg);
+            } else if (appPassword && !this.validateDatabasePasswordStrength(appPassword)) {
+                // 重新设置密码强度错误（如果之前被密码重复错误覆盖）
+                const errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                appPasswordField.setCustomValidity(errorMsg);
             }
             
             if (e.target.checkValidity()) {
@@ -1423,15 +1547,27 @@ class SetupApp {
     
     async saveDatabaseConfig() {
         const serviceType = document.querySelector('input[name="db-service-type"]:checked').value;
+
+        // 基础配置
         this.config.database = {
             service_type: serviceType,
             host: serviceType === 'docker' ? 'localhost' : document.getElementById('db-host').value,
             port: parseInt(document.getElementById('db-port').value),
             name: document.getElementById('db-name').value,
-            user: document.getElementById('db-user').value,
-            password: document.getElementById('db-password').value
+            app_user: document.getElementById('db-app-user').value,
+            app_password: document.getElementById('db-app-password').value
         };
-        
+
+        // 仅Docker模式需要超级用户配置
+        if (serviceType === 'docker') {
+            this.config.database.super_user = document.getElementById('db-super-user').value;
+            this.config.database.super_password = document.getElementById('db-super-password').value;
+        } else {
+            // 外部服务模式清空超级用户字段
+            this.config.database.super_user = '';
+            this.config.database.super_password = '';
+        }
+
         // 只保存到本地缓存，不调用后端API
         this.saveToLocalCache();
         this.nextStep();
@@ -1440,7 +1576,10 @@ class SetupApp {
     updateDatabaseHostField(serviceType) {
         const hostField = document.getElementById('db-host');
         const testConnectionContainer = document.getElementById('db-test-connection-container');
-        
+        const superUserConfig = document.getElementById('db-super-user-config');
+        const superUserField = document.getElementById('db-super-user');
+        const superPasswordField = document.getElementById('db-super-password');
+
         if (serviceType === 'docker') {
             hostField.value = 'localhost';
             hostField.readOnly = true;
@@ -1448,11 +1587,31 @@ class SetupApp {
             if (testConnectionContainer) {
                 testConnectionContainer.style.display = 'none';
             }
+            // Docker模式显示超级用户配置并设置为必填
+            if (superUserConfig) {
+                superUserConfig.style.display = 'block';
+            }
+            if (superUserField) {
+                superUserField.required = true;
+            }
+            if (superPasswordField) {
+                superPasswordField.required = true;
+            }
         } else {
             hostField.readOnly = false;
             hostField.style.backgroundColor = '';
             if (testConnectionContainer) {
                 testConnectionContainer.style.display = 'block';
+            }
+            // 外部服务模式隐藏超级用户配置并移除必填
+            if (superUserConfig) {
+                superUserConfig.style.display = 'none';
+            }
+            if (superUserField) {
+                superUserField.required = false;
+            }
+            if (superPasswordField) {
+                superPasswordField.required = false;
             }
         }
     }
@@ -1771,14 +1930,24 @@ class SetupApp {
         testBtn.textContent = window.i18n ? window.i18n.t('common.testing') : 'Testing...';
         
         if (type === 'database') {
+            const serviceType = document.querySelector('input[name="db-service-type"]:checked').value;
             testConfig.database = {
-                service_type: document.querySelector('input[name="db-service-type"]:checked').value,
+                service_type: serviceType,
                 host: document.getElementById('db-host').value,
                 port: parseInt(document.getElementById('db-port').value),
                 name: document.getElementById('db-name').value,
-                user: document.getElementById('db-user').value,
-                password: document.getElementById('db-password').value
+                app_user: document.getElementById('db-app-user').value,
+                app_password: document.getElementById('db-app-password').value
             };
+
+            // 仅Docker模式包含超级用户配置
+            if (serviceType === 'docker') {
+                testConfig.database.super_user = document.getElementById('db-super-user').value;
+                testConfig.database.super_password = document.getElementById('db-super-password').value;
+            } else {
+                testConfig.database.super_user = '';
+                testConfig.database.super_password = '';
+            }
         } else if (type === 'redis') {
             testConfig.redis = {
                 service_type: document.querySelector('input[name="redis-service-type"]:checked').value,
@@ -1987,8 +2156,10 @@ class SetupApp {
                 'database.host': 'db-host',
                 'database.port': 'db-port', 
                 'database.name': 'db-name',
-                'database.user': 'db-user',
-                'database.password': 'db-password',
+                'database.super_user': 'db-super-user',
+                'database.super_password': 'db-super-password',
+                'database.app_user': 'db-app-user',
+                'database.app_password': 'db-app-password',
                 'redis.host': 'redis-host',
                 'redis.port': 'redis-port',
                 'redis.password': 'redis-password',
@@ -2078,6 +2249,44 @@ class SetupApp {
         if (specialRegex.test(password)) typeCount++;
         
         return typeCount >= 3;
+    }
+
+    // 显示自定义错误信息
+    showCustomError(field, message) {
+        const formGroup = field.closest('.form-group');
+        if (formGroup) {
+            // 添加错误样式
+            formGroup.classList.add('error');
+
+            // 查找错误消息容器
+            let errorDiv = formGroup.querySelector('.invalid-feedback');
+            if (errorDiv) {
+                // 更新错误消息并显示
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+
+            // 添加字段边框颜色
+            field.style.borderColor = '#dc2626';
+        }
+    }
+
+    // 隐藏自定义错误信息
+    hideCustomError(field) {
+        const formGroup = field.closest('.form-group');
+        if (formGroup) {
+            // 移除错误样式
+            formGroup.classList.remove('error');
+
+            // 隐藏错误消息
+            const errorDiv = formGroup.querySelector('.invalid-feedback');
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
+
+            // 恢复字段边框颜色
+            field.style.borderColor = '';
+        }
     }
 
     async completeSetup() {

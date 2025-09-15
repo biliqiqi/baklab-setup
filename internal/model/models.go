@@ -25,12 +25,16 @@ type SetupState struct {
 
 // DatabaseConfig 数据库配置
 type DatabaseConfig struct {
-	ServiceType string `json:"service_type" validate:"required,oneof=docker external"` // "docker" for docker compose, "external" for external service
-	Host        string `json:"host" validate:"required"`
-	Port        int    `json:"port" validate:"required,min=1,max=65535"`
-	Name        string `json:"name" validate:"required"`
-	User        string `json:"user" validate:"required"`
-	Password    string `json:"password" validate:"required"`
+	ServiceType   string `json:"service_type" validate:"required,oneof=docker external"` // "docker" for docker compose, "external" for external service
+	Host          string `json:"host" validate:"required"`
+	Port          int    `json:"port" validate:"required,min=1,max=65535"`
+	Name          string `json:"name" validate:"required"`
+	// 超级用户配置 (仅Docker模式需要，用于初始化数据库容器)
+	SuperUser     string `json:"super_user"`
+	SuperPassword string `json:"super_password"`
+	// 应用用户配置
+	AppUser       string `json:"app_user" validate:"required"`
+	AppPassword   string `json:"app_password" validate:"required"`
 }
 
 // RedisConfig Redis配置
