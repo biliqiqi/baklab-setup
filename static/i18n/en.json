@@ -83,11 +83,13 @@
       "app_username_placeholder": "baklab",
       "app_username_help": "PostgreSQL user for application database access (e.g., baklab, app_user)",
       "app_username_error": "App username must start with a letter and contain only letters, numbers, and underscores (max 63 characters)",
+      "app_username_external_error": "Username cannot exceed 128 characters",
 
       "app_password_label": "Application User Password",
       "app_password_placeholder": "Enter application password",
       "app_password_help": "Password for application database user (12-64 chars, mixed types)",
       "app_password_error": "App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+      "app_password_external_error": "App password must be 1-128 characters and cannot contain control characters",
 
       "username_duplicate_error": "Application username must be different from super user username",
       "password_duplicate_error": "Application password must be different from super user password",

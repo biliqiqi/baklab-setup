@@ -107,6 +107,31 @@ func validateDatabasePassword(pwd string) bool {
 	return typeCount >= 3
 }
 
+// validateExternalServicePassword 验证外部服务密码（更宽松的规则，遵循PostgreSQL/Redis规范）
+func validateExternalServicePassword(pwd string) bool {
+	// 外部服务密码验证：只检查基本要求
+	// 1. 不能为空
+	// 2. 长度在1-128字符之间（PostgreSQL和Redis都支持这个范围）
+	// 3. 不包含不安全字符
+	if pwd == "" {
+		return false
+	}
+
+	// PostgreSQL和Redis密码长度限制
+	if len(pwd) < 1 || len(pwd) > 128 {
+		return false
+	}
+
+	// 不能包含控制字符和不可打印字符
+	for _, char := range pwd {
+		if char < 32 || char == 127 {
+			return false
+		}
+	}
+
+	return true
+}
+
 // TestDatabaseConnection 验证数据库配置格式
 func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) model.ConnectionTestResult {
 	result := model.ConnectionTestResult{
@@ -430,16 +455,27 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 			Field:   "database.app_user",
 			Message: "key:validation.database.app_user_required",
 		})
-	} else if len(cfg.AppUser) > 63 {
-		errors = append(errors, model.ValidationError{
-			Field:   "database.app_user",
-			Message: "key:validation.database.app_user_error",
-		})
-	} else if !dbNameRegex.MatchString(cfg.AppUser) {
-		errors = append(errors, model.ValidationError{
-			Field:   "database.app_user",
-			Message: "key:validation.database.app_user_error",
-		})
+	} else if cfg.ServiceType == "docker" {
+		// Docker模式使用严格的用户名验证
+		if len(cfg.AppUser) > 63 {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.app_user",
+				Message: "key:validation.database.app_user_error",
+			})
+		} else if !dbNameRegex.MatchString(cfg.AppUser) {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.app_user",
+				Message: "key:validation.database.app_user_error",
+			})
+		}
+	} else {
+		// 外部服务模式使用宽松的用户名验证
+		if len(cfg.AppUser) > 128 {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.app_user",
+				Message: "key:validation.database.app_user_external_error",
+			})
+		}
 	}
 
 	// 超级用户密码验证 - 仅Docker模式需要（用于初始化数据库容器）
@@ -463,11 +499,27 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 			Field:   "database.app_password",
 			Message: "key:validation.database.app_password_required",
 		})
-	} else if !validateDatabasePassword(cfg.AppPassword) {
-		errors = append(errors, model.ValidationError{
-			Field:   "database.app_password",
-			Message: "key:validation.database.app_password_error",
-		})
+	} else {
+		// 根据服务类型使用不同的密码验证规则
+		var passwordValid bool
+		var errorMessage string
+
+		if cfg.ServiceType == "docker" {
+			// Docker模式使用严格的密码规则
+			passwordValid = validateDatabasePassword(cfg.AppPassword)
+			errorMessage = "key:validation.database.app_password_error"
+		} else {
+			// 外部服务使用宽松的密码规则
+			passwordValid = validateExternalServicePassword(cfg.AppPassword)
+			errorMessage = "key:validation.database.app_password_external_error"
+		}
+
+		if !passwordValid {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.app_password",
+				Message: errorMessage,
+			})
+		}
 	}
 
 	// 验证用户名不能重复 - 仅Docker模式需要检查
@@ -532,17 +584,33 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		})
 	}
 
-	// Password验证（加强要求）
+	// Password验证
 	if cfg.Password == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "redis.password",
 			Message: "Redis password is required",
 		})
-	} else if !validateDatabasePassword(cfg.Password) {
-		errors = append(errors, model.ValidationError{
-			Field:   "redis.password",
-			Message: "Redis password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
-		})
+	} else {
+		// 根据服务类型使用不同的密码验证规则
+		var passwordValid bool
+		var errorMessage string
+
+		if cfg.ServiceType == "docker" {
+			// Docker模式使用严格的密码规则
+			passwordValid = validateDatabasePassword(cfg.Password)
+			errorMessage = "Redis password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)"
+		} else {
+			// 外部服务使用宽松的密码规则
+			passwordValid = validateExternalServicePassword(cfg.Password)
+			errorMessage = "Redis password must be 1-128 characters and cannot contain control characters"
+		}
+
+		if !passwordValid {
+			errors = append(errors, model.ValidationError{
+				Field:   "redis.password",
+				Message: errorMessage,
+			})
+		}
 	}
 
 	return errors

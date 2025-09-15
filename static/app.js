@@ -394,9 +394,6 @@ class SetupApp {
                                 value="${this.config.database.app_user || 'baklab'}"
                                 data-i18n-placeholder="setup.database.app_username_placeholder"
                                 required
-                                pattern="^[a-zA-Z][a-zA-Z0-9_]*$"
-                                minlength="1"
-                                maxlength="63"
                                 data-i18n-title="setup.database.app_username_error"
                             >
                             <div class="form-help" data-i18n="setup.database.app_username_help"></div>
@@ -411,9 +408,6 @@ class SetupApp {
                                 value="${this.config.database.app_password || ''}"
                                 data-i18n-placeholder="setup.database.app_password_placeholder"
                                 required
-                                minlength="12"
-                                maxlength="64"
-                                pattern="^[A-Za-z\\d!@#$%^&*]{12,64}$"
                                 data-i18n-title="setup.database.app_password_error"
                             >
                             <div class="form-help" data-i18n="setup.database.app_password_help"></div>
@@ -442,44 +436,87 @@ class SetupApp {
             radio.addEventListener('change', (e) => {
                 this.updateDatabaseHostField(e.target.value);
                 this.updateRadioStyles('db-service-type');
+                // 服务类型切换时重新验证，清除可能的重复验证错误
+                setTimeout(() => validateDuplicates(), 10);
             });
         });
         
         // 初始化主机字段状态和样式
         this.updateDatabaseHostField(this.config.database.service_type);
         this.updateRadioStyles('db-service-type');
+
+        // 确保DOM渲染完成后再次设置验证规则
+        setTimeout(() => {
+            this.updateDatabaseHostField(this.config.database.service_type);
+        }, 100);
         
         // 添加实时验证事件监听
         const validateDuplicates = () => {
-            const superUser = document.getElementById('db-super-user').value;
-            const appUser = document.getElementById('db-app-user').value;
-            const superPassword = document.getElementById('db-super-password').value;
-            const appPassword = document.getElementById('db-app-password').value;
+            const serviceType = document.querySelector('input[name="db-service-type"]:checked').value;
             const appUserField = document.getElementById('db-app-user');
             const appPasswordField = document.getElementById('db-app-password');
 
-            // 验证用户名重复 - 重复性验证优先级最高
-            if (superUser === appUser && superUser !== '' && appUser !== '') {
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.username_duplicate_error') : 'Application username must be different from super user username';
-                appUserField.setCustomValidity(errorMsg);
-                // 显示自定义错误提示
-                this.showCustomError(appUserField, errorMsg);
+            // 仅Docker模式需要验证重复性
+            if (serviceType === 'docker') {
+                const superUser = document.getElementById('db-super-user').value;
+                const appUser = document.getElementById('db-app-user').value;
+                const superPassword = document.getElementById('db-super-password').value;
+                const appPassword = document.getElementById('db-app-password').value;
+
+                // 验证用户名重复 - 重复性验证优先级最高
+                if (superUser === appUser && superUser !== '' && appUser !== '') {
+                    const errorMsg = window.i18n ? window.i18n.t('setup.database.username_duplicate_error') : 'Application username must be different from super user username';
+                    appUserField.setCustomValidity(errorMsg);
+                    // 显示自定义错误提示
+                    this.showCustomError(appUserField, errorMsg);
+                } else {
+                    appUserField.setCustomValidity('');
+                    this.hideCustomError(appUserField);
+                }
             } else {
+                // 外部服务模式清空可能的重复验证错误
                 appUserField.setCustomValidity('');
                 this.hideCustomError(appUserField);
             }
 
-            // 验证密码重复 - 重复性验证优先级最高
-            if (superPassword === appPassword && superPassword !== '' && appPassword !== '') {
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.password_duplicate_error') : 'Application password must be different from super user password';
-                appPasswordField.setCustomValidity(errorMsg);
-                // 显示自定义错误提示
-                this.showCustomError(appPasswordField, errorMsg);
-            } else if (appPassword && !this.validateDatabasePasswordStrength(appPassword)) {
-                // 密码强度验证
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
-                appPasswordField.setCustomValidity(errorMsg);
-                this.showCustomError(appPasswordField, errorMsg);
+            // 验证密码重复 - 仅Docker模式需要检查
+            if (serviceType === 'docker') {
+                const superPassword = document.getElementById('db-super-password').value;
+                const appPassword = document.getElementById('db-app-password').value;
+
+                if (superPassword === appPassword && superPassword !== '' && appPassword !== '') {
+                    const errorMsg = window.i18n ? window.i18n.t('setup.database.password_duplicate_error') : 'Application password must be different from super user password';
+                    appPasswordField.setCustomValidity(errorMsg);
+                    // 显示自定义错误提示
+                    this.showCustomError(appPasswordField, errorMsg);
+                    return; // 重复错误优先级最高，直接返回
+                }
+            }
+
+            // 验证密码强度 - 两种模式都需要
+            const appPassword = document.getElementById('db-app-password').value;
+            if (appPassword) {
+                // 根据服务类型验证密码强度
+                let isValid = true;
+                let errorMsg = '';
+
+                if (serviceType === 'docker') {
+                    // Docker模式使用严格验证
+                    isValid = this.validateDatabasePasswordStrength(appPassword);
+                    errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                } else {
+                    // 外部服务使用宽松验证
+                    isValid = this.validateExternalServicePassword(appPassword);
+                    errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_external_error') : 'App password must be 1-128 characters and cannot contain control characters';
+                }
+
+                if (!isValid) {
+                    appPasswordField.setCustomValidity(errorMsg);
+                    this.showCustomError(appPasswordField, errorMsg);
+                } else {
+                    appPasswordField.setCustomValidity('');
+                    this.hideCustomError(appPasswordField);
+                }
             } else {
                 appPasswordField.setCustomValidity('');
                 this.hideCustomError(appPasswordField);
@@ -513,34 +550,68 @@ class SetupApp {
                 superPasswordField.setCustomValidity('');
             }
 
-            // 验证应用用户密码
-            if (appPassword && !this.validateDatabasePasswordStrength(appPassword)) {
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
-                appPasswordField.setCustomValidity(errorMsg);
+            // 验证应用用户密码 - 根据服务类型使用不同验证规则
+            const serviceType = document.querySelector('input[name="db-service-type"]:checked').value;
+
+            if (appPassword) {
+                let isValid = true;
+                let errorMsg = '';
+
+                if (serviceType === 'docker') {
+                    // Docker模式使用严格验证
+                    isValid = this.validateDatabasePasswordStrength(appPassword);
+                    errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                } else {
+                    // 外部服务使用宽松验证
+                    isValid = this.validateExternalServicePassword(appPassword);
+                    errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_external_error') : 'App password must be 1-128 characters and cannot contain control characters';
+                }
+
+                if (!isValid) {
+                    appPasswordField.setCustomValidity(errorMsg);
+                } else {
+                    appPasswordField.setCustomValidity('');
+                }
             } else {
                 appPasswordField.setCustomValidity('');
             }
 
-            // 验证用户名和密码不重复
-            const superUser = document.getElementById('db-super-user').value;
-            const appUser = document.getElementById('db-app-user').value;
-            const appUserField = document.getElementById('db-app-user');
+            // 验证用户名和密码不重复 - 仅Docker模式需要检查
+            if (serviceType === 'docker') {
+                const superUser = document.getElementById('db-super-user').value;
+                const appUser = document.getElementById('db-app-user').value;
+                const appUserField = document.getElementById('db-app-user');
 
-            if (superUser === appUser && superUser !== '') {
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.username_duplicate_error') : 'Application username must be different from super user username';
-                appUserField.setCustomValidity(errorMsg);
-            } else {
-                appUserField.setCustomValidity('');
-            }
+                if (superUser === appUser && superUser !== '') {
+                    const errorMsg = window.i18n ? window.i18n.t('setup.database.username_duplicate_error') : 'Application username must be different from super user username';
+                    appUserField.setCustomValidity(errorMsg);
+                } else {
+                    appUserField.setCustomValidity('');
+                }
 
-            if (superPassword === appPassword && superPassword !== '') {
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.password_duplicate_error') : 'Application password must be different from super user password';
-                appPasswordField.setCustomValidity(errorMsg);
-            } else if (appPassword && !this.validateDatabasePasswordStrength(appPassword)) {
-                // 重新设置密码强度错误（如果之前被密码重复错误覆盖）
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
-                appPasswordField.setCustomValidity(errorMsg);
-            }
+                if (superPassword === appPassword && superPassword !== '') {
+                    const errorMsg = window.i18n ? window.i18n.t('setup.database.password_duplicate_error') : 'Application password must be different from super user password';
+                    appPasswordField.setCustomValidity(errorMsg);
+                } else if (appPassword) {
+                        // 根据服务类型重新验证密码强度（如果之前被密码重复错误覆盖）
+                        let isValid = true;
+                        let errorMsg = '';
+
+                        if (serviceType === 'docker') {
+                            // Docker模式使用严格验证
+                            isValid = this.validateDatabasePasswordStrength(appPassword);
+                            errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                        } else {
+                            // 外部服务使用宽松验证
+                            isValid = this.validateExternalServicePassword(appPassword);
+                            errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_external_error') : 'App password must be 1-128 characters and cannot contain control characters';
+                        }
+
+                        if (!isValid) {
+                            appPasswordField.setCustomValidity(errorMsg);
+                        }
+                    }
+                }
             
             if (e.target.checkValidity()) {
                 app.saveDatabaseConfig();
@@ -660,9 +731,27 @@ class SetupApp {
             // 验证Redis密码强度
             const password = document.getElementById('redis-password').value;
             const passwordField = document.getElementById('redis-password');
-            
-            if (password && !this.validateDatabasePasswordStrength(password)) {
-                passwordField.setCustomValidity('Password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)');
+            const serviceType = document.querySelector('input[name="redis-service-type"]:checked').value;
+
+            if (password) {
+                let isValid = true;
+                let errorMessage = '';
+
+                if (serviceType === 'docker') {
+                    // Docker模式使用严格验证
+                    isValid = this.validateDatabasePasswordStrength(password);
+                    errorMessage = 'Password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                } else {
+                    // 外部服务使用宽松验证
+                    isValid = this.validateExternalServicePassword(password);
+                    errorMessage = 'Password must be 1-128 characters and cannot contain control characters';
+                }
+
+                if (!isValid) {
+                    passwordField.setCustomValidity(errorMessage);
+                } else {
+                    passwordField.setCustomValidity('');
+                }
             } else {
                 passwordField.setCustomValidity('');
             }
@@ -1579,6 +1668,8 @@ class SetupApp {
         const superUserConfig = document.getElementById('db-super-user-config');
         const superUserField = document.getElementById('db-super-user');
         const superPasswordField = document.getElementById('db-super-password');
+        const appUserField = document.getElementById('db-app-user');
+        const appPasswordField = document.getElementById('db-app-password');
 
         if (serviceType === 'docker') {
             hostField.value = 'localhost';
@@ -1597,6 +1688,20 @@ class SetupApp {
             if (superPasswordField) {
                 superPasswordField.required = true;
             }
+            // Docker模式使用严格的用户名和密码验证
+            if (appUserField) {
+                appUserField.minLength = 1;
+                appUserField.maxLength = 63;
+                appUserField.pattern = '^[a-zA-Z][a-zA-Z0-9_]*$';
+            }
+            if (appPasswordField) {
+                appPasswordField.minLength = 12;
+                appPasswordField.maxLength = 64;
+                appPasswordField.pattern = '^[A-Za-z\\d!@#$%^&*]{12,64}$';
+            }
+            // Docker模式显示帮助文本
+            this.toggleHelpText('db-app-user', true);
+            this.toggleHelpText('db-app-password', true);
         } else {
             hostField.readOnly = false;
             hostField.style.backgroundColor = '';
@@ -1613,9 +1718,48 @@ class SetupApp {
             if (superPasswordField) {
                 superPasswordField.required = false;
             }
+            // 外部服务模式使用宽松的用户名和密码验证
+            if (appUserField) {
+                appUserField.minLength = 1;
+                appUserField.maxLength = 128;
+                appUserField.pattern = '';  // 移除用户名pattern限制
+                appUserField.removeAttribute('pattern');  // 完全移除pattern属性
+            }
+            if (appPasswordField) {
+                appPasswordField.minLength = 1;
+                appPasswordField.maxLength = 128;
+                appPasswordField.pattern = '';  // 移除密码pattern限制
+                appPasswordField.removeAttribute('pattern');  // 完全移除pattern属性
+            }
+            // 外部服务模式隐藏帮助文本
+            this.toggleHelpText('db-app-user', false);
+            this.toggleHelpText('db-app-password', false);
+
+            // 清除所有自定义验证错误
+            if (appUserField) {
+                appUserField.setCustomValidity('');
+                this.hideCustomError(appUserField);
+            }
+            if (appPasswordField) {
+                appPasswordField.setCustomValidity('');
+                this.hideCustomError(appPasswordField);
+            }
         }
     }
-    
+
+    toggleHelpText(fieldId, show) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            const formGroup = field.closest('.form-group');
+            if (formGroup) {
+                const helpText = formGroup.querySelector('.form-help');
+                if (helpText) {
+                    helpText.style.display = show ? 'block' : 'none';
+                }
+            }
+        }
+    }
+
     async saveRedisConfig() {
         const serviceType = document.querySelector('input[name="redis-service-type"]:checked').value;
         this.config.redis = {
@@ -1634,7 +1778,8 @@ class SetupApp {
     updateRedisHostField(serviceType) {
         const hostField = document.getElementById('redis-host');
         const testConnectionContainer = document.getElementById('redis-test-connection-container');
-        
+        const passwordField = document.getElementById('redis-password');
+
         if (serviceType === 'docker') {
             hostField.value = 'localhost';
             hostField.readOnly = true;
@@ -1642,11 +1787,23 @@ class SetupApp {
             if (testConnectionContainer) {
                 testConnectionContainer.style.display = 'none';
             }
+            // Docker模式使用严格的密码验证
+            if (passwordField) {
+                passwordField.minLength = 12;
+                passwordField.maxLength = 64;
+                passwordField.pattern = '^[A-Za-z\\d!@#$%^&*]{12,64}$';
+            }
         } else {
             hostField.readOnly = false;
             hostField.style.backgroundColor = '';
             if (testConnectionContainer) {
                 testConnectionContainer.style.display = 'block';
+            }
+            // 外部服务模式使用宽松的密码验证
+            if (passwordField) {
+                passwordField.minLength = 1;
+                passwordField.maxLength = 128;
+                passwordField.pattern = '';  // 移除pattern限制
             }
         }
     }
@@ -2249,6 +2406,30 @@ class SetupApp {
         if (specialRegex.test(password)) typeCount++;
         
         return typeCount >= 3;
+    }
+
+    validateExternalServicePassword(password) {
+        // 外部服务密码验证：更宽松的规则
+        // 1. 不能为空
+        // 2. 长度在1-128字符之间
+        // 3. 不包含控制字符
+        if (!password || password.length === 0) {
+            return false;
+        }
+
+        if (password.length > 128) {
+            return false;
+        }
+
+        // 不能包含控制字符和不可打印字符
+        for (let i = 0; i < password.length; i++) {
+            const charCode = password.charCodeAt(i);
+            if (charCode < 32 || charCode === 127) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // 显示自定义错误信息

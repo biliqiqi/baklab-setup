@@ -83,11 +83,13 @@
       "app_username_placeholder": "baklab",
       "app_username_help": "PostgreSQL 应用用户，用于应用程序数据库访问（例如：baklab、app_user）",
       "app_username_error": "应用用户名必须以字母开头，只能包含字母、数字和下划线（最大63个字符）",
+      "app_username_external_error": "用户名不能超过128个字符",
 
       "app_password_label": "应用用户密码",
       "app_password_placeholder": "输入应用密码",
       "app_password_help": "应用数据库用户的密码（12-64个字符，包含多种类型）",
       "app_password_error": "应用密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+      "app_password_external_error": "应用密码必须是1-128个字符，不能包含控制字符",
 
       "username_duplicate_error": "应用用户名必须与超级用户名不同",
       "password_duplicate_error": "应用密码必须与超级用户密码不同",
