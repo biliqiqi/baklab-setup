@@ -436,7 +436,8 @@ services:
         echo "user default +ping on >$$REDISCLI_AUTH" > /config/users.acl
         echo "user $$REDIS_USER +@all ~* on >$$REDIS_PASSWORD" >> /config/users.acl
         echo "ACL file generated successfully"
-        cat /config/users.acl
+        echo "Users configured: default, $$REDIS_USER"
+        echo "ACL file location: /config/users.acl"
       '
 
   redis:
