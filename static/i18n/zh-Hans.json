@@ -147,11 +147,13 @@
       "debug_help": "仅在开发环境中启用",
       
       "jwt_section_title": "JWT 密钥配置",
-      "jwt_section_description": "配置用于身份验证令牌的 JWT 签名密钥。BakLab 支持 PEM 格式的 RSA 和 Ed25519 私钥。您可以上传密钥文件或指定宿主机文件路径用于 Docker 卷挂载。",
-      
+      "jwt_section_description": "配置用于身份验证令牌的 JWT 签名密钥。BakLab 支持 RSA 和 Ed25519 私钥。您可以自动生成安全的密钥或指定宿主机文件路径用于 Docker 卷挂载。",
+
       "jwt_method_label": "JWT 密钥方式",
-      "jwt_method_upload": "上传密钥文件",
+      "jwt_method_auto": "自动生成 JWT 密钥（推荐）",
       "jwt_method_path": "指定宿主机文件路径",
+
+      "jwt_auto_description": "将自动生成一个安全的 Ed25519 私钥用于 JWT 签名。这是推荐且最安全的选项。",
       
       "jwt_file_label": "JWT 密钥文件",
       "jwt_file_help": "将 JWT 私钥文件拖放到此处或点击选择（仅支持 .pem 格式）",
