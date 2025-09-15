@@ -133,21 +133,44 @@ func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) mode
 		return result
 	}
 
-	if cfg.User == "" {
+	// 外部服务模式下不需要超级用户验证
+	if cfg.ServiceType == "docker" {
+		if cfg.SuperUser == "" {
+			result.Success = false
+			result.Message = "key:validation.database.super_user_required"
+			return result
+		}
+
+		if cfg.SuperPassword == "" {
+			result.Success = false
+			result.Message = "key:validation.database.super_password_required"
+			return result
+		}
+	}
+
+	if cfg.AppUser == "" {
 		result.Success = false
-		result.Message = "key:validation.database.user_required"
+		result.Message = "key:validation.database.app_user_required"
 		return result
 	}
 
-	if cfg.Password == "" {
+	if cfg.AppPassword == "" {
 		result.Success = false
-		result.Message = "key:validation.database.password_required"
+		result.Message = "key:validation.database.app_password_required"
 		return result
 	}
 
+	// Docker模式下跳过连接测试，因为服务还未启动
+	if cfg.ServiceType == "docker" {
+		result.Success = true
+		result.Message = "key:messages.database_config_validated"
+		return result
+	}
+
+	// 外部服务模式下进行实际连接测试
 	// 构建连接字符串并尝试实际连接（对用户名和密码进行URL编码）
-	encodedUser := url.QueryEscape(cfg.User)
-	encodedPassword := url.QueryEscape(cfg.Password)
+	encodedUser := url.QueryEscape(cfg.AppUser)
+	encodedPassword := url.QueryEscape(cfg.AppPassword)
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		encodedUser, encodedPassword, cfg.Host, cfg.Port, cfg.Name)
 
@@ -195,6 +218,14 @@ func (v *ValidatorService) TestRedisConnection(cfg model.RedisConfig) model.Conn
 		return result
 	}
 
+	// Docker模式下跳过连接测试，因为服务还未启动
+	if cfg.ServiceType == "docker" {
+		result.Success = true
+		result.Message = "key:messages.redis_config_validated"
+		return result
+	}
+
+	// 外部服务模式下进行实际连接测试
 	// 构建Redis连接选项
 	opts := &redis.Options{
 		Addr:     net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port)),
@@ -373,34 +404,85 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		})
 	}
 
-	// User验证
-	if cfg.User == "" {
+	// 超级用户验证 - 仅Docker模式需要（用于初始化数据库容器）
+	if cfg.ServiceType == "docker" {
+		if cfg.SuperUser == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.super_user",
+				Message: "key:validation.database.super_user_required",
+			})
+		} else if len(cfg.SuperUser) > 63 {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.super_user",
+				Message: "key:validation.database.super_user_error",
+			})
+		} else if !dbNameRegex.MatchString(cfg.SuperUser) {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.super_user",
+				Message: "key:validation.database.super_user_error",
+			})
+		}
+	}
+
+	// 应用用户验证
+	if cfg.AppUser == "" {
 		errors = append(errors, model.ValidationError{
-			Field:   "database.user",
-			Message: "Database user is required",
+			Field:   "database.app_user",
+			Message: "key:validation.database.app_user_required",
 		})
-	} else if len(cfg.User) > 63 {
+	} else if len(cfg.AppUser) > 63 {
 		errors = append(errors, model.ValidationError{
-			Field:   "database.user",
-			Message: "Database user must be 63 characters or less",
+			Field:   "database.app_user",
+			Message: "key:validation.database.app_user_error",
 		})
-	} else if !dbNameRegex.MatchString(cfg.User) {
+	} else if !dbNameRegex.MatchString(cfg.AppUser) {
 		errors = append(errors, model.ValidationError{
-			Field:   "database.user",
-			Message: "Database user must start with a letter and contain only letters, numbers, and underscores",
+			Field:   "database.app_user",
+			Message: "key:validation.database.app_user_error",
 		})
 	}
 
-	// Password验证 (数据库密码要求加强)
-	if cfg.Password == "" {
+	// 超级用户密码验证 - 仅Docker模式需要（用于初始化数据库容器）
+	if cfg.ServiceType == "docker" {
+		if cfg.SuperPassword == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.super_password",
+				Message: "key:validation.database.super_password_required",
+			})
+		} else if !validateDatabasePassword(cfg.SuperPassword) {
+			errors = append(errors, model.ValidationError{
+				Field:   "database.super_password",
+				Message: "key:validation.database.super_password_error",
+			})
+		}
+	}
+
+	// 应用用户密码验证
+	if cfg.AppPassword == "" {
 		errors = append(errors, model.ValidationError{
-			Field:   "database.password",
-			Message: "Database password is required",
+			Field:   "database.app_password",
+			Message: "key:validation.database.app_password_required",
 		})
-	} else if !validateDatabasePassword(cfg.Password) {
+	} else if !validateDatabasePassword(cfg.AppPassword) {
 		errors = append(errors, model.ValidationError{
-			Field:   "database.password",
-			Message: "Database password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+			Field:   "database.app_password",
+			Message: "key:validation.database.app_password_error",
+		})
+	}
+
+	// 验证用户名不能重复 - 仅Docker模式需要检查
+	if cfg.ServiceType == "docker" && cfg.SuperUser != "" && cfg.AppUser != "" && cfg.SuperUser == cfg.AppUser {
+		errors = append(errors, model.ValidationError{
+			Field:   "database.app_user",
+			Message: "key:validation.database.username_duplicate_error",
+		})
+	}
+
+	// 验证密码不能重复 - 仅Docker模式需要检查
+	if cfg.ServiceType == "docker" && cfg.SuperPassword != "" && cfg.AppPassword != "" && cfg.SuperPassword == cfg.AppPassword {
+		errors = append(errors, model.ValidationError{
+			Field:   "database.app_password",
+			Message: "key:validation.database.password_duplicate_error",
 		})
 	}
 

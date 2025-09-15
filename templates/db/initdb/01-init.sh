@@ -5,7 +5,7 @@ set -e
 export PGCLIENTENCODING=UTF8
 
 # Create user if not exists (using PGPASSWORD to avoid logging)
-PGPASSWORD="${APP_DB_PASSWORD}" psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres -c "
+PGPASSWORD="${POSTGRES_PASSWORD}" psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres -c "
 DO \$\$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${APP_DB_USER}') THEN

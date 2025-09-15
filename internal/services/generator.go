@@ -142,11 +142,11 @@ DEFAULT_LANG={{ .App.DefaultLang }}
 # Database Configuration
 DB_HOST='{{ .Database.Host }}'
 DB_PORT={{ .Database.Port }}
-PG_USER='{{ .Database.User }}'
-PG_PASSWORD='{{ .Database.Password }}'
+PG_USER='{{ .Database.SuperUser }}'
+PG_PASSWORD='{{ .Database.SuperPassword }}'
 APP_DB_NAME='{{ .Database.Name }}'
-APP_DB_USER='{{ .Database.User }}'
-APP_DB_PASSWORD='{{ .Database.Password }}'
+APP_DB_USER='{{ .Database.AppUser }}'
+APP_DB_PASSWORD='{{ .Database.AppPassword }}'
 
 # Redis Configuration
 REDIS_HOST='{{ .Redis.Host }}'
@@ -161,7 +161,6 @@ BASE_DOMAIN_NAME='{{ .App.DomainName }}'
 BRAND_NAME='{{ .App.BrandName }}'
 BRAND_DOMAIN_NAME='{{ .App.DomainName }}'
 ADMIN_EMAIL='{{ .App.AdminEmail }}'
-ADMIN_PASSWORD='{{ .Database.Password }}'
 DEBUG={{ .App.Debug }}
 TEST=false
 APP_VERSION={{ if .App.Version }}{{ .App.Version }}{{ else }}latest{{ end }}

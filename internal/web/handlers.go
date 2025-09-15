@@ -239,7 +239,8 @@ func (h *SetupHandlers) GetConfigHandler(w http.ResponseWriter, r *http.Request)
 
 	// 不返回敏感信息
 	safeCfg := *cfg
-	safeCfg.Database.Password = ""
+	safeCfg.Database.SuperPassword = ""
+	safeCfg.Database.AppPassword = ""
 	safeCfg.Redis.Password = ""
 	safeCfg.SMTP.Password = ""
 	safeCfg.AdminUser.Password = ""

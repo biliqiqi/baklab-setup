@@ -67,15 +67,30 @@
       "name_help": "Start with letter, only letters/numbers/underscores (e.g., baklab, my_app_db)",
       "name_error": "Database name must start with a letter and contain only letters, numbers, and underscores (max 63 characters)",
       
-      "username_label": "Username",
-      "username_placeholder": "baklab",
-      "username_help": "PostgreSQL username, start with letter (e.g., baklab, admin_user)",
-      "username_error": "Username must start with a letter and contain only letters, numbers, and underscores (max 63 characters)",
-      
-      "password_label": "Password",
-      "password_placeholder": "Enter database password",
-      "password_help": "12-64 characters with mixed types (letters, numbers, symbols)",
-      "password_error": "Database password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+      "super_user_title": "PostgreSQL Super User Configuration (Docker Only)",
+      "super_username_label": "Super User Name",
+      "super_username_placeholder": "baklab_super",
+      "super_username_help": "PostgreSQL super user for Docker container initialization (e.g., baklab_super, postgres_admin)",
+      "super_username_error": "Super username must start with a letter and contain only letters, numbers, and underscores (max 63 characters)",
+
+      "super_password_label": "Super User Password",
+      "super_password_placeholder": "Enter super user password",
+      "super_password_help": "Strong password for PostgreSQL super user (12-64 chars, mixed types)",
+      "super_password_error": "Super password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+
+      "app_user_title": "Application User Configuration",
+      "app_username_label": "Application User Name",
+      "app_username_placeholder": "baklab",
+      "app_username_help": "PostgreSQL user for application database access (e.g., baklab, app_user)",
+      "app_username_error": "App username must start with a letter and contain only letters, numbers, and underscores (max 63 characters)",
+
+      "app_password_label": "Application User Password",
+      "app_password_placeholder": "Enter application password",
+      "app_password_help": "Password for application database user (12-64 chars, mixed types)",
+      "app_password_error": "App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+
+      "username_duplicate_error": "Application username must be different from super user username",
+      "password_duplicate_error": "Application password must be different from super user password",
 
       "test_connection": "Test Connection"
     },
