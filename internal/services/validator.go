@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/biliqiqi/baklab-setup/internal/model"
 	_ "github.com/lib/pq" // PostgreSQL driver
@@ -37,8 +38,7 @@ var (
 	// 域名格式 - 支持多级域名和子域名
 	domainRegex = regexp.MustCompile(`^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$|^localhost$`)
 
-	// 品牌名称（字母、数字、空格、连字符、下划线）
-	brandNameRegex = regexp.MustCompile(`^[a-zA-Z0-9\s\-_]+$`)
+	// 品牌名称校验已移除字符类型限制，只保留长度验证
 
 	// 用户名格式（与主项目保持一致：开头和结尾必须是字母数字，中间可以有字母、数字、点、下划线、连字符）
 	usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]+[a-zA-Z0-9]$`)
@@ -483,21 +483,16 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		})
 	}
 
-	// Brand name验证
+	// Brand name验证 - 只验证长度，支持所有Unicode字符
 	if cfg.BrandName == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.brand_name",
 			Message: "Brand name is required",
 		})
-	} else if len(cfg.BrandName) < 2 || len(cfg.BrandName) > 50 {
+	} else if utf8.RuneCountInString(cfg.BrandName) < 2 || utf8.RuneCountInString(cfg.BrandName) > 50 {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.brand_name",
 			Message: "Brand name must be 2-50 characters long",
-		})
-	} else if !brandNameRegex.MatchString(cfg.BrandName) {
-		errors = append(errors, model.ValidationError{
-			Field:   "app.brand_name",
-			Message: "Brand name must contain only letters, numbers, spaces, hyphens, and underscores",
 		})
 	}
 

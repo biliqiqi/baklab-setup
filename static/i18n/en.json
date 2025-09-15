@@ -41,7 +41,6 @@
       "welcome_title": "Welcome to BakLab Setup",
       "welcome_description": "This setup wizard will help you configure your BakLab application for production. Click the button below to generate a secure setup token and begin the configuration process.",
       "language_label": "Setup Interface Language",
-      "language_description": "Choose the language for this setup wizard. This only affects the setup interface, not your application.",
       "initialize_button": "Initialize Setup"
     },
     
@@ -51,9 +50,7 @@
       
       "service_type_label": "Service Type",
       "service_type_docker": "Docker Compose",
-      "service_type_docker_help": "Use database service from Docker Compose",
       "service_type_external": "External Service",
-      "service_type_external_help": "Connect to existing PostgreSQL server",
       
       "host_label": "Host",
       "host_placeholder": "localhost", 
@@ -77,11 +74,10 @@
       
       "password_label": "Password",
       "password_placeholder": "Enter database password",
-      "password_help": "12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+      "password_help": "12-64 characters with mixed types (letters, numbers, symbols)",
       "password_error": "Database password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
-      
-      "test_connection": "Test Connection",
-      "test_connection_help": "Test the database connection with current settings (only available for external services)"
+
+      "test_connection": "Test Connection"
     },
     
     "redis": {
@@ -90,9 +86,7 @@
       
       "service_type_label": "Service Type",
       "service_type_docker": "Docker Compose",
-      "service_type_docker_help": "Use Redis service from Docker Compose",
       "service_type_external": "External Service",
-      "service_type_external_help": "Connect to existing Redis server",
       
       "host_label": "Host",
       "host_placeholder": "localhost",
@@ -106,11 +100,10 @@
       
       "password_label": "Password",
       "password_placeholder": "Enter Redis password",
-      "password_help": "12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+      "password_help": "12-64 characters with mixed types (letters, numbers, symbols)",
       "password_error": "Redis password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
-      
-      "test_connection": "Test Connection",
-      "test_connection_help": "Test the Redis connection with current settings (only available for external services)"
+
+      "test_connection": "Test Connection"
     },
     
     "app": {
@@ -124,7 +117,6 @@
       
       "brand_label": "Brand Name",
       "brand_placeholder": "BakLab",
-      "brand_error": "Brand name must be 2-50 characters and contain only letters, numbers, spaces, hyphens, and underscores",
       
       "version_label": "Application Version",
       "version_help": "Select BakLab application version",
@@ -181,7 +173,6 @@
       "description": "Configure SSL certificates for HTTPS. You can either disable HTTPS (HTTP only) or provide certificate file paths for secure connections.",
       
       "enable_label": "Enable HTTPS",
-      "enable_help": "Enable SSL/TLS encryption for secure connections. Requires valid certificate files.",
       
       "use_setup_cert_label": "Use same certificates as setup program",
       "use_setup_cert_help": "Automatically fill in the certificate paths currently used by this setup program",
@@ -200,7 +191,6 @@
       "description": "Configure GoAccess real-time web analytics. This service provides detailed analysis of your website traffic and visitor behavior.",
       
       "enable_label": "Enable GoAccess Analytics",
-      "enable_help": "Real-time web analytics with geographic data visualization",
       
       "geo_file_label": "GeoIP Database File",
       "geo_file_help": "Drop a GeoLite2-City.mmdb file here or click to select",
@@ -231,7 +221,7 @@
       
       "password_label": "Password",
       "password_placeholder": "Enter secure password",
-      "password_help": "12-64 characters with lowercase, uppercase, numbers, and special characters (!@#$%^&*)",
+      "password_help": "12-64 characters with mixed types (letters, numbers, symbols)",
       "password_error": "Password must be 12-64 characters with lowercase, uppercase, numbers, and special characters (!@#$%^&*)",
       
       "password_confirm_label": "Confirm Password",
@@ -303,6 +293,7 @@
     "config_saved": "Configuration saved successfully",
     "config_generated": "Configuration files generated successfully",
     "setup_completed": "Setup completed successfully! You can now start the main application.",
+    "setup_already_completed": "Setup has already been completed.",
     "validation_failed": "Configuration validation failed",
     "fix_errors": "Please fix the validation errors below and try again.",
     

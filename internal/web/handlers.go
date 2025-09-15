@@ -344,6 +344,25 @@ func (h *SetupHandlers) CompleteSetupHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// 检查setup是否已经完成（幂等性保护）
+	completed, err := h.setupService.IsSetupCompleted()
+	if err != nil {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.failed_check_status"),
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	if completed {
+		// 如果已经完成，直接返回成功（幂等性）
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: true,
+			Message: h.localizeMessage(r, "messages.setup_already_completed"),
+		}, http.StatusOK)
+		return
+	}
+
 	// 完成setup
 	if err := h.setupService.CompleteSetup(); err != nil {
 		h.writeJSONResponse(w, model.SetupResponse{
