@@ -1,2 +1,2 @@
-user default +ping on >$REDISCLI_AUTH
-user $REDIS_USER +@all ~* on >$REDIS_PASSWORD
+user default +@all ~* on >$REDISCLI_AUTH
+user $REDIS_USER +@read +@write +@list +@hash +@set +@string +@bitmap +@hyperloglog +@geo +@stream +@connection -@admin -@dangerous on >$REDIS_PASSWORD

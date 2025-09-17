@@ -242,6 +242,7 @@ func (h *SetupHandlers) GetConfigHandler(w http.ResponseWriter, r *http.Request)
 	safeCfg.Database.SuperPassword = ""
 	safeCfg.Database.AppPassword = ""
 	safeCfg.Redis.Password = ""
+	safeCfg.Redis.AdminPassword = ""
 	safeCfg.SMTP.Password = ""
 	safeCfg.AdminUser.Password = ""
 	safeCfg.App.SessionSecret = ""

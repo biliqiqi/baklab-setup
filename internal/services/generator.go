@@ -153,7 +153,7 @@ REDIS_HOST='{{ .Redis.Host }}'
 REDIS_PORT={{ .Redis.Port }}
 REDIS_USER='{{ if .Redis.User }}{{ .Redis.User }}{{ else }}default{{ end }}'
 REDIS_PASSWORD='{{ .Redis.Password }}'
-REDISCLI_AUTH='{{ .Redis.Password }}'
+REDISCLI_AUTH='{{ .Redis.AdminPassword }}'
 
 # Application Configuration
 DOMAIN_NAME='{{ .App.DomainName }}'
@@ -432,10 +432,10 @@ services:
     command: |
       sh -c '
         cp /src/redis.conf /config/
-        echo "user default +ping on >$$REDISCLI_AUTH" > /config/users.acl
-        echo "user $$REDIS_USER +@all ~* on >$$REDIS_PASSWORD" >> /config/users.acl
+        echo "user default +@all ~* on >$$REDISCLI_AUTH" > /config/users.acl
+        echo "user $$REDIS_USER +@read +@write +@list +@hash +@set +@string +@bitmap +@hyperloglog +@geo +@stream +@connection -@admin -@dangerous on >$$REDIS_PASSWORD" >> /config/users.acl
         echo "ACL file generated successfully"
-        echo "Users configured: default, $$REDIS_USER"
+        echo "Users configured: default (admin access), $$REDIS_USER (app access)"
         echo "ACL file location: /config/users.acl"
       '
 

@@ -29,7 +29,8 @@ class SetupApp {
                 host: 'localhost',
                 port: 6377,
                 user: '',
-                password: ''
+                password: '',
+                admin_password: ''
             },
             smtp: {
                 server: '',
@@ -698,6 +699,28 @@ class SetupApp {
                     <div class="invalid-feedback" data-i18n="setup.redis.user_error"></div>
                 </div>
 
+                <!-- Redis CLI 管理配置 -->
+                <div id="redis-admin-config" style="background: var(--gray-50); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: none;">
+                    <h4 style="margin: 0 0 1rem 0; color: var(--gray-700); font-size: 1rem;" data-i18n="setup.redis.admin_password_title"></h4>
+                    <div class="form-group">
+                        <label for="redis-admin-password"><span data-i18n="setup.redis.admin_password_label"></span> <span data-i18n="common.required"></span></label>
+                        <input
+                            type="password"
+                            id="redis-admin-password"
+                            name="admin_password"
+                            value="${this.config.redis.admin_password || ''}"
+                            data-i18n-placeholder="setup.redis.admin_password_placeholder"
+                            required
+                            minlength="12"
+                            maxlength="64"
+                            pattern="^[A-Za-z\\d!@#$%^&*]{12,64}$"
+                            data-i18n-title="setup.redis.admin_password_error"
+                        >
+                        <div class="form-help" data-i18n="setup.redis.admin_password_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.redis.admin_password_error"></div>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label for="redis-password"><span data-i18n="setup.redis.password_label"></span> <span data-i18n="common.required"></span></label>
                     <input
@@ -748,11 +771,12 @@ class SetupApp {
         // 添加表单提交事件监听
         document.getElementById('redis-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            
-            // 验证Redis密码强度
+
+            const serviceType = document.querySelector('input[name="redis-service-type"]:checked').value;
+
+            // 验证Redis应用密码强度
             const password = document.getElementById('redis-password').value;
             const passwordField = document.getElementById('redis-password');
-            const serviceType = document.querySelector('input[name="redis-service-type"]:checked').value;
 
             if (password) {
                 let isValid = true;
@@ -775,6 +799,24 @@ class SetupApp {
                 }
             } else {
                 passwordField.setCustomValidity('');
+            }
+
+            // 验证Redis管理密码强度（仅Docker模式）
+            if (serviceType === 'docker') {
+                const adminPassword = document.getElementById('redis-admin-password').value;
+                const adminPasswordField = document.getElementById('redis-admin-password');
+
+                if (adminPassword) {
+                    const isValid = this.validateDatabasePasswordStrength(adminPassword);
+                    if (!isValid) {
+                        const errorMessage = 'CLI password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                        adminPasswordField.setCustomValidity(errorMessage);
+                    } else {
+                        adminPasswordField.setCustomValidity('');
+                    }
+                } else {
+                    adminPasswordField.setCustomValidity('');
+                }
             }
             
             if (e.target.checkValidity()) {
@@ -1790,7 +1832,15 @@ class SetupApp {
             user: document.getElementById('redis-user') ? document.getElementById('redis-user').value : '',
             password: document.getElementById('redis-password').value
         };
-        
+
+        // 仅Docker模式需要管理密码配置
+        if (serviceType === 'docker') {
+            this.config.redis.admin_password = document.getElementById('redis-admin-password').value;
+        } else {
+            // 外部服务模式清空管理密码字段
+            this.config.redis.admin_password = '';
+        }
+
         // 只保存到本地缓存，不调用后端API
         this.saveToLocalCache();
         this.nextStep();
@@ -1801,6 +1851,8 @@ class SetupApp {
         const testConnectionContainer = document.getElementById('redis-test-connection-container');
         const passwordField = document.getElementById('redis-password');
         const userField = document.getElementById('redis-user');
+        const adminConfig = document.getElementById('redis-admin-config');
+        const adminPasswordField = document.getElementById('redis-admin-password');
 
         if (serviceType === 'docker') {
             hostField.value = 'localhost';
@@ -1808,6 +1860,14 @@ class SetupApp {
             hostField.style.backgroundColor = 'var(--gray-100)';
             if (testConnectionContainer) {
                 testConnectionContainer.style.display = 'none';
+            }
+
+            // Docker模式：显示管理密码配置并设置为必填
+            if (adminConfig) {
+                adminConfig.style.display = 'block';
+            }
+            if (adminPasswordField) {
+                adminPasswordField.required = true;
             }
 
             // Docker模式：用户名设为默认值且必填
@@ -1826,11 +1886,20 @@ class SetupApp {
             // Docker模式显示帮助文本
             this.toggleHelpText('redis-password', true);
             this.toggleHelpText('redis-user', true);
+            this.toggleHelpText('redis-admin-password', true);
         } else {
             hostField.readOnly = false;
             hostField.style.backgroundColor = '';
             if (testConnectionContainer) {
                 testConnectionContainer.style.display = 'block';
+            }
+
+            // 外部服务模式：隐藏管理密码配置并移除必填
+            if (adminConfig) {
+                adminConfig.style.display = 'none';
+            }
+            if (adminPasswordField) {
+                adminPasswordField.required = false;
             }
 
             // 外部服务模式：用户名可选，兼容旧版Redis
@@ -1849,6 +1918,7 @@ class SetupApp {
             // 外部服务模式隐藏帮助文本
             this.toggleHelpText('redis-password', false);
             this.toggleHelpText('redis-user', false);
+            this.toggleHelpText('redis-admin-password', false);
 
             // 清除所有自定义验证错误
             if (passwordField) {
@@ -1858,6 +1928,10 @@ class SetupApp {
             if (userField) {
                 userField.setCustomValidity('');
                 this.hideCustomError(userField);
+            }
+            if (adminPasswordField) {
+                adminPasswordField.setCustomValidity('');
+                this.hideCustomError(adminPasswordField);
             }
         }
     }
@@ -2374,6 +2448,7 @@ class SetupApp {
                 'redis.host': 'redis-host',
                 'redis.port': 'redis-port',
                 'redis.user': 'redis-user',
+                'redis.admin_password': 'redis-admin-password',
                 'redis.password': 'redis-password',
                 'app.domain_name': 'app-domain',
                 'app.brand_name': 'app-brand',

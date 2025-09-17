@@ -120,6 +120,12 @@
       "user_help": "Docker 模式：用于 Redis ACL 配置的用户名（默认：'default'）。外部模式：可选的身份验证用户名（留空以兼容旧版 Redis）。",
       "user_error": "用户名不能超过128个字符",
 
+      "admin_password_title": "Redis CLI 管理配置（仅限 Docker）",
+      "admin_password_label": "CLI 管理密码",
+      "admin_password_placeholder": "输入 CLI 管理密码",
+      "admin_password_help": "用于 Redis CLI 管理访问的强密码（12-64个字符，包含多种类型）",
+      "admin_password_error": "CLI 密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+
       "password_label": "密码",
       "password_placeholder": "输入 Redis 密码",
       "password_help": "12-64个字符，包含多种类型（字母、数字、符号）",

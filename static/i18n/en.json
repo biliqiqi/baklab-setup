@@ -120,6 +120,12 @@
       "user_help": "Docker mode: Username for Redis ACL configuration (default: 'default'). External mode: Optional username for authentication (leave empty for legacy Redis compatibility).",
       "user_error": "Username cannot exceed 128 characters",
 
+      "admin_password_title": "Redis CLI Management Configuration (Docker Only)",
+      "admin_password_label": "CLI Management Password",
+      "admin_password_placeholder": "Enter CLI management password",
+      "admin_password_help": "Strong password for Redis CLI management access (12-64 chars, mixed types)",
+      "admin_password_error": "CLI password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+
       "password_label": "Password",
       "password_placeholder": "Enter Redis password",
       "password_help": "12-64 characters with mixed types (letters, numbers, symbols)",
