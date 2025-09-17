@@ -298,7 +298,10 @@
       
       "sections": {
         "database": "Database",
-        "redis": "Redis", 
+        "redis": "Redis",
+        "smtp": "Email Service",
+        "ssl": "SSL/HTTPS",
+        "goaccess": "Analytics Service",
         "application": "Application",
         "administrator": "Administrator"
       },
@@ -307,21 +310,38 @@
         "host": "Host",
         "database": "Database",
         "user": "User",
+        "app_user": "App User",
+        "super_user": "Super User",
+        "service_type": "Service Type",
         "password": "Password",
+        "smtp_server": "SMTP Server",
+        "smtp_user": "SMTP User",
+        "smtp_sender": "Sender Address",
+        "ssl_enabled": "SSL Enabled",
+        "ssl_cert_path": "Certificate Path",
+        "ssl_key_path": "Private Key Path",
+        "ssl_use_setup_cert": "Use Setup Certificate",
+        "goaccess_enabled": "Analytics Enabled",
+        "goaccess_geo_file": "GeoIP Database File",
         "domain": "Domain",
         "brand": "Brand",
         "version": "Version",
         "language": "Language",
         "cors_origins": "CORS Origins",
+        "jwt_mode": "JWT Key Mode",
+        "jwt_file_path": "JWT Key File Path",
         "username": "Username",
         "email": "Email"
       },
       
       "cors_configured": {
         "zero": "No CORS origins configured",
-        "one": "{{count}} CORS origin configured", 
+        "one": "{{count}} CORS origin configured",
         "other": "{{count}} CORS origins configured"
-      }
+      },
+
+      "jwt_auto_generate": "Auto Generate",
+      "jwt_from_file": "From File"
     },
     
     "config_complete": {

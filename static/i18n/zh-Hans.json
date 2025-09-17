@@ -299,7 +299,10 @@
       "sections": {
         "database": "数据库",
         "redis": "Redis缓存",
-        "application": "应用程序", 
+        "smtp": "邮件服务",
+        "ssl": "SSL/HTTPS",
+        "goaccess": "分析服务",
+        "application": "应用程序",
         "administrator": "管理员"
       },
       
@@ -307,12 +310,26 @@
         "host": "主机",
         "database": "数据库",
         "user": "用户",
+        "app_user": "应用用户",
+        "super_user": "超级用户",
+        "service_type": "服务类型",
         "password": "密码",
+        "smtp_server": "SMTP 服务器",
+        "smtp_user": "SMTP 用户",
+        "smtp_sender": "发件人地址",
+        "ssl_enabled": "启用 SSL",
+        "ssl_cert_path": "证书路径",
+        "ssl_key_path": "私钥路径",
+        "ssl_use_setup_cert": "使用 Setup 证书",
+        "goaccess_enabled": "启用分析服务",
+        "goaccess_geo_file": "GeoIP 数据库文件",
         "domain": "域名",
         "brand": "品牌",
         "version": "版本",
         "language": "语言",
         "cors_origins": "CORS 来源",
+        "jwt_mode": "JWT 密钥模式",
+        "jwt_file_path": "JWT 密钥文件路径",
         "username": "用户名",
         "email": "邮箱"
       },
@@ -321,7 +338,10 @@
         "zero": "未配置 CORS 来源",
         "one": "已配置 {{count}} 个 CORS 来源",
         "other": "已配置 {{count}} 个 CORS 来源"
-      }
+      },
+
+      "jwt_auto_generate": "自动生成",
+      "jwt_from_file": "从文件加载"
     },
     
     "config_complete": {
