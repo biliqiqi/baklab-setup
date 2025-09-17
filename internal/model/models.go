@@ -83,8 +83,6 @@ type AppConfig struct {
 	Version           string   `json:"version"`
 	Debug             bool     `json:"debug"`
 	CORSAllowOrigins  []string `json:"cors_allow_origins"`
-	SessionSecret     string   `json:"session_secret"`
-	CSRFSecret        string   `json:"csrf_secret"`
 	JWTKeyFilePath    string   `json:"jwt_key_file_path"`
 	JWTKeyFromFile    bool     `json:"jwt_key_from_file"`
 	HasJWTKeyFile     bool     `json:"has_jwt_key_file"`
