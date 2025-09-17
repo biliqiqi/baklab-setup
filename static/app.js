@@ -682,7 +682,22 @@ class SetupApp {
                         <div class="invalid-feedback" data-i18n="setup.redis.port_error"></div>
                     </div>
                 </div>
-                
+
+                <div class="form-group">
+                    <label for="redis-user"><span data-i18n="setup.redis.user_label"></span> <span data-i18n="common.optional"></span></label>
+                    <input
+                        type="text"
+                        id="redis-user"
+                        name="user"
+                        value="${this.config.redis.user || ''}"
+                        data-i18n-placeholder="setup.redis.user_placeholder"
+                        maxlength="128"
+                        data-i18n-title="setup.redis.user_error"
+                    >
+                    <div class="form-help" data-i18n="setup.redis.user_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.redis.user_error"></div>
+                </div>
+
                 <div class="form-group">
                     <label for="redis-password"><span data-i18n="setup.redis.password_label"></span> <span data-i18n="common.required"></span></label>
                     <input
@@ -1785,6 +1800,7 @@ class SetupApp {
         const hostField = document.getElementById('redis-host');
         const testConnectionContainer = document.getElementById('redis-test-connection-container');
         const passwordField = document.getElementById('redis-password');
+        const userField = document.getElementById('redis-user');
 
         if (serviceType === 'docker') {
             hostField.value = 'localhost';
@@ -1793,6 +1809,14 @@ class SetupApp {
             if (testConnectionContainer) {
                 testConnectionContainer.style.display = 'none';
             }
+
+            // Docker模式：用户名设为默认值且必填
+            if (userField) {
+                userField.value = userField.value || 'default';
+                userField.required = true;
+                userField.placeholder = 'default';
+            }
+
             // Docker模式使用严格的密码验证
             if (passwordField) {
                 passwordField.minLength = 12;
@@ -1801,12 +1825,20 @@ class SetupApp {
             }
             // Docker模式显示帮助文本
             this.toggleHelpText('redis-password', true);
+            this.toggleHelpText('redis-user', true);
         } else {
             hostField.readOnly = false;
             hostField.style.backgroundColor = '';
             if (testConnectionContainer) {
                 testConnectionContainer.style.display = 'block';
             }
+
+            // 外部服务模式：用户名可选，兼容旧版Redis
+            if (userField) {
+                userField.required = false;
+                userField.placeholder = '';
+            }
+
             // 外部服务模式使用宽松的密码验证
             if (passwordField) {
                 passwordField.minLength = 1;
@@ -1816,11 +1848,16 @@ class SetupApp {
             }
             // 外部服务模式隐藏帮助文本
             this.toggleHelpText('redis-password', false);
+            this.toggleHelpText('redis-user', false);
 
             // 清除所有自定义验证错误
             if (passwordField) {
                 passwordField.setCustomValidity('');
                 this.hideCustomError(passwordField);
+            }
+            if (userField) {
+                userField.setCustomValidity('');
+                this.hideCustomError(userField);
             }
         }
     }
@@ -2127,7 +2164,7 @@ class SetupApp {
                 service_type: document.querySelector('input[name="redis-service-type"]:checked').value,
                 host: document.getElementById('redis-host').value,
                 port: parseInt(document.getElementById('redis-port').value),
-                user: '',
+                user: document.getElementById('redis-user') ? document.getElementById('redis-user').value : '',
                 password: document.getElementById('redis-password').value
             };
         }
@@ -2336,6 +2373,7 @@ class SetupApp {
                 'database.app_password': 'db-app-password',
                 'redis.host': 'redis-host',
                 'redis.port': 'redis-port',
+                'redis.user': 'redis-user',
                 'redis.password': 'redis-password',
                 'app.domain_name': 'app-domain',
                 'app.brand_name': 'app-brand',

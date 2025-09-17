@@ -114,7 +114,12 @@
       "port_placeholder": "6377",
       "port_help": "Redis port number (default: 6377, range: 1-65535)",
       "port_error": "Port must be between 1 and 65535",
-      
+
+      "user_label": "Username",
+      "user_placeholder": "default",
+      "user_help": "Docker mode: Username for Redis ACL configuration (default: 'default'). External mode: Optional username for authentication (leave empty for legacy Redis compatibility).",
+      "user_error": "Username cannot exceed 128 characters",
+
       "password_label": "Password",
       "password_placeholder": "Enter Redis password",
       "password_help": "12-64 characters with mixed types (letters, numbers, symbols)",

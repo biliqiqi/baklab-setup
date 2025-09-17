@@ -151,7 +151,7 @@ APP_DB_PASSWORD='{{ .Database.AppPassword }}'
 # Redis Configuration
 REDIS_HOST='{{ .Redis.Host }}'
 REDIS_PORT={{ .Redis.Port }}
-REDIS_USER='{{ if .Redis.User }}{{ .Redis.User }}{{ else }}user{{ end }}'
+REDIS_USER='{{ if .Redis.User }}{{ .Redis.User }}{{ else }}default{{ end }}'
 REDIS_PASSWORD='{{ .Redis.Password }}'
 REDISCLI_AUTH='{{ .Redis.Password }}'
 

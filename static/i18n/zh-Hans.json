@@ -114,7 +114,12 @@
       "port_placeholder": "6377", 
       "port_help": "Redis 端口号（默认：6377，范围：1-65535）",
       "port_error": "端口必须在 1 到 65535 之间",
-      
+
+      "user_label": "用户名",
+      "user_placeholder": "default",
+      "user_help": "Docker 模式：用于 Redis ACL 配置的用户名（默认：'default'）。外部模式：可选的身份验证用户名（留空以兼容旧版 Redis）。",
+      "user_error": "用户名不能超过128个字符",
+
       "password_label": "密码",
       "password_placeholder": "输入 Redis 密码",
       "password_help": "12-64个字符，包含多种类型（字母、数字、符号）",
