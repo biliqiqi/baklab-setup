@@ -254,8 +254,6 @@ func (h *SetupHandlers) GetConfigHandler(w http.ResponseWriter, r *http.Request)
 	safeCfg.Redis.AdminPassword = ""
 	safeCfg.SMTP.Password = ""
 	safeCfg.AdminUser.Password = ""
-	safeCfg.App.SessionSecret = ""
-	safeCfg.App.CSRFSecret = ""
 
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,

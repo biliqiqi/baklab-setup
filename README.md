@@ -98,7 +98,6 @@ output/
 - 静态文件服务
 
 ### 安全特性
-- 自动生成安全密钥 (SESSION_SECRET, CSRF_SECRET)
 - 数据库用户隔离
 - Redis ACL 权限控制
 - 安全头配置

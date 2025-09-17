@@ -702,19 +702,6 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		})
 	}
 
-	// 验证密钥长度（如果提供的话）
-	if cfg.SessionSecret != "" && len(cfg.SessionSecret) < 32 {
-		errors = append(errors, model.ValidationError{
-			Field:   "app.session_secret",
-			Message: "Session secret must be at least 32 characters if provided",
-		})
-	}
-	if cfg.CSRFSecret != "" && len(cfg.CSRFSecret) < 32 {
-		errors = append(errors, model.ValidationError{
-			Field:   "app.csrf_secret",
-			Message: "CSRF secret must be at least 32 characters if provided",
-		})
-	}
 
 	return errors
 }
