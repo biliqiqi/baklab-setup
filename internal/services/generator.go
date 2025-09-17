@@ -207,9 +207,6 @@ DEFAULT_DATA_DIR=./config/defaults
 HOST_PROXY=http://127.0.0.1:1008
 APP_LOCAL_HOST=172.17.0.1
 
-# Version
-APP_VERSION={{ if .App.Version }}{{ .App.Version }}{{ else }}latest{{ end }}
-
 # Setup Status
 SETUP_COMPLETED=true
 SETUP_COMPLETED_AT={{ .Timestamp }}
