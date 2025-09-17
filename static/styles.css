@@ -32,6 +32,17 @@ body {
     font-size: 14px;
 }
 
+/* Global link styles */
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: text-decoration 0.2s ease;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;

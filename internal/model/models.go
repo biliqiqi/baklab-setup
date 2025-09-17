@@ -69,30 +69,38 @@ type GoAccessConfig struct {
 
 // SSLConfig SSL证书配置
 type SSLConfig struct {
-	Enabled  bool   `json:"enabled"`                                      // 是否启用HTTPS
-	CertPath string `json:"cert_path" validate:"required_if=Enabled true"` // 证书文件路径（启用HTTPS时必须）
-	KeyPath  string `json:"key_path" validate:"required_if=Enabled true"`  // 私钥文件路径（启用HTTPS时必须）
+	Enabled       bool   `json:"enabled"`                                      // 是否启用HTTPS
+	CertPath      string `json:"cert_path" validate:"required_if=Enabled true"` // 证书文件路径（启用HTTPS时必须）
+	KeyPath       string `json:"key_path" validate:"required_if=Enabled true"`  // 私钥文件路径（启用HTTPS时必须）
+	UseSetupCert  bool   `json:"use_setup_cert"`                              // 是否使用设置程序的证书
+}
+
+// OAuthConfig OAuth第三方登录配置
+type OAuthConfig struct {
+	GoogleEnabled    bool   `json:"google_enabled"`                                        // 是否启用Google OAuth
+	GoogleClientID   string `json:"google_client_id" validate:"required_if=GoogleEnabled true"`   // Google客户端ID
+	GoogleSecret     string `json:"google_client_secret" validate:"required_if=GoogleEnabled true"` // Google客户端密钥
+	GithubEnabled    bool   `json:"github_enabled"`                                        // 是否启用GitHub OAuth
+	GithubClientID   string `json:"github_client_id" validate:"required_if=GithubEnabled true"`   // GitHub客户端ID
+	GithubSecret     string `json:"github_client_secret" validate:"required_if=GithubEnabled true"` // GitHub客户端密钥
 }
 
 // AppConfig 应用配置
 type AppConfig struct {
-	DomainName        string   `json:"domain_name" validate:"required"`
-	BrandName         string   `json:"brand_name" validate:"required"`
-	AdminEmail        string   `json:"admin_email" validate:"required,email"`
-	DefaultLang       string   `json:"default_lang" validate:"required"`
-	Version           string   `json:"version"`
-	Debug             bool     `json:"debug"`
-	CORSAllowOrigins  []string `json:"cors_allow_origins"`
-	JWTKeyFilePath    string   `json:"jwt_key_file_path"`
-	JWTKeyFromFile    bool     `json:"jwt_key_from_file"`
-	HasJWTKeyFile     bool     `json:"has_jwt_key_file"`
-	JWTKeyTempPath    string   `json:"jwt_key_temp_path"` // 临时文件路径，用于配置生成时复制文件
-	GoogleClientID    string   `json:"google_client_id"`
-	GoogleSecret      string   `json:"google_client_secret"`
-	GithubClientID    string   `json:"github_client_id"`
-	GithubSecret      string   `json:"github_client_secret"`
-	CloudflareSiteKey string   `json:"cloudflare_site_key"`
-	CloudflareSecret  string   `json:"cloudflare_secret"`
+	DomainName        string      `json:"domain_name" validate:"required"`
+	BrandName         string      `json:"brand_name" validate:"required"`
+	AdminEmail        string      `json:"admin_email" validate:"required,email"`
+	DefaultLang       string      `json:"default_lang" validate:"required"`
+	Version           string      `json:"version"`
+	Debug             bool        `json:"debug"`
+	CORSAllowOrigins  []string    `json:"cors_allow_origins"`
+	JWTKeyFilePath    string      `json:"jwt_key_file_path"`
+	JWTKeyFromFile    bool        `json:"jwt_key_from_file"`
+	HasJWTKeyFile     bool        `json:"has_jwt_key_file"`
+	JWTKeyTempPath    string      `json:"jwt_key_temp_path"` // 临时文件路径，用于配置生成时复制文件
+	OAuth             OAuthConfig `json:"oauth"`             // 第三方登录配置
+	CloudflareSiteKey string      `json:"cloudflare_site_key"`
+	CloudflareSecret  string      `json:"cloudflare_secret"`
 }
 
 // AdminUserConfig 管理员用户配置
@@ -108,6 +116,7 @@ type SetupConfig struct {
 	Redis       RedisConfig     `json:"redis"`
 	SMTP        SMTPConfig      `json:"smtp"`
 	App         AppConfig       `json:"app"`
+	OAuth       OAuthConfig     `json:"oauth"`      // 第三方登录配置
 	AdminUser   AdminUserConfig `json:"admin_user"`
 	GoAccess    GoAccessConfig  `json:"goaccess"`
 	SSL         SSLConfig       `json:"ssl"`

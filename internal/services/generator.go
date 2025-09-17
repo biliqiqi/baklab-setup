@@ -180,10 +180,10 @@ SERVICE_URL='http{{ if ne .App.DomainName "localhost" }}s{{ end }}://{{ .App.Dom
 STATIC_HOST_NAME='{{ .App.DomainName }}{{ if eq .App.DomainName "localhost" }}:8787{{ end }}'
 
 # OAuth Configuration (optional)
-{{ if .App.GoogleClientID }}GOOGLE_CLIENT_ID='{{ .App.GoogleClientID }}'{{ else }}GOOGLE_CLIENT_ID={{ end }}
-{{ if .App.GoogleSecret }}GOOGLE_CLIENT_SECRET='{{ .App.GoogleSecret }}'{{ else }}GOOGLE_CLIENT_SECRET={{ end }}
-{{ if .App.GithubClientID }}GITHUB_CLIENT_ID='{{ .App.GithubClientID }}'{{ else }}GITHUB_CLIENT_ID={{ end }}
-{{ if .App.GithubSecret }}GITHUB_CLIENT_SECRET='{{ .App.GithubSecret }}'{{ else }}GITHUB_CLIENT_SECRET={{ end }}
+{{ if .OAuth.GoogleClientID }}GOOGLE_CLIENT_ID='{{ .OAuth.GoogleClientID }}'{{ else }}GOOGLE_CLIENT_ID={{ end }}
+{{ if .OAuth.GoogleSecret }}GOOGLE_CLIENT_SECRET='{{ .OAuth.GoogleSecret }}'{{ else }}GOOGLE_CLIENT_SECRET={{ end }}
+{{ if .OAuth.GithubClientID }}GITHUB_CLIENT_ID='{{ .OAuth.GithubClientID }}'{{ else }}GITHUB_CLIENT_ID={{ end }}
+{{ if .OAuth.GithubSecret }}GITHUB_CLIENT_SECRET='{{ .OAuth.GithubSecret }}'{{ else }}GITHUB_CLIENT_SECRET={{ end }}
 
 # Cloudflare Configuration (optional)
 {{ if .App.CloudflareSiteKey }}CLOUDFLARE_SITE_KEY='{{ .App.CloudflareSiteKey }}'{{ else }}CLOUDFLARE_SITE_KEY={{ end }}

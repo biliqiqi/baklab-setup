@@ -31,6 +31,7 @@
       "redis": "Redis",
       "smtp": "SMTP Email",
       "application": "Application",
+      "oauth": "Third-party Login",
       "ssl": "SSL/HTTPS",
       "goaccess": "Analytics",
       "admin_user": "Admin User",
@@ -229,7 +230,41 @@
       "jwt_generation_title": "How to Generate JWT Private Key",
       "jwt_generation_commands": "<strong>Ed25519 (Recommended):</strong><br><code>openssl genpkey -algorithm Ed25519 -out jwt.pem</code><br><br><strong>RSA-3072:</strong><br><code>openssl genrsa -out jwt.pem 3072</code><br><br><strong>Set proper permissions:</strong><br><code>chmod 600 jwt.pem</code>"
     },
-    
+
+    "oauth": {
+      "title": "Third-party Login Configuration",
+      "description": "Configure OAuth providers to allow users to sign in with their existing accounts from Google, GitHub, and other services. All OAuth providers are optional.",
+
+      "google_enable_label": "Enable Google OAuth",
+      "google_enable_help": "Allow users to sign in with their Google accounts",
+      "google_client_id_label": "Google Client ID",
+      "google_client_id_placeholder": "Enter Google OAuth Client ID",
+      "google_client_id_help": "Obtain from Google Cloud Console (APIs & Services → Credentials)",
+      "google_client_id_error": "Google Client ID is required when Google OAuth is enabled",
+      "google_client_secret_label": "Google Client Secret",
+      "google_client_secret_placeholder": "Enter Google OAuth Client Secret",
+      "google_client_secret_help": "Secret key from Google Cloud Console, keep it secure",
+      "google_client_secret_error": "Google Client Secret is required when Google OAuth is enabled",
+
+      "github_enable_label": "Enable GitHub OAuth",
+      "github_enable_help": "Allow users to sign in with their GitHub accounts",
+      "github_client_id_label": "GitHub Client ID",
+      "github_client_id_placeholder": "Enter GitHub OAuth Client ID",
+      "github_client_id_help": "Obtain from GitHub Settings → Developer settings → OAuth Apps",
+      "github_client_id_error": "GitHub Client ID is required when GitHub OAuth is enabled",
+      "github_client_secret_label": "GitHub Client Secret",
+      "github_client_secret_placeholder": "Enter GitHub OAuth Client Secret",
+      "github_client_secret_help": "Secret key from GitHub OAuth App settings, keep it secure",
+      "github_client_secret_error": "GitHub Client Secret is required when GitHub OAuth is enabled",
+
+      "google_docs_description": "Official documentation:",
+      "google_docs_link": "Google OAuth Configuration Guide",
+      "github_docs_description": "Official documentation:",
+      "github_docs_link": "GitHub OAuth App Creation Guide",
+
+      "general_note": "OAuth configuration is optional. You can enable only the providers you need, or skip this step entirely if you prefer email/password authentication only."
+    },
+
     "ssl": {
       "title": "SSL/HTTPS Configuration",
       "description": "Configure SSL certificates for HTTPS. You can either disable HTTPS (HTTP only) or provide certificate file paths for secure connections.",
@@ -300,6 +335,7 @@
         "database": "Database",
         "redis": "Redis",
         "smtp": "Email Service",
+        "oauth": "Third-party Login",
         "ssl": "SSL/HTTPS",
         "goaccess": "Analytics Service",
         "application": "Application",
@@ -330,6 +366,10 @@
         "cors_origins": "CORS Origins",
         "jwt_mode": "JWT Key Mode",
         "jwt_file_path": "JWT Key File Path",
+        "google_oauth": "Google OAuth",
+        "github_oauth": "GitHub OAuth",
+        "oauth_enabled": "Enabled",
+        "oauth_disabled": "Disabled",
         "username": "Username",
         "email": "Email"
       },
