@@ -27,8 +27,9 @@
     
     "steps": {
       "welcome": "Welcome",
-      "database": "Database", 
+      "database": "Database",
       "redis": "Redis",
+      "smtp": "SMTP Email",
       "application": "Application",
       "ssl": "SSL/HTTPS",
       "goaccess": "Analytics",
@@ -133,7 +134,40 @@
 
       "test_connection": "Test Connection"
     },
-    
+
+    "smtp": {
+      "title": "SMTP Configuration",
+      "description": "Configure your SMTP email server settings for user registration and notifications.",
+
+      "server_label": "SMTP Server",
+      "server_placeholder": "smtp.gmail.com",
+      "server_help": "SMTP server hostname (e.g., smtp.gmail.com, smtp.outlook.com, mail.example.com)",
+      "server_error": "Please enter a valid SMTP server hostname",
+
+      "port_label": "Port",
+      "port_placeholder": "587",
+      "port_help": "SMTP port number (587 for TLS, 465 for SSL, 25 for plain)",
+      "port_error": "Port must be between 1 and 65535",
+
+      "user_label": "Username",
+      "user_placeholder": "your-email@example.com",
+      "user_help": "SMTP authentication username (usually your email address)",
+      "user_error": "SMTP username is required",
+
+      "password_label": "Password",
+      "password_placeholder": "Enter SMTP password",
+      "password_help": "SMTP authentication password or app-specific password",
+      "password_error": "SMTP password is required",
+
+      "sender_label": "Sender Email",
+      "sender_placeholder": "noreply@example.com",
+      "sender_help": "Email address that will appear as sender (e.g., noreply@example.com)",
+      "sender_error": "Please enter a valid sender email address",
+
+      "test_connection": "Test Connection",
+      "test_connection_help": "Fill in all fields above to test your SMTP connection. This helps ensure email delivery will work correctly."
+    },
+
     "app": {
       "title": "Application Configuration",
       "description": "Configure your application's basic settings and security options.",

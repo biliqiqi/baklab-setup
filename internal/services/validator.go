@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"log"
@@ -300,16 +301,41 @@ func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.Connec
 		result.Message = "key:validation.smtp.connection_failed"
 		return result
 	}
+
+	// 使用更安全的连接关闭方式
+	var connectionClosed bool
 	defer func() {
-		if err := client.Close(); err != nil {
-			log.Printf("Warning: failed to close SMTP connection: %v", err)
+		if !connectionClosed {
+			if err := client.Close(); err != nil {
+				// 忽略 "use of closed network connection" 错误，这是正常的
+				if !strings.Contains(err.Error(), "use of closed network connection") {
+					log.Printf("Warning: failed to close SMTP connection: %v", err)
+				}
+			}
 		}
 	}()
 
+	// 检查并启动 STARTTLS
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		tlsConfig := &tls.Config{
+			ServerName: cfg.Server,
+		}
+		if err := client.StartTLS(tlsConfig); err != nil {
+			connectionClosed = true
+			result.Success = false
+			result.Message = "key:validation.smtp.tls_failed"
+			return result
+		}
+	}
+
 	// 测试认证
 	if cfg.User != "" && cfg.Password != "" {
+		// 首先尝试 PLAIN 认证
 		auth := smtp.PlainAuth("", cfg.User, cfg.Password, cfg.Server)
 		if err := client.Auth(auth); err != nil {
+			log.Printf("PLAIN auth failed: %v, trying to close connection gracefully", err)
+			// PLAIN 认证失败时，连接可能已经被服务器关闭
+			connectionClosed = true
 			result.Success = false
 			result.Message = "key:validation.smtp.auth_failed"
 			return result
@@ -326,7 +352,7 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 	var errors []model.ValidationError
 
 	// 定义步骤顺序
-	stepOrder := []string{"welcome", "database", "redis", "app", "ssl", "goaccess", "admin", "review", "complete"}
+	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "ssl", "goaccess", "admin", "review", "complete"}
 	currentStepIndex := -1
 	
 	// 找到当前步骤的索引
@@ -351,17 +377,21 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 		errors = append(errors, v.validateRedisConfig(cfg.Redis)...)
 	}
 
-	if currentStepIndex >= 3 { // app
+	if currentStepIndex >= 3 { // smtp
+		errors = append(errors, v.validateSMTPConfig(cfg.SMTP)...)
+	}
+
+	if currentStepIndex >= 4 { // app
 		errors = append(errors, v.validateAppConfig(cfg.App)...)
 	}
 
-	if currentStepIndex >= 4 { // ssl
+	if currentStepIndex >= 5 { // ssl
 		errors = append(errors, v.validateSSLConfig(cfg.SSL)...)
 	}
 
 	// goaccess 不需要强制验证，跳过
 
-	if currentStepIndex >= 6 { // admin
+	if currentStepIndex >= 7 { // admin
 		errors = append(errors, v.validateAdminUserConfig(cfg.AdminUser)...)
 	}
 
@@ -629,6 +659,63 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 				})
 			}
 		}
+	}
+
+	return errors
+}
+
+// validateSMTPConfig 验证SMTP配置
+func (v *ValidatorService) validateSMTPConfig(cfg model.SMTPConfig) []model.ValidationError {
+	var errors []model.ValidationError
+
+	// SMTP服务器验证
+	if cfg.Server == "" {
+		errors = append(errors, model.ValidationError{
+			Field:   "smtp.server",
+			Message: "key:validation.smtp.server_required",
+		})
+	} else if !hostRegex.MatchString(cfg.Server) {
+		errors = append(errors, model.ValidationError{
+			Field:   "smtp.server",
+			Message: "key:validation.smtp.server_invalid",
+		})
+	}
+
+	// 端口验证
+	if cfg.Port <= 0 || cfg.Port > 65535 {
+		errors = append(errors, model.ValidationError{
+			Field:   "smtp.port",
+			Message: "key:validation.smtp.port_invalid",
+		})
+	}
+
+	// 用户名验证
+	if cfg.User == "" {
+		errors = append(errors, model.ValidationError{
+			Field:   "smtp.user",
+			Message: "key:validation.smtp.user_required",
+		})
+	}
+
+	// 密码验证
+	if cfg.Password == "" {
+		errors = append(errors, model.ValidationError{
+			Field:   "smtp.password",
+			Message: "key:validation.smtp.password_required",
+		})
+	}
+
+	// 发件人邮箱验证
+	if cfg.Sender == "" {
+		errors = append(errors, model.ValidationError{
+			Field:   "smtp.sender",
+			Message: "key:validation.smtp.sender_required",
+		})
+	} else if !emailRegex.MatchString(cfg.Sender) {
+		errors = append(errors, model.ValidationError{
+			Field:   "smtp.sender",
+			Message: "key:validation.smtp.sender_invalid",
+		})
 	}
 
 	return errors
