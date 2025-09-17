@@ -29,10 +29,11 @@
       "welcome": "欢迎",
       "database": "数据库",
       "redis": "Redis缓存",
+      "smtp": "SMTP邮件",
       "application": "应用程序",
       "ssl": "SSL/HTTPS",
       "goaccess": "分析服务",
-      "admin_user": "管理员用户", 
+      "admin_user": "管理员用户",
       "review": "检查配置",
       "config_complete": "配置完成"
     },
@@ -133,7 +134,40 @@
 
       "test_connection": "测试连接"
     },
-    
+
+    "smtp": {
+      "title": "SMTP 邮件配置",
+      "description": "配置您的 SMTP 邮件服务器设置，用于用户注册验证和系统通知。",
+
+      "server_label": "SMTP 服务器",
+      "server_placeholder": "smtp.gmail.com",
+      "server_help": "SMTP 服务器主机名（例如：smtp.gmail.com, smtp.outlook.com, mail.example.com）",
+      "server_error": "请输入有效的 SMTP 服务器主机名",
+
+      "port_label": "端口",
+      "port_placeholder": "587",
+      "port_help": "SMTP 端口号（587 用于 TLS，465 用于 SSL，25 用于普通连接）",
+      "port_error": "端口必须在 1 到 65535 之间",
+
+      "user_label": "用户名",
+      "user_placeholder": "your-email@example.com",
+      "user_help": "SMTP 认证用户名（通常是您的邮箱地址）",
+      "user_error": "SMTP 用户名是必需的",
+
+      "password_label": "密码",
+      "password_placeholder": "输入 SMTP 密码",
+      "password_help": "SMTP 认证密码或应用专用密码",
+      "password_error": "SMTP 密码是必需的",
+
+      "sender_label": "发件人邮箱",
+      "sender_placeholder": "noreply@example.com",
+      "sender_help": "将显示为发件人的邮箱地址（例如：noreply@example.com）",
+      "sender_error": "请输入有效的发件人邮箱地址",
+
+      "test_connection": "测试连接",
+      "test_connection_help": "填写完上述所有字段后可测试 SMTP 连接。这有助于确保邮件发送功能正常工作。"
+    },
+
     "app": {
       "title": "应用程序配置",
       "description": "配置您的应用程序基本设置和安全选项。",

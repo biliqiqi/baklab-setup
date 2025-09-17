@@ -12,6 +12,7 @@ class SetupApp {
             generateConfig: false,
             testDatabase: false,
             testRedis: false,
+            testSMTP: false,
             saveConfig: false,
             geoFileUpload: false
         };
@@ -81,6 +82,7 @@ class SetupApp {
             { key: 'welcome', titleKey: 'setup.steps.welcome', handler: this.renderInitStep },
             { key: 'database', titleKey: 'setup.steps.database', handler: this.renderDatabaseStep },
             { key: 'redis', titleKey: 'setup.steps.redis', handler: this.renderRedisStep },
+            { key: 'smtp', titleKey: 'setup.steps.smtp', handler: this.renderSMTPStep },
             { key: 'app', titleKey: 'setup.steps.application', handler: this.renderAppStep },
             { key: 'ssl', titleKey: 'setup.steps.ssl', handler: this.renderSSLStep },
             { key: 'goaccess', titleKey: 'setup.steps.goaccess', handler: this.renderGoAccessStep },
@@ -826,7 +828,150 @@ class SetupApp {
             }
         });
     }
-    
+
+    renderSMTPStep(container) {
+        container.innerHTML = `
+            <form id="smtp-form" class="form-section" novalidate>
+                <h3 data-i18n="setup.smtp.title"></h3>
+                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.smtp.description"></p>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="smtp-server"><span data-i18n="setup.smtp.server_label"></span> <span data-i18n="common.required"></span></label>
+                        <input
+                            type="text"
+                            id="smtp-server"
+                            name="server"
+                            value="${this.config.smtp.server}"
+                            data-i18n-placeholder="setup.smtp.server_placeholder"
+                            required
+                            pattern="^[a-zA-Z0-9.\\-]+$"
+                            data-i18n-title="setup.smtp.server_error"
+                        >
+                        <div class="form-help" data-i18n="setup.smtp.server_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.smtp.server_error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp-port"><span data-i18n="setup.smtp.port_label"></span> <span data-i18n="common.required"></span></label>
+                        <input
+                            type="number"
+                            id="smtp-port"
+                            name="port"
+                            value="${this.config.smtp.port}"
+                            data-i18n-placeholder="setup.smtp.port_placeholder"
+                            required
+                            min="1"
+                            max="65535"
+                            data-i18n-title="setup.smtp.port_error"
+                        >
+                        <div class="form-help" data-i18n="setup.smtp.port_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.smtp.port_error"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="smtp-user"><span data-i18n="setup.smtp.user_label"></span> <span data-i18n="common.required"></span></label>
+                    <input
+                        type="text"
+                        id="smtp-user"
+                        name="user"
+                        value="${this.config.smtp.user}"
+                        data-i18n-placeholder="setup.smtp.user_placeholder"
+                        required
+                        data-i18n-title="setup.smtp.user_error"
+                    >
+                    <div class="form-help" data-i18n="setup.smtp.user_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.smtp.user_error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="smtp-password"><span data-i18n="setup.smtp.password_label"></span> <span data-i18n="common.required"></span></label>
+                    <input
+                        type="password"
+                        id="smtp-password"
+                        name="password"
+                        value="${this.config.smtp.password}"
+                        data-i18n-placeholder="setup.smtp.password_placeholder"
+                        required
+                        data-i18n-title="setup.smtp.password_error"
+                    >
+                    <div class="form-help" data-i18n="setup.smtp.password_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.smtp.password_error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="smtp-sender"><span data-i18n="setup.smtp.sender_label"></span> <span data-i18n="common.required"></span></label>
+                    <input
+                        type="email"
+                        id="smtp-sender"
+                        name="sender"
+                        value="${this.config.smtp.sender}"
+                        data-i18n-placeholder="setup.smtp.sender_placeholder"
+                        required
+                        data-i18n-title="setup.smtp.sender_error"
+                    >
+                    <div class="form-help" data-i18n="setup.smtp.sender_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.smtp.sender_error"></div>
+                </div>
+
+                <div id="smtp-test-connection-container">
+                    <div class="form-group">
+                        <button type="button" id="smtp-test-btn" class="btn btn-outline-primary" onclick="app.testSMTPConnection()" data-i18n="setup.smtp.test_connection" disabled></button>
+                        <div class="form-help" data-i18n="setup.smtp.test_connection_help"></div>
+                    </div>
+                    <div id="smtp-connection-results" class="connection-results-container"></div>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
+                </div>
+            </form>
+        `;
+
+        // 添加字段变化监听以启用测试按钮
+        this.addSMTPFieldListeners();
+
+        // 添加表单提交事件监听
+        document.getElementById('smtp-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            if (e.target.checkValidity()) {
+                app.saveSMTPConfig();
+            } else {
+                app.showFormErrors(e.target);
+            }
+        });
+    }
+
+    addSMTPFieldListeners() {
+        const fields = ['smtp-server', 'smtp-port', 'smtp-user', 'smtp-password', 'smtp-sender'];
+        const testBtn = document.getElementById('smtp-test-btn');
+
+        const checkFieldsComplete = () => {
+            const allFieldsFilled = fields.every(fieldId => {
+                const field = document.getElementById(fieldId);
+                return field && field.value.trim() !== '';
+            });
+
+            if (testBtn) {
+                testBtn.disabled = !allFieldsFilled;
+            }
+        };
+
+        // 为每个字段添加输入监听
+        fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('input', checkFieldsComplete);
+                field.addEventListener('blur', checkFieldsComplete);
+            }
+        });
+
+        // 初始检查
+        checkFieldsComplete();
+    }
+
     renderAppStep(container) {
         container.innerHTML = `
             <form id="app-form" class="form-section" novalidate>
@@ -1846,7 +1991,21 @@ class SetupApp {
         this.saveToLocalCache();
         this.nextStep();
     }
-    
+
+    async saveSMTPConfig() {
+        this.config.smtp = {
+            server: document.getElementById('smtp-server').value,
+            port: parseInt(document.getElementById('smtp-port').value),
+            user: document.getElementById('smtp-user').value,
+            password: document.getElementById('smtp-password').value,
+            sender: document.getElementById('smtp-sender').value
+        };
+
+        // 只保存到本地缓存，不调用后端API
+        this.saveToLocalCache();
+        this.nextStep();
+    }
+
     updateRedisHostField(serviceType) {
         const hostField = document.getElementById('redis-host');
         const testConnectionContainer = document.getElementById('redis-test-connection-container');
@@ -2205,12 +2364,16 @@ class SetupApp {
     async testRedisConnection() {
         await this.protectedApiCall('testRedis', () => this.testConnection('redis'));
     }
+
+    async testSMTPConnection() {
+        await this.protectedApiCall('testSMTP', () => this.testConnection('smtp'));
+    }
     
     async testConnection(type) {
         const testConfig = { ...this.config };
         
         // Show loading state
-        const testBtn = document.getElementById(`${type === 'database' ? 'db' : 'redis'}-test-btn`);
+        const testBtn = document.getElementById(`${type === 'database' ? 'db' : type === 'smtp' ? 'smtp' : 'redis'}-test-btn`);
         const originalText = testBtn.textContent;
         testBtn.disabled = true;
         testBtn.textContent = window.i18n ? window.i18n.t('common.testing') : 'Testing...';
@@ -2242,6 +2405,14 @@ class SetupApp {
                 user: document.getElementById('redis-user') ? document.getElementById('redis-user').value : '',
                 password: document.getElementById('redis-password').value
             };
+        } else if (type === 'smtp') {
+            testConfig.smtp = {
+                server: document.getElementById('smtp-server').value,
+                port: parseInt(document.getElementById('smtp-port').value),
+                user: document.getElementById('smtp-user').value,
+                password: document.getElementById('smtp-password').value,
+                sender: document.getElementById('smtp-sender').value
+            };
         }
         
         try {
@@ -2268,7 +2439,7 @@ class SetupApp {
     displayConnectionResults(results, serviceType = null) {
         // If serviceType is specified, show results in the specific service container
         if (serviceType) {
-            const containerId = `${serviceType === 'database' ? 'db' : 'redis'}-connection-results`;
+            const containerId = `${serviceType === 'database' ? 'db' : serviceType === 'smtp' ? 'smtp' : 'redis'}-connection-results`;
             const container = document.getElementById(containerId);
             if (container) {
                 const serviceResults = results.filter(r => r.service === serviceType);
