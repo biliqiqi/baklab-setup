@@ -613,6 +613,24 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		}
 	}
 
+	// AdminPassword验证（仅Docker模式需要）
+	if cfg.ServiceType == "docker" {
+		if cfg.AdminPassword == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "redis.admin_password",
+				Message: "Redis CLI management password is required for Docker mode",
+			})
+		} else {
+			// Docker模式的管理密码使用严格验证
+			if !validateDatabasePassword(cfg.AdminPassword) {
+				errors = append(errors, model.ValidationError{
+					Field:   "redis.admin_password",
+					Message: "Redis CLI password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+				})
+			}
+		}
+	}
+
 	return errors
 }
 

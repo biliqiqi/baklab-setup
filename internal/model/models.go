@@ -39,11 +39,13 @@ type DatabaseConfig struct {
 
 // RedisConfig Redis配置
 type RedisConfig struct {
-	ServiceType string `json:"service_type" validate:"required,oneof=docker external"` // "docker" for docker compose, "external" for external service
-	Host        string `json:"host" validate:"required"`
-	Port        int    `json:"port" validate:"required,min=1,max=65535"`
-	User        string `json:"user"`
-	Password    string `json:"password" validate:"required"`
+	ServiceType   string `json:"service_type" validate:"required,oneof=docker external"` // "docker" for docker compose, "external" for external service
+	Host          string `json:"host" validate:"required"`
+	Port          int    `json:"port" validate:"required,min=1,max=65535"`
+	User          string `json:"user"`
+	Password      string `json:"password" validate:"required"`
+	// 管理密码配置 (仅Docker模式需要，用于CLI管理)
+	AdminPassword string `json:"admin_password"`
 }
 
 // SMTPConfig SMTP配置
