@@ -118,11 +118,12 @@
       "port_error": "Port must be between 1 and 65535",
 
       "user_label": "Username",
-      "user_placeholder": "default",
-      "user_help": "Docker mode: Username for Redis ACL configuration (default: 'default'). External mode: Optional username for authentication (leave empty for legacy Redis compatibility).",
-      "user_error": "Username cannot exceed 128 characters",
+      "user_placeholder": "app_user",
+      "user_help": "Docker mode: Application Redis username (required, cannot use 'default', reserved for administrator). External mode: Optional username for authentication (leave empty for legacy Redis compatibility).",
+      "user_error": "Username cannot be 'default' and can only contain letters, numbers, underscores and hyphens, max 128 characters",
 
-      "admin_password_title": "Redis CLI Management Configuration (Docker Only)",
+      "admin_password_title": "Redis CLI Management Configuration",
+      "admin_password_description": "This configuration is for Redis administrator access, using the default 'default' username and your configured management password",
       "admin_password_label": "CLI Management Password",
       "admin_password_placeholder": "Enter CLI management password",
       "admin_password_help": "Strong password for Redis CLI management access (12-64 chars, mixed types)",

@@ -62,6 +62,26 @@ func (h *SetupHandlers) localizeMessage(r *http.Request, messageKey string, data
 	return localizer.LocalTpl(messageKey)
 }
 
+// translateValidationErrors 统一翻译验证错误列表
+func (h *SetupHandlers) translateValidationErrors(r *http.Request, errors []model.ValidationError) {
+	for i := range errors {
+		if strings.HasPrefix(errors[i].Message, "key:") {
+			messageKey := strings.TrimPrefix(errors[i].Message, "key:")
+			errors[i].Message = h.localizeMessage(r, messageKey)
+		}
+	}
+}
+
+// translateConnectionResults 统一翻译连接测试结果
+func (h *SetupHandlers) translateConnectionResults(r *http.Request, results []model.ConnectionTestResult) {
+	for i := range results {
+		if strings.HasPrefix(results[i].Message, "key:") {
+			messageKey := strings.TrimPrefix(results[i].Message, "key:")
+			results[i].Message = h.localizeMessage(r, messageKey)
+		}
+	}
+}
+
 // IndexHandler 主页处理程序
 func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	// 开发模式下跳过token验证
@@ -204,6 +224,8 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 	errors := validator.ValidateConfig(&cfg)
 
 	if len(errors) > 0 {
+		// Translate validation error messages
+		h.translateValidationErrors(r, errors)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: h.localizeMessage(r, "messages.configuration_validation_failed"),
@@ -291,12 +313,7 @@ func (h *SetupHandlers) TestConnectionsHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	// 翻译带key:前缀的消息
-	for i, result := range results {
-		if strings.HasPrefix(result.Message, "key:") {
-			messageKey := strings.TrimPrefix(result.Message, "key:")
-			results[i].Message = h.localizeMessage(r, messageKey)
-		}
-	}
+	h.translateConnectionResults(r, results)
 
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
@@ -417,6 +434,8 @@ func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Req
 	errors := validator.ValidateConfig(&cfg)
 
 	if len(errors) > 0 {
+		// Translate validation error messages
+		h.translateValidationErrors(r, errors)
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: h.localizeMessage(r, "messages.configuration_validation_failed"),

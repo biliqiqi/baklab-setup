@@ -352,7 +352,7 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 	var errors []model.ValidationError
 
 	// 定义步骤顺序
-	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "ssl", "goaccess", "admin", "review", "complete"}
+	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "oauth", "ssl", "goaccess", "admin", "review", "complete"}
 	currentStepIndex := -1
 	
 	// 找到当前步骤的索引
@@ -385,13 +385,17 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 		errors = append(errors, v.validateAppConfig(cfg.App)...)
 	}
 
-	if currentStepIndex >= 5 { // ssl
+	if currentStepIndex >= 5 { // oauth
+		errors = append(errors, v.validateOAuthConfig(cfg.OAuth)...)
+	}
+
+	if currentStepIndex >= 6 { // ssl
 		errors = append(errors, v.validateSSLConfig(cfg.SSL)...)
 	}
 
 	// goaccess 不需要强制验证，跳过
 
-	if currentStepIndex >= 7 { // admin
+	if currentStepIndex >= 8 { // admin
 		errors = append(errors, v.validateAdminUserConfig(cfg.AdminUser)...)
 	}
 
@@ -437,7 +441,7 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 	if cfg.Port <= 0 || cfg.Port > 65535 {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.port",
-			Message: "Database port must be between 1 and 65535",
+			Message: "key:validation.database.port_invalid",
 		})
 	}
 
@@ -445,17 +449,17 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 	if cfg.Name == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.name",
-			Message: "Database name is required",
+			Message: "key:validation.database.name_required",
 		})
 	} else if len(cfg.Name) > 63 {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.name",
-			Message: "Database name must be 63 characters or less",
+			Message: "key:validation.database.name_error",
 		})
 	} else if !dbNameRegex.MatchString(cfg.Name) {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.name",
-			Message: "Database name must start with a letter and contain only letters, numbers, and underscores",
+			Message: "key:validation.database.name_error",
 		})
 	}
 
@@ -610,7 +614,7 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 	if cfg.Port <= 0 || cfg.Port > 65535 {
 		errors = append(errors, model.ValidationError{
 			Field:   "redis.port",
-			Message: "Redis port must be between 1 and 65535",
+			Message: "key:validation.redis.port_invalid",
 		})
 	}
 
@@ -640,6 +644,59 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 				Field:   "redis.password",
 				Message: errorMessage,
 			})
+		}
+	}
+
+	// User验证 - Docker模式下必需且禁止使用'default'用户名
+	if cfg.ServiceType == "docker" {
+		// Docker模式下必须提供用户名
+		if cfg.User == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "redis.user",
+				Message: "key:validation.redis.user_required",
+			})
+		} else if cfg.User == "default" {
+			errors = append(errors, model.ValidationError{
+				Field:   "redis.user",
+				Message: "key:validation.redis.user_default_forbidden",
+			})
+		} else {
+			// 验证用户名格式（字母、数字、下划线、连字符）
+			userRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+			if !userRegex.MatchString(cfg.User) {
+				errors = append(errors, model.ValidationError{
+					Field:   "redis.user",
+					Message: "key:validation.redis.user_format_error",
+				})
+			} else if len(cfg.User) > 128 {
+				errors = append(errors, model.ValidationError{
+					Field:   "redis.user",
+					Message: "key:validation.redis.user_length_error",
+				})
+			}
+		}
+	} else {
+		// 外部模式下用户名可选，但如果提供了就需要验证格式
+		if cfg.User != "" {
+			if cfg.User == "default" {
+				errors = append(errors, model.ValidationError{
+					Field:   "redis.user",
+					Message: "key:validation.redis.user_default_forbidden",
+				})
+			} else {
+				userRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+				if !userRegex.MatchString(cfg.User) {
+					errors = append(errors, model.ValidationError{
+						Field:   "redis.user",
+						Message: "key:validation.redis.user_format_error",
+					})
+				} else if len(cfg.User) > 128 {
+					errors = append(errors, model.ValidationError{
+						Field:   "redis.user",
+						Message: "key:validation.redis.user_length_error",
+					})
+				}
+			}
 		}
 	}
 
@@ -729,12 +786,12 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 	if cfg.DomainName == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.domain_name",
-			Message: "Domain name is required",
+			Message: "key:validation.app.domain_required",
 		})
 	} else if !domainRegex.MatchString(cfg.DomainName) {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.domain_name",
-			Message: "Domain name must be a valid domain (e.g., example.com) or localhost",
+			Message: "key:validation.app.domain_error",
 		})
 	}
 
@@ -742,12 +799,12 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 	if cfg.BrandName == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.brand_name",
-			Message: "Brand name is required",
+			Message: "key:validation.app.brand_required",
 		})
 	} else if utf8.RuneCountInString(cfg.BrandName) < 2 || utf8.RuneCountInString(cfg.BrandName) > 50 {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.brand_name",
-			Message: "Brand name must be 2-50 characters long",
+			Message: "key:validation.app.brand_error",
 		})
 	}
 
@@ -755,12 +812,12 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 	if cfg.AdminEmail == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.admin_email",
-			Message: "Admin email is required",
+			Message: "key:validation.app.admin_email_required",
 		})
 	} else if !emailRegex.MatchString(cfg.AdminEmail) {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.admin_email",
-			Message: "Admin email must be a valid email address",
+			Message: "key:validation.app.email_error",
 		})
 	}
 
@@ -770,7 +827,7 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		if origin != "" && !urlRegex.MatchString(origin) {
 			errors = append(errors, model.ValidationError{
 				Field:   fmt.Sprintf("app.cors_allow_origins[%d]", i),
-				Message: "CORS origin must be a valid HTTP/HTTPS URL",
+				Message: "key:validation.app.cors_error",
 			})
 		}
 	}
@@ -780,15 +837,54 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 	if cfg.DefaultLang == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.default_lang",
-			Message: "Default language is required",
+			Message: "key:validation.app.language_required",
 		})
 	} else if !validLangs[cfg.DefaultLang] {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.default_lang",
-			Message: "Default language must be one of: en, zh-Hans, zh-Hant, ja",
+			Message: "key:validation.app.language_error",
 		})
 	}
 
+
+	return errors
+}
+
+// validateOAuthConfig 验证OAuth配置
+func (v *ValidatorService) validateOAuthConfig(cfg model.OAuthConfig) []model.ValidationError {
+	var errors []model.ValidationError
+
+	// Google OAuth验证
+	if cfg.GoogleEnabled {
+		if cfg.GoogleClientID == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "oauth.google_client_id",
+				Message: "key:validation.oauth.google_client_id_required",
+			})
+		}
+		if cfg.GoogleSecret == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "oauth.google_client_secret",
+				Message: "key:validation.oauth.google_client_secret_required",
+			})
+		}
+	}
+
+	// GitHub OAuth验证
+	if cfg.GithubEnabled {
+		if cfg.GithubClientID == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "oauth.github_client_id",
+				Message: "key:validation.oauth.github_client_id_required",
+			})
+		}
+		if cfg.GithubSecret == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "oauth.github_client_secret",
+				Message: "key:validation.oauth.github_client_secret_required",
+			})
+		}
+	}
 
 	return errors
 }
@@ -801,17 +897,17 @@ func (v *ValidatorService) validateAdminUserConfig(cfg model.AdminUserConfig) []
 	if cfg.Username == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.username",
-			Message: "Admin username is required",
+			Message: "key:validation.admin.username_required",
 		})
 	} else if len(cfg.Username) < 4 || len(cfg.Username) > 20 {
 		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.username",
-			Message: "Username must be 4-20 characters long",
+			Message: "key:validation.admin.username_error",
 		})
 	} else if !usernameRegex.MatchString(cfg.Username) {
 		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.username",
-			Message: "Username must start and end with alphanumeric characters, can contain letters, numbers, dots, underscores, and hyphens",
+			Message: "key:validation.admin.username_error",
 		})
 	}
 
@@ -819,12 +915,12 @@ func (v *ValidatorService) validateAdminUserConfig(cfg model.AdminUserConfig) []
 	if cfg.Email == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.email",
-			Message: "Admin email is required",
+			Message: "key:validation.admin.email_required",
 		})
 	} else if !emailRegex.MatchString(cfg.Email) {
 		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.email",
-			Message: "Admin email must be a valid email address",
+			Message: "key:validation.admin.email_error",
 		})
 	}
 
@@ -832,12 +928,12 @@ func (v *ValidatorService) validateAdminUserConfig(cfg model.AdminUserConfig) []
 	if cfg.Password == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.password",
-			Message: "Admin password is required",
+			Message: "key:validation.admin.password_required",
 		})
 	} else if !validatePassword(cfg.Password) {
 		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.password",
-			Message: "Password must be 12-64 characters with lowercase, uppercase, numbers, and special characters (!@#$%^&*)",
+			Message: "key:validation.admin.password_error",
 		})
 	}
 

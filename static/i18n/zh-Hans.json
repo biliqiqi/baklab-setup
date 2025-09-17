@@ -118,11 +118,12 @@
       "port_error": "端口必须在 1 到 65535 之间",
 
       "user_label": "用户名",
-      "user_placeholder": "default",
-      "user_help": "Docker 模式：用于 Redis ACL 配置的用户名（默认：'default'）。外部模式：可选的身份验证用户名（留空以兼容旧版 Redis）。",
-      "user_error": "用户名不能超过128个字符",
+      "user_placeholder": "app_user",
+      "user_help": "Docker 模式：应用程序Redis用户名（必填，不能使用'default'，该名称保留给管理员）。外部模式：可选的身份验证用户名（留空以兼容旧版 Redis）。",
+      "user_error": "用户名不能是'default'且只能包含字母、数字、下划线和连字符，长度不超过128个字符",
 
-      "admin_password_title": "Redis CLI 管理配置（仅限 Docker）",
+      "admin_password_title": "Redis CLI 管理配置",
+      "admin_password_description": "此配置用于Redis管理员访问，使用默认的 'default' 用户名和您设置的管理密码",
       "admin_password_label": "CLI 管理密码",
       "admin_password_placeholder": "输入 CLI 管理密码",
       "admin_password_help": "用于 Redis CLI 管理访问的强密码（12-64个字符，包含多种类型）",

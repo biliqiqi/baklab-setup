@@ -144,7 +144,7 @@ APP_DB_PASSWORD='{{ .Database.AppPassword }}'
 # Redis Configuration
 REDIS_HOST='{{ .Redis.Host }}'
 REDIS_PORT={{ .Redis.Port }}
-REDIS_USER='{{ if .Redis.User }}{{ .Redis.User }}{{ else }}default{{ end }}'
+REDIS_USER='{{ .Redis.User }}'
 REDIS_PASSWORD='{{ .Redis.Password }}'
 REDISCLI_AUTH='{{ .Redis.AdminPassword }}'
 
@@ -495,7 +495,10 @@ services:
       - ./nginx/logs:/data/logs
       - ./manage_static:/data/static
     ports:
-      - "9880:9880"{{ end }}
+      - "9880:9880"
+    depends_on:
+      nginx:
+        condition: service_healthy{{ end }}
 
 {{ if or (eq .Database.ServiceType "docker") (eq .Redis.ServiceType "docker") }}
 volumes:{{ if eq .Database.ServiceType "docker" }}
@@ -656,17 +659,8 @@ func (g *GeneratorService) generateRedisConfig(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to write redis.conf: %w", err)
 	}
 
-	// 读取并写入users.acl文件
-	usersAclTemplatePath := "./templates/redis/users.acl.tpl"
-	usersAclContent, err := os.ReadFile(usersAclTemplatePath)
-	if err != nil {
-		return fmt.Errorf("failed to read users.acl template: %w", err)
-	}
-
-	usersAclPath := filepath.Join(redisDir, "users.acl")
-	if err := os.WriteFile(usersAclPath, usersAclContent, 0644); err != nil {
-		return fmt.Errorf("failed to write users.acl: %w", err)
-	}
+	// 注意：users.acl文件由docker-compose中的redis-acl-generator服务动态生成
+	// 不在此处生成静态文件，避免与动态生成冲突
 
 	return nil
 }
