@@ -162,6 +162,21 @@
     "validation.redis.host_docker_error": "使用docker compose时Redis主机必须是 'localhost'",
     "validation.redis.password_required": "Redis密码为必填项",
     "validation.redis.password_external_error": "Redis密码必须是1-128个字符且不能包含控制字符",
+    "validation.redis.user_required": "Docker模式下必须提供Redis用户名",
+    "validation.redis.user_default_forbidden": "Redis用户名不能是'default'，该名称已保留给管理员使用",
+    "validation.redis.user_format_error": "Redis用户名只能包含字母、数字、下划线和连字符",
+    "validation.redis.user_length_error": "Redis用户名长度不能超过128个字符",
     "validation.redis.admin_password_required": "Docker模式下需要Redis CLI管理密码",
-    "validation.redis.admin_password_error": "Redis CLI密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）"
+    "validation.redis.admin_password_error": "Redis CLI密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+    "validation.oauth.google_client_id_required": "启用Google OAuth时必须提供Google客户端ID",
+    "validation.oauth.google_client_secret_required": "启用Google OAuth时必须提供Google客户端密钥",
+    "validation.oauth.github_client_id_required": "启用GitHub OAuth时必须提供GitHub客户端ID",
+    "validation.oauth.github_client_secret_required": "启用GitHub OAuth时必须提供GitHub客户端密钥",
+    "validation.app.domain_required": "域名为必填项",
+    "validation.app.brand_required": "品牌名称为必填项",
+    "validation.app.admin_email_required": "管理员邮箱为必填项",
+    "validation.app.language_required": "默认语言为必填项",
+    "validation.admin.username_required": "管理员用户名为必填项",
+    "validation.admin.email_required": "管理员邮箱为必填项",
+    "validation.admin.password_required": "管理员密码为必填项"
 }

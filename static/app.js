@@ -150,6 +150,12 @@ class SetupApp {
         const result = await response.json();
         
         if (!response.ok) {
+            // 如果有验证错误，创建包含详细错误信息的错误对象
+            if (result.errors && result.errors.length > 0) {
+                const error = new Error(result.message || 'Validation failed');
+                error.validationErrors = result.errors;
+                throw error;
+            }
             throw new Error(result.message || 'Request failed');
         }
         
@@ -179,7 +185,12 @@ class SetupApp {
             const result = await apiCall.apply(this, args);
             return result;
         } catch (error) {
-            this.showAlert('error', error.message);
+            // 如果是验证错误，显示详细的错误信息
+            if (error.validationErrors && error.validationErrors.length > 0) {
+                this.showValidationErrors(error.validationErrors);
+            } else {
+                this.showAlert('error', error.message);
+            }
             throw error; // 继续抛出错误供调用者处理
         } finally {
             this.releaseLock(lockName);
@@ -545,7 +556,7 @@ class SetupApp {
         });
 
         // 添加表单提交事件监听
-        document.getElementById('database-form').addEventListener('submit', (e) => {
+        document.getElementById('database-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             // 验证数据库密码强度
@@ -626,7 +637,7 @@ class SetupApp {
                 }
             
             if (e.target.checkValidity()) {
-                app.saveDatabaseConfig();
+                await app.saveDatabaseConfig();
             } else {
                 app.showFormErrors(e.target);
             }
@@ -692,7 +703,7 @@ class SetupApp {
                 </div>
 
                 <div class="form-group">
-                    <label for="redis-user"><span data-i18n="setup.redis.user_label"></span> <span data-i18n="common.optional"></span></label>
+                    <label for="redis-user" id="redis-user-label"><span data-i18n="setup.redis.user_label"></span> <span id="redis-user-required-indicator" data-i18n="common.optional"></span></label>
                     <input
                         type="text"
                         id="redis-user"
@@ -708,7 +719,8 @@ class SetupApp {
 
                 <!-- Redis CLI 管理配置 -->
                 <div id="redis-admin-config" style="background: var(--gray-50); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: none;">
-                    <h4 style="margin: 0 0 1rem 0; color: var(--gray-700); font-size: 1rem;" data-i18n="setup.redis.admin_password_title"></h4>
+                    <h4 style="margin: 0 0 0.5rem 0; color: var(--gray-700); font-size: 1rem;" data-i18n="setup.redis.admin_password_title"></h4>
+                    <p style="margin: 0 0 1rem 0; color: var(--gray-600); font-size: 0.9rem;" data-i18n="setup.redis.admin_password_description"></p>
                     <div class="form-group">
                         <label for="redis-admin-password"><span data-i18n="setup.redis.admin_password_label"></span> <span data-i18n="common.required"></span></label>
                         <input
@@ -776,7 +788,7 @@ class SetupApp {
         }, 100);
         
         // 添加表单提交事件监听
-        document.getElementById('redis-form').addEventListener('submit', (e) => {
+        document.getElementById('redis-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const serviceType = document.querySelector('input[name="redis-service-type"]:checked').value;
@@ -827,7 +839,7 @@ class SetupApp {
             }
             
             if (e.target.checkValidity()) {
-                app.saveRedisConfig();
+                await app.saveRedisConfig();
             } else {
                 app.showFormErrors(e.target);
             }
@@ -938,11 +950,11 @@ class SetupApp {
         this.addSMTPFieldListeners();
 
         // 添加表单提交事件监听
-        document.getElementById('smtp-form').addEventListener('submit', (e) => {
+        document.getElementById('smtp-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             if (e.target.checkValidity()) {
-                app.saveSMTPConfig();
+                await app.saveSMTPConfig();
             } else {
                 app.showFormErrors(e.target);
             }
@@ -1149,10 +1161,10 @@ class SetupApp {
         `;
         
         // 添加表单提交事件监听
-        document.getElementById('app-form').addEventListener('submit', (e) => {
+        document.getElementById('app-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (e.target.checkValidity()) {
-                app.saveAppConfig();
+                await app.saveAppConfig();
             } else {
                 app.showFormErrors(e.target);
             }
@@ -1312,10 +1324,10 @@ class SetupApp {
         });
 
         // 表单提交处理
-        document.getElementById('oauth-form').addEventListener('submit', (e) => {
+        document.getElementById('oauth-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (e.target.checkValidity()) {
-                app.saveOAuthConfig();
+                await app.saveOAuthConfig();
             } else {
                 app.showFormErrors(e.target);
             }
@@ -1875,7 +1887,7 @@ class SetupApp {
         `;
         
         // 添加表单提交事件监听
-        document.getElementById('admin-form').addEventListener('submit', (e) => {
+        document.getElementById('admin-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             // 检查密码匹配
@@ -1898,7 +1910,7 @@ class SetupApp {
             }
             
             if (e.target.checkValidity()) {
-                app.saveAdminConfig();
+                await app.saveAdminConfig();
             } else {
                 app.showFormErrors(e.target);
             }
@@ -2025,11 +2037,11 @@ class SetupApp {
             this.config.database.super_password = '';
         }
 
-        // 只保存到本地缓存，不调用后端API
+        // 保存到本地缓存并调用后端验证
         this.saveToLocalCache();
-        this.nextStep();
+        await this.saveConfigWithValidation();
     }
-    
+
     updateDatabaseHostField(serviceType) {
         const hostField = document.getElementById('db-host');
         const testConnectionContainer = document.getElementById('db-test-connection-container');
@@ -2146,9 +2158,9 @@ class SetupApp {
             this.config.redis.admin_password = '';
         }
 
-        // 只保存到本地缓存，不调用后端API
+        // 保存到本地缓存并调用后端验证
         this.saveToLocalCache();
-        this.nextStep();
+        await this.saveConfigWithValidation();
     }
 
     async saveSMTPConfig() {
@@ -2160,9 +2172,9 @@ class SetupApp {
             sender: document.getElementById('smtp-sender').value
         };
 
-        // 只保存到本地缓存，不调用后端API
+        // 保存到本地缓存并调用后端验证
         this.saveToLocalCache();
-        this.nextStep();
+        await this.saveConfigWithValidation();
     }
 
     updateRedisHostField(serviceType) {
@@ -2189,11 +2201,18 @@ class SetupApp {
                 adminPasswordField.required = true;
             }
 
-            // Docker模式：用户名设为默认值且必填
+            // Docker模式：用户名必填但不设置默认值
             if (userField) {
-                userField.value = userField.value || 'default';
+                // 不设置默认值，让用户必须手动输入
                 userField.required = true;
-                userField.placeholder = 'default';
+                // placeholder已通过i18n设置为app_user
+
+                // 更新标签为必填
+                const requiredIndicator = document.getElementById('redis-user-required-indicator');
+                if (requiredIndicator) {
+                    requiredIndicator.textContent = '*';
+                    requiredIndicator.setAttribute('data-i18n', 'common.required');
+                }
             }
 
             // Docker模式使用严格的密码验证
@@ -2330,9 +2349,9 @@ class SetupApp {
             jwt_key_file_path: jwtKeyFilePath
         };
         
-        // 只保存到本地缓存，不调用后端API
+        // 保存到本地缓存并调用后端验证
         this.saveToLocalCache();
-        this.nextStep();
+        await this.saveConfigWithValidation();
     }
 
     async saveOAuthConfig() {
@@ -2345,9 +2364,9 @@ class SetupApp {
             github_client_secret: document.getElementById('github-client-secret').value.trim()
         };
 
-        // 只保存到本地缓存，不调用后端API
+        // 保存到本地缓存并调用后端验证
         this.saveToLocalCache();
-        this.nextStep();
+        await this.saveConfigWithValidation();
     }
 
     async saveAdminConfig() {
@@ -2357,11 +2376,11 @@ class SetupApp {
             password: document.getElementById('admin-password').value
         };
         
-        // 只保存到本地缓存，不调用后端API
+        // 保存到本地缓存并调用后端验证
         this.saveToLocalCache();
-        this.nextStep();
+        await this.saveConfigWithValidation();
     }
-    
+
     // 保存配置到本地缓存
     saveToLocalCache() {
         try {
@@ -2462,7 +2481,32 @@ class SetupApp {
     }
     
     
-    // 提交最终配置到后端（只在review步骤使用）
+    // 通用的配置保存和验证方法
+    async saveConfigWithValidation() {
+        try {
+            const result = await this.protectedApiCall('saveConfig', async () => {
+                // 传递当前步骤信息以支持递增验证
+                const configWithStep = {
+                    ...this.config,
+                    current_step: this.steps[this.currentStep].key
+                };
+
+                const response = await this.api('POST', '/api/config', configWithStep);
+
+                if (response.success) {
+                    // 保存成功，继续下一步
+                    this.nextStep();
+                }
+
+                return response;
+            });
+        } catch (error) {
+            // 错误已在 protectedApiCall 中处理
+            console.error('Configuration validation failed:', error);
+        }
+    }
+
+    // 提交最终配置到后端（保留用于review步骤的向后兼容）
     async saveConfig() {
         try {
             const result = await this.protectedApiCall('saveConfig', async () => {
@@ -3038,6 +3082,47 @@ class SetupApp {
     }
     
     // Utility functions
+    showValidationErrors(errors) {
+        // 清除现有的错误提示
+        const existingAlerts = document.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+
+        // 创建错误容器
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'alert alert-error validation-errors';
+
+        // 创建错误标题
+        const errorTitle = document.createElement('div');
+        errorTitle.className = 'validation-error-title';
+        errorTitle.textContent = window.i18n ? window.i18n.t('messages.fix_errors') : 'Please fix the validation errors below and try again.';
+        errorContainer.appendChild(errorTitle);
+
+        // 创建错误列表
+        const errorList = document.createElement('ul');
+        errorList.className = 'validation-error-list';
+
+        errors.forEach(error => {
+            const errorItem = document.createElement('li');
+            errorItem.className = 'validation-error-item';
+
+            // 只显示错误信息，不显示技术字段名
+            const message = error.message || 'Validation error';
+            errorItem.textContent = message;
+
+            errorList.appendChild(errorItem);
+        });
+
+        errorContainer.appendChild(errorList);
+        document.querySelector('.setup-card').insertBefore(errorContainer, document.getElementById('step-content'));
+
+        // 自动移除警告
+        setTimeout(() => {
+            if (errorContainer.parentNode) {
+                errorContainer.parentNode.removeChild(errorContainer);
+            }
+        }, 10000); // 验证错误显示时间更长
+    }
+
     showAlert(type, message) {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type}`;

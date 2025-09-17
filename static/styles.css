@@ -626,6 +626,31 @@ a:hover {
     color: var(--primary-color);
 }
 
+/* Validation errors */
+.validation-errors {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    color: var(--error-color);
+    margin-bottom: 1.5rem;
+}
+
+.validation-error-title {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.validation-error-list {
+    list-style: disc;
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.validation-error-item {
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
 /* Loading */
 .loading {
     display: flex;
