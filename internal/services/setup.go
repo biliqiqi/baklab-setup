@@ -55,7 +55,7 @@ func (s *SetupService) InitializeSetup(ipAddress string) (*model.SetupToken, err
 		Status:      model.StatusPending,
 		CurrentStep: "initialization",
 		Progress:    0,
-		Message:     "Setup initialized successfully",
+		Message:     "Setup initialized successfully", // Note: This is an internal message
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -251,7 +251,7 @@ func (s *SetupService) CompleteSetup() error {
 	}
 
 	// 更新setup状态为已完成
-	if err := s.updateSetupProgress("completed", 100, "Setup completed successfully - tokens invalidated"); err != nil {
+	if err := s.updateSetupProgress("completed", 100, "Setup completed successfully - tokens invalidated"); err != nil { // Note: This is an internal message
 		log.Printf("Warning: failed to update setup progress: %v", err)
 	}
 

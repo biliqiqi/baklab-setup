@@ -376,7 +376,7 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 	if cfg.ServiceType != "docker" && cfg.ServiceType != "external" {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.service_type",
-			Message: "Database service type must be 'docker' or 'external'",
+			Message: "key:validation.database.service_type_error",
 		})
 	}
 
@@ -385,7 +385,7 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		if cfg.Host != "localhost" {
 			errors = append(errors, model.ValidationError{
 				Field:   "database.host",
-				Message: "Database host must be 'localhost' when using docker compose",
+				Message: "key:validation.database.host_docker_error",
 			})
 		}
 	} else {
@@ -393,12 +393,12 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		if cfg.Host == "" {
 			errors = append(errors, model.ValidationError{
 				Field:   "database.host",
-				Message: "Database host is required",
+				Message: "key:validation.database.host_required",
 			})
 		} else if !hostRegex.MatchString(cfg.Host) {
 			errors = append(errors, model.ValidationError{
 				Field:   "database.host",
-				Message: "Database host must be a valid hostname or IP address",
+				Message: "key:validation.database.host_error",
 			})
 		}
 	}
@@ -549,7 +549,7 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 	if cfg.ServiceType != "docker" && cfg.ServiceType != "external" {
 		errors = append(errors, model.ValidationError{
 			Field:   "redis.service_type",
-			Message: "Redis service type must be 'docker' or 'external'",
+			Message: "key:validation.redis.service_type_error",
 		})
 	}
 
@@ -558,7 +558,7 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		if cfg.Host != "localhost" {
 			errors = append(errors, model.ValidationError{
 				Field:   "redis.host",
-				Message: "Redis host must be 'localhost' when using docker compose",
+				Message: "key:validation.redis.host_docker_error",
 			})
 		}
 	} else {
@@ -566,12 +566,12 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		if cfg.Host == "" {
 			errors = append(errors, model.ValidationError{
 				Field:   "redis.host",
-				Message: "Redis host is required",
+				Message: "key:validation.redis.host_required",
 			})
 		} else if !hostRegex.MatchString(cfg.Host) {
 			errors = append(errors, model.ValidationError{
 				Field:   "redis.host",
-				Message: "Redis host must be a valid hostname or IP address",
+				Message: "key:validation.redis.host_error",
 			})
 		}
 	}
@@ -588,7 +588,7 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 	if cfg.Password == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "redis.password",
-			Message: "Redis password is required",
+			Message: "key:validation.redis.password_required",
 		})
 	} else {
 		// 根据服务类型使用不同的密码验证规则
@@ -598,11 +598,11 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		if cfg.ServiceType == "docker" {
 			// Docker模式使用严格的密码规则
 			passwordValid = validateDatabasePassword(cfg.Password)
-			errorMessage = "Redis password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)"
+			errorMessage = "key:validation.redis.password_error"
 		} else {
 			// 外部服务使用宽松的密码规则
 			passwordValid = validateExternalServicePassword(cfg.Password)
-			errorMessage = "Redis password must be 1-128 characters and cannot contain control characters"
+			errorMessage = "key:validation.redis.password_external_error"
 		}
 
 		if !passwordValid {
@@ -618,14 +618,14 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		if cfg.AdminPassword == "" {
 			errors = append(errors, model.ValidationError{
 				Field:   "redis.admin_password",
-				Message: "Redis CLI management password is required for Docker mode",
+				Message: "key:validation.redis.admin_password_required",
 			})
 		} else {
 			// Docker模式的管理密码使用严格验证
 			if !validateDatabasePassword(cfg.AdminPassword) {
 				errors = append(errors, model.ValidationError{
 					Field:   "redis.admin_password",
-					Message: "Redis CLI password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+					Message: "key:validation.redis.admin_password_error",
 				})
 			}
 		}
