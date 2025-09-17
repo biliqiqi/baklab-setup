@@ -229,7 +229,7 @@ body {
 .sidebar-step:not(:last-child)::before {
     content: '';
     position: absolute;
-    left: 13px;
+    left: calc(0.5rem + 14px - 1px);
     top: calc(100% - 0.25rem);
     width: 2px;
     height: 0.75rem;
