@@ -54,12 +54,16 @@ class SetupApp {
                 jwt_key_from_file: false,
                 original_file_name: '',
                 file_size: 0,
-                google_client_id: '',
-                google_secret: '',
-                github_client_id: '',
-                github_secret: '',
                 cloudflare_site_key: '',
                 cloudflare_secret: ''
+            },
+            oauth: {
+                google_enabled: false,
+                google_client_id: '',
+                google_client_secret: '',
+                github_enabled: false,
+                github_client_id: '',
+                github_client_secret: ''
             },
             admin_user: {
                 username: 'admin',
@@ -74,7 +78,8 @@ class SetupApp {
             ssl: {
                 enabled: false,
                 cert_path: '',
-                key_path: ''
+                key_path: '',
+                use_setup_cert: false
             }
         };
         
@@ -84,6 +89,7 @@ class SetupApp {
             { key: 'redis', titleKey: 'setup.steps.redis', handler: this.renderRedisStep },
             { key: 'smtp', titleKey: 'setup.steps.smtp', handler: this.renderSMTPStep },
             { key: 'app', titleKey: 'setup.steps.application', handler: this.renderAppStep },
+            { key: 'oauth', titleKey: 'setup.steps.oauth', handler: this.renderOAuthStep },
             { key: 'ssl', titleKey: 'setup.steps.ssl', handler: this.renderSSLStep },
             { key: 'goaccess', titleKey: 'setup.steps.goaccess', handler: this.renderGoAccessStep },
             { key: 'admin', titleKey: 'setup.steps.admin_user', handler: this.renderAdminStep },
@@ -153,7 +159,6 @@ class SetupApp {
     // 通用的请求锁管理
     acquireLock(lockName) {
         if (this.requestLocks[lockName]) {
-            console.log(`Request ${lockName} is already in progress`);
             return false;
         }
         this.requestLocks[lockName] = true;
@@ -1162,7 +1167,161 @@ class SetupApp {
             e.target.setCustomValidity('');
         });
     }
-    
+
+    renderOAuthStep(container) {
+        container.innerHTML = `
+            <form id="oauth-form" class="form-section" novalidate>
+                <h3 data-i18n="setup.oauth.title"></h3>
+                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.oauth.description"></p>
+
+                <!-- Google OAuth Configuration -->
+                <div class="oauth-provider-section" style="margin-bottom: 2rem;">
+                    <h4 style="margin: 1.5rem 0 1rem 0; color: var(--gray-700); display: flex; align-items: center;">
+                        <img src="/static/google.webp" alt="Google" width="20" height="20" style="margin-right: 0.5rem;">
+                        Google
+                    </h4>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="google-enabled" name="google_enabled" ${this.config.oauth.google_enabled ? 'checked' : ''}>
+                            <span data-i18n="setup.oauth.google_enable_label"></span>
+                        </label>
+                    </div>
+                    <div id="google-config" style="display: ${this.config.oauth.google_enabled ? 'block' : 'none'};">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="google-client-id"><span data-i18n="setup.oauth.google_client_id_label"></span> <span data-i18n="common.required"></span></label>
+                                <input
+                                    type="text"
+                                    id="google-client-id"
+                                    name="google_client_id"
+                                    value="${this.config.oauth.google_client_id}"
+                                    data-i18n-placeholder="setup.oauth.google_client_id_placeholder"
+                                    ${this.config.oauth.google_enabled ? 'required' : ''}
+                                >
+                                <div class="invalid-feedback" data-i18n="setup.oauth.google_client_id_error"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="google-client-secret"><span data-i18n="setup.oauth.google_client_secret_label"></span> <span data-i18n="common.required"></span></label>
+                                <input
+                                    type="password"
+                                    id="google-client-secret"
+                                    name="google_client_secret"
+                                    value="${this.config.oauth.google_client_secret}"
+                                    data-i18n-placeholder="setup.oauth.google_client_secret_placeholder"
+                                    ${this.config.oauth.google_enabled ? 'required' : ''}
+                                >
+                                <div class="invalid-feedback" data-i18n="setup.oauth.google_client_secret_error"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--gray-600);">
+                        <span data-i18n="setup.oauth.google_docs_description"></span>
+                        <a href="https://developers.google.com/identity/protocols/oauth2" target="_blank" data-i18n="setup.oauth.google_docs_link" style="margin-left: 0.25rem;"></a>
+                    </div>
+                </div>
+
+                <!-- GitHub OAuth Configuration -->
+                <div class="oauth-provider-section">
+                    <h4 style="margin: 1.5rem 0 1rem 0; color: var(--gray-700); display: flex; align-items: center;">
+                        <img src="/static/github-mark.png" alt="GitHub" width="20" height="20" style="margin-right: 0.5rem;">
+                        GitHub
+                    </h4>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="github-enabled" name="github_enabled" ${this.config.oauth.github_enabled ? 'checked' : ''}>
+                            <span data-i18n="setup.oauth.github_enable_label"></span>
+                        </label>
+                    </div>
+                    <div id="github-config" style="display: ${this.config.oauth.github_enabled ? 'block' : 'none'};">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="github-client-id"><span data-i18n="setup.oauth.github_client_id_label"></span> <span data-i18n="common.required"></span></label>
+                                <input
+                                    type="text"
+                                    id="github-client-id"
+                                    name="github_client_id"
+                                    value="${this.config.oauth.github_client_id}"
+                                    data-i18n-placeholder="setup.oauth.github_client_id_placeholder"
+                                    ${this.config.oauth.github_enabled ? 'required' : ''}
+                                >
+                                <div class="invalid-feedback" data-i18n="setup.oauth.github_client_id_error"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="github-client-secret"><span data-i18n="setup.oauth.github_client_secret_label"></span> <span data-i18n="common.required"></span></label>
+                                <input
+                                    type="password"
+                                    id="github-client-secret"
+                                    name="github_client_secret"
+                                    value="${this.config.oauth.github_client_secret}"
+                                    data-i18n-placeholder="setup.oauth.github_client_secret_placeholder"
+                                    ${this.config.oauth.github_enabled ? 'required' : ''}
+                                >
+                                <div class="invalid-feedback" data-i18n="setup.oauth.github_client_secret_error"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--gray-600);">
+                        <span data-i18n="setup.oauth.github_docs_description"></span>
+                        <a href="https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app" target="_blank" data-i18n="setup.oauth.github_docs_link" style="margin-left: 0.25rem;"></a>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
+                </div>
+            </form>
+        `;
+
+        // Google OAuth 启用状态切换
+        document.getElementById('google-enabled').addEventListener('change', (e) => {
+            const configDiv = document.getElementById('google-config');
+            const clientId = document.getElementById('google-client-id');
+            const clientSecret = document.getElementById('google-client-secret');
+
+            if (e.target.checked) {
+                configDiv.style.display = 'block';
+                clientId.required = true;
+                clientSecret.required = true;
+            } else {
+                configDiv.style.display = 'none';
+                clientId.required = false;
+                clientSecret.required = false;
+                // 清除验证错误
+                this.clearFormErrors(document.getElementById('oauth-form'));
+            }
+        });
+
+        // GitHub OAuth 启用状态切换
+        document.getElementById('github-enabled').addEventListener('change', (e) => {
+            const configDiv = document.getElementById('github-config');
+            const clientId = document.getElementById('github-client-id');
+            const clientSecret = document.getElementById('github-client-secret');
+
+            if (e.target.checked) {
+                configDiv.style.display = 'block';
+                clientId.required = true;
+                clientSecret.required = true;
+            } else {
+                configDiv.style.display = 'none';
+                clientId.required = false;
+                clientSecret.required = false;
+                // 清除验证错误
+                this.clearFormErrors(document.getElementById('oauth-form'));
+            }
+        });
+
+        // 表单提交处理
+        document.getElementById('oauth-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (e.target.checkValidity()) {
+                app.saveOAuthConfig();
+            } else {
+                app.showFormErrors(e.target);
+            }
+        });
+    }
+
     renderSSLStep(container) {
         container.innerHTML = `
             <form id="ssl-form" class="form-section" novalidate>
@@ -1179,7 +1338,7 @@ class SetupApp {
                 <div id="ssl-config" style="display: ${this.config.ssl.enabled ? 'block' : 'none'};">
                     <div class="form-group">
                         <label class="checkbox-label">
-                            <input type="checkbox" id="ssl-use-setup-cert" name="use_setup_cert">
+                            <input type="checkbox" id="ssl-use-setup-cert" name="use_setup_cert" ${this.config.ssl.use_setup_cert ? 'checked' : ''}>
                             <span data-i18n="setup.ssl.use_setup_cert_label"></span>
                         </label>
                         <div class="form-help" data-i18n="setup.ssl.use_setup_cert_help"></div>
@@ -1267,7 +1426,8 @@ class SetupApp {
             const sslConfig = {
                 enabled: formData.get('enabled') === 'on',
                 cert_path: formData.get('cert_path') || '',
-                key_path: formData.get('key_path') || ''
+                key_path: formData.get('key_path') || '',
+                use_setup_cert: formData.get('use_setup_cert') === 'on'
             };
 
             // 验证逻辑
@@ -1542,7 +1702,6 @@ class SetupApp {
                         uploadArea.style.opacity = '';
                     }
 
-                    console.log('GeoIP file uploaded successfully:', result.data);
                     return result;
                 } else {
                     throw new Error(result.message || 'Upload failed');
@@ -2175,7 +2334,22 @@ class SetupApp {
         this.saveToLocalCache();
         this.nextStep();
     }
-    
+
+    async saveOAuthConfig() {
+        this.config.oauth = {
+            google_enabled: document.getElementById('google-enabled').checked,
+            google_client_id: document.getElementById('google-client-id').value.trim(),
+            google_client_secret: document.getElementById('google-client-secret').value.trim(),
+            github_enabled: document.getElementById('github-enabled').checked,
+            github_client_id: document.getElementById('github-client-id').value.trim(),
+            github_client_secret: document.getElementById('github-client-secret').value.trim()
+        };
+
+        // 只保存到本地缓存，不调用后端API
+        this.saveToLocalCache();
+        this.nextStep();
+    }
+
     async saveAdminConfig() {
         this.config.admin_user = {
             username: document.getElementById('admin-username').value,
@@ -2192,7 +2366,6 @@ class SetupApp {
     saveToLocalCache() {
         try {
             localStorage.setItem('baklab_setup_config', JSON.stringify(this.config));
-            console.log('Configuration saved to local cache');
         } catch (error) {
             console.warn('Failed to save to localStorage:', error);
         }
@@ -2204,7 +2377,6 @@ class SetupApp {
             const cached = localStorage.getItem('baklab_setup_config');
             if (cached) {
                 this.config = { ...this.config, ...JSON.parse(cached) };
-                console.log('Configuration loaded from local cache');
             }
         } catch (error) {
             console.warn('Failed to load from localStorage:', error);
@@ -2215,7 +2387,6 @@ class SetupApp {
     clearLocalCache() {
         try {
             localStorage.removeItem('baklab_setup_config');
-            console.log('Local cache cleared');
         } catch (error) {
             console.warn('Failed to clear localStorage:', error);
         }
@@ -2229,7 +2400,6 @@ class SetupApp {
         this.config.goaccess.original_file_name = '';
         this.config.goaccess.file_size = 0;
 
-        console.log('Upload states reset - temporary files have been cleared');
     }
     
     // 更新上传文件状态显示
@@ -2343,13 +2513,11 @@ class SetupApp {
                     <p><strong data-i18n="setup.review.fields.service_type"></strong>: ${window.i18n ? window.i18n.t(`setup.redis.service_type_${config.redis.service_type}`) : config.redis.service_type}</p>
                     <p><strong data-i18n="setup.review.fields.host"></strong>: ${config.redis.host}:${config.redis.port}</p>
                     ${config.redis.user ? `<p><strong data-i18n="setup.review.fields.user"></strong>: ${config.redis.user}</p>` : ''}
-                    <p><strong data-i18n="setup.review.fields.password"></strong>: ••••••••</p>
                     
                     <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.smtp"></h4>
                     <p><strong data-i18n="setup.review.fields.smtp_server"></strong>: ${config.smtp.server}:${config.smtp.port}</p>
                     <p><strong data-i18n="setup.review.fields.smtp_user"></strong>: ${config.smtp.user}</p>
                     <p><strong data-i18n="setup.review.fields.smtp_sender"></strong>: ${config.smtp.sender}</p>
-                    <p><strong data-i18n="setup.review.fields.password"></strong>: ••••••••</p>
 
                     <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.ssl"></h4>
                     <p><strong data-i18n="setup.review.fields.ssl_enabled"></strong>: ${config.ssl.enabled ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
@@ -2376,10 +2544,13 @@ class SetupApp {
                         <p><strong data-i18n="setup.review.fields.jwt_file_path"></strong>: ${config.app.jwt_key_file_path}</p>
                     ` : ''}
 
+                    <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.oauth"></h4>
+                    <p><strong data-i18n="setup.review.fields.google_oauth"></strong>: ${config.oauth.google_enabled ? (window.i18n ? window.i18n.t('setup.review.fields.oauth_enabled') : 'Enabled') : (window.i18n ? window.i18n.t('setup.review.fields.oauth_disabled') : 'Disabled')}</p>
+                    <p><strong data-i18n="setup.review.fields.github_oauth"></strong>: ${config.oauth.github_enabled ? (window.i18n ? window.i18n.t('setup.review.fields.oauth_enabled') : 'Enabled') : (window.i18n ? window.i18n.t('setup.review.fields.oauth_disabled') : 'Disabled')}</p>
+
                     <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.administrator"></h4>
                     <p><strong data-i18n="setup.review.fields.username"></strong>: ${config.admin_user.username}</p>
                     <p><strong data-i18n="setup.review.fields.email"></strong>: ${config.admin_user.email}</p>
-                    <p><strong data-i18n="setup.review.fields.password"></strong>: ••••••••</p>
                 </div>
             `;
             

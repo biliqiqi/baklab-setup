@@ -356,7 +356,6 @@ window.i18n = new SetupI18n();
 
 document.addEventListener('DOMContentLoaded', async () => {
     await window.i18n.init();
-    console.log('Setup i18n initialized with language:', window.i18n.getCurrentLanguage());
 });
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -365,8 +364,6 @@ if (typeof module !== 'undefined' && module.exports) {
 
 // 测试函数
 function testI18n() {
-    console.log('=== i18n 测试开始 ===');
-    
     const testData = {
         'en': {
             welcome: "Welcome {{name}}!",
@@ -379,10 +376,10 @@ function testI18n() {
             nested: { deep: { value: "深层值：{{value}}" } }
         }
     };
-    
+
     const i18nTest = new SetupI18n();
     i18nTest.translations = testData;
-    
+
     const testCases = [
         { lang: 'en', key: 'welcome', params: { name: 'Alice' }, expected: 'Welcome Alice!' },
         { lang: 'en', key: 'items', params: { count: 0 }, expected: 'No items' },
@@ -394,27 +391,18 @@ function testI18n() {
         { lang: 'zh-Hans', key: 'items', params: { count: 5 }, expected: '5 个项目' },
         { lang: 'zh-Hans', key: 'nested.deep.value', params: { value: '测试' }, expected: '深层值：测试' }
     ];
-    
+
     let passed = 0;
     let total = testCases.length;
-    
+
     testCases.forEach((test, index) => {
         i18nTest.currentLanguage = test.lang;
         const result = i18nTest.t(test.key, test.params);
         const success = result === test.expected;
-        
-        console.log(`Test ${index + 1}: ${success ? '✅' : '❌'} [${test.lang}] ${test.key}`);
-        if (!success) {
-            console.log(`  Expected: ${test.expected}`);
-            console.log(`  Got: ${result}`);
-        }
-        
+
         if (success) passed++;
     });
-    
-    console.log(`\n测试结果: ${passed}/${total} 通过`);
-    console.log('=== i18n 测试结束 ===');
-    
+
     return passed === total;
 }
 
