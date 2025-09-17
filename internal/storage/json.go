@@ -185,7 +185,7 @@ func (s *JSONStorage) MarkSetupCompleted() error {
 	state.Status = model.StatusCompleted
 	state.Progress = 100
 	state.CompletedAt = &now
-	state.Message = "Setup completed successfully"
+	state.Message = "Setup completed successfully" // Note: This is an internal message
 
 	return s.SaveSetupState(state)
 }

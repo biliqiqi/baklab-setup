@@ -149,7 +149,10 @@ func (h *SetupHandlers) InitializeHandler(w http.ResponseWriter, r *http.Request
 // StatusHandler 获取setup状态
 func (h *SetupHandlers) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.method_not_allowed"),
+		}, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -180,7 +183,10 @@ func (h *SetupHandlers) StatusHandler(w http.ResponseWriter, r *http.Request) {
 // SaveConfigHandler 保存配置
 func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.method_not_allowed"),
+		}, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -188,7 +194,7 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Invalid JSON format",
+			Message: h.localizeMessage(r, "messages.errors.invalid_json"),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -224,7 +230,10 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 // GetConfigHandler 获取保存的配置
 func (h *SetupHandlers) GetConfigHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.method_not_allowed"),
+		}, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -300,7 +309,10 @@ func (h *SetupHandlers) TestConnectionsHandler(w http.ResponseWriter, r *http.Re
 // GenerateConfigHandler 生成配置文件
 func (h *SetupHandlers) GenerateConfigHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.method_not_allowed"),
+		}, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -342,7 +354,10 @@ func (h *SetupHandlers) GenerateConfigHandler(w http.ResponseWriter, r *http.Req
 // CompleteSetupHandler 完成setup
 func (h *SetupHandlers) CompleteSetupHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.method_not_allowed"),
+		}, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -383,7 +398,10 @@ func (h *SetupHandlers) CompleteSetupHandler(w http.ResponseWriter, r *http.Requ
 // ValidateConfigHandler 验证配置
 func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.method_not_allowed"),
+		}, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -391,7 +409,7 @@ func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Req
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
-			Message: "Invalid JSON format",
+			Message: h.localizeMessage(r, "messages.errors.invalid_json"),
 		}, http.StatusBadRequest)
 		return
 	}
@@ -695,7 +713,9 @@ func (h *SetupHandlers) renderUnauthorizedPage(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusUnauthorized)
 
-	_, err := fmt.Fprintf(w, "Unauthorized: Valid setup token required")
+	localizer := h.getLocalizerFromContext(r)
+	message := localizer.MustLocalize("messages.unauthorized_setup_token_required", nil, nil)
+	_, err := fmt.Fprintf(w, message)
 	if err != nil {
 		log.Printf("Warning: failed to write unauthorized page: %v", err)
 	}
@@ -706,9 +726,10 @@ func (h *SetupHandlers) renderSetupPage(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 
-	// 获取翻译的页面标题
+	// 获取翻译的页面标题和加载消息
 	localizer := h.getLocalizerFromContext(r)
 	pageTitle := localizer.MustLocalize("setup.page_title", nil, nil)
+	loadingMessage := localizer.MustLocalize("messages.loading_setup_interface", nil, nil)
 
 	_, err := fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
@@ -723,12 +744,12 @@ func (h *SetupHandlers) renderSetupPage(w http.ResponseWriter, r *http.Request) 
 <body>
     <div id="app">
         <h1>BakLab Setup</h1>
-        <p>Loading setup interface...</p>
+        <p>%s</p>
     </div>
     <script src="/static/i18n.js?v=1.0"></script>
     <script src="/static/app.js?v=1.2"></script>
 </body>
-</html>`, pageTitle)
+</html>`, pageTitle, loadingMessage)
 	if err != nil {
 		log.Printf("Warning: failed to write setup page: %v", err)
 	}
