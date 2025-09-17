@@ -864,14 +864,15 @@ class SetupApp {
                     </div>
                     <div class="form-group">
                         <label for="app-version" data-i18n="setup.app.version_label"></label>
-                        <select 
-                            id="app-version" 
+                        <select
+                            id="app-version"
                             name="version"
                         >
                             <option value="latest" ${this.config.app.version === 'latest' ? 'selected' : ''}>latest</option>
-                            <option value="v2.0.0" ${this.config.app.version === 'v2.0.0' ? 'selected' : ''}>v2.0.0</option>
-                            <option value="v1.9.0" ${this.config.app.version === 'v1.9.0' ? 'selected' : ''}>v1.9.0</option>
-                            <option value="v1.8.0" ${this.config.app.version === 'v1.8.0' ? 'selected' : ''}>v1.8.0</option>
+                            <!-- Temporarily commented out specific versions, using latest only -->
+                            <!-- <option value="v2.0.0" ${this.config.app.version === 'v2.0.0' ? 'selected' : ''}>v2.0.0</option> -->
+                            <!-- <option value="v1.9.0" ${this.config.app.version === 'v1.9.0' ? 'selected' : ''}>v1.9.0</option> -->
+                            <!-- <option value="v1.8.0" ${this.config.app.version === 'v1.8.0' ? 'selected' : ''}>v1.8.0</option> -->
                         </select>
                         <div class="form-help" data-i18n="setup.app.version_help"></div>
                     </div>
