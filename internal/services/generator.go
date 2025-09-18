@@ -327,7 +327,6 @@ services:
       DEBUG: $DEBUG
       TEST: $TEST
     volumes:
-      - ./manage_static:/app/manage_static
       {{ if .App.JWTKeyFromFile -}}
       - {{ .App.JWTKeyFilePath }}:/app/keys/jwt-private.pem
       {{- else -}}
@@ -457,6 +456,7 @@ services:
       - BASE_DOMAIN_NAME=$BASE_DOMAIN_NAME
     volumes:
       - ./static:/data/static
+      - ./manage_static:/data/manage_static
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates/webapp.conf.template:/etc/nginx/templates/webapp.conf.template:ro
       - ./nginx/logs:/etc/nginx/logs{{if .SSL.Enabled}}
