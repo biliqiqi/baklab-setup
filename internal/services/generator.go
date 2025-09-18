@@ -150,9 +150,8 @@ REDISCLI_AUTH='{{ .Redis.AdminPassword }}'
 
 # Application Configuration
 DOMAIN_NAME='{{ .App.DomainName }}'
-BASE_DOMAIN_NAME='{{ .App.DomainName }}'
+ROOT_DOMAIN_NAME='{{ rootDomain .App.DomainName }}'
 BRAND_NAME='{{ .App.BrandName }}'
-BRAND_DOMAIN_NAME='{{ .App.DomainName }}'
 ADMIN_EMAIL='{{ .App.AdminEmail }}'
 DEBUG={{ .App.Debug }}
 TEST=false
@@ -212,8 +211,35 @@ SETUP_COMPLETED=true
 SETUP_COMPLETED_AT={{ .Timestamp }}
 `
 
+	// 定义模板函数
+	funcMap := template.FuncMap{
+		"rootDomain": func(domain string) string {
+			// 移除末尾的点号（如果存在）
+			domain = strings.TrimSuffix(domain, ".")
+
+			// 如果域名为空，返回原值
+			if domain == "" {
+				return domain
+			}
+
+			// 按点号分割域名
+			parts := strings.Split(domain, ".")
+
+			// 如果只有一个部分（如 localhost），返回原域名
+			if len(parts) < 2 {
+				return domain
+			}
+
+			// 返回最后两个部分作为根域名
+			// 例如：www.example.com -> example.com
+			//      local.example.com -> example.com
+			//      1.sub.example.com -> example.com
+			return strings.Join(parts[len(parts)-2:], ".")
+		},
+	}
+
 	// 解析模板
-	tmpl, err := template.New("env").Parse(envTemplate)
+	tmpl, err := template.New("env").Funcs(funcMap).Parse(envTemplate)
 	if err != nil {
 		return fmt.Errorf("failed to parse env template: %w", err)
 	}
@@ -323,7 +349,6 @@ services:
       DEFAULT_DATA_DIR: $DEFAULT_DATA_DIR
       DEFAULT_LANG: $DEFAULT_LANG
       BRAND_NAME: $BRAND_NAME
-      BRAND_DOMAIN_NAME: $BRAND_DOMAIN_NAME
       DEBUG: $DEBUG
       TEST: $TEST
     volumes:
@@ -453,7 +478,7 @@ services:
     environment:
       - APP_LOCAL_HOST=webapp
       - APP_PORT=$APP_PORT
-      - BASE_DOMAIN_NAME=$BASE_DOMAIN_NAME
+      - ROOT_DOMAIN_NAME=$ROOT_DOMAIN_NAME
     volumes:
       - ./static:/data/static
       - ./manage_static:/data/manage_static
