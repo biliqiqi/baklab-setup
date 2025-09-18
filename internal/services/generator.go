@@ -788,7 +788,7 @@ func (g *GeneratorService) generateAdditionalConfigs(cfg *model.SetupConfig) err
 		}
 	}
 
-	if err := g.copyStaticFiles(); err != nil {
+	if err := g.copyStaticFiles(cfg); err != nil {
 		return fmt.Errorf("failed to create static directory: %w", err)
 	}
 
@@ -820,22 +820,106 @@ geoip-database /data/geoip/GeoLite2-City.mmdb`
 	return nil
 }
 
-// copyStaticFiles 创建静态资源目录
-func (g *GeneratorService) copyStaticFiles() error {
+// copyStaticFiles 创建静态资源目录并复制主项目的静态文件，支持配置替换
+func (g *GeneratorService) copyStaticFiles(cfg *model.SetupConfig) error {
 	staticDir := filepath.Join(g.outputDir, "static")
 	if err := os.MkdirAll(staticDir, 0755); err != nil {
 		return fmt.Errorf("failed to create static directory: %w", err)
 	}
 
-	// 创建基本的静态文件占位，供nginx配置使用
-	robotsContent := `User-agent: *
+	// 从预存的 data/static 复制主项目的静态文件
+	dataStaticDir := "./data/static"
+	if _, err := os.Stat(dataStaticDir); err == nil {
+		// 预存的主项目静态文件目录存在，复制所有内容（包括robots.txt）
+		if err := g.copyStaticWithTemplateProcessing(dataStaticDir, staticDir, cfg); err != nil {
+			return fmt.Errorf("failed to copy main project static files from data: %w", err)
+		}
+		log.Printf("Copied main project static files from %s to %s", dataStaticDir, staticDir)
+	} else {
+		// 预存的静态文件目录不存在，创建基本的占位文件
+		log.Printf("Preloaded static directory not found at %s, creating placeholder files", dataStaticDir)
+
+		// 仅在没有预存文件时创建基本的 robots.txt 占位文件
+		robotsContent := `User-agent: *
 Allow: /
 
 Sitemap: https://example.com/sitemap.xml`
 
-	robotsPath := filepath.Join(staticDir, "robots.txt")
-	if err := os.WriteFile(robotsPath, []byte(robotsContent), 0644); err != nil {
-		return fmt.Errorf("failed to create robots.txt: %w", err)
+		robotsPath := filepath.Join(staticDir, "robots.txt")
+		if err := os.WriteFile(robotsPath, []byte(robotsContent), 0644); err != nil {
+			return fmt.Errorf("failed to create robots.txt: %w", err)
+		}
+		log.Printf("Created placeholder robots.txt")
+	}
+
+	return nil
+}
+
+// copyStaticWithTemplateProcessing 复制静态文件，对模板文件进行处理
+func (g *GeneratorService) copyStaticWithTemplateProcessing(src, dest string, cfg *model.SetupConfig) error {
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(dest, srcInfo.Mode()); err != nil {
+		return err
+	}
+
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		destPath := filepath.Join(dest, entry.Name())
+
+		if entry.IsDir() {
+			if err := g.copyStaticWithTemplateProcessing(srcPath, destPath, cfg); err != nil {
+				return err
+			}
+		} else {
+			// 对特定模板文件进行处理
+			if entry.Name() == "site.webmanifest" && cfg != nil {
+				if err := g.processTemplateFile(srcPath, destPath, cfg); err != nil {
+					return err
+				}
+			} else {
+				if err := g.copyFile(srcPath, destPath); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// processTemplateFile 处理模板文件
+func (g *GeneratorService) processTemplateFile(srcPath, destPath string, cfg *model.SetupConfig) error {
+	// 读取模板文件内容
+	templateContent, err := os.ReadFile(srcPath)
+	if err != nil {
+		return fmt.Errorf("failed to read template file %s: %w", srcPath, err)
+	}
+
+	// 解析模板
+	tmpl, err := template.New(filepath.Base(srcPath)).Parse(string(templateContent))
+	if err != nil {
+		return fmt.Errorf("failed to parse template file %s: %w", srcPath, err)
+	}
+
+	// 创建输出文件
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("failed to create output file %s: %w", destPath, err)
+	}
+	defer destFile.Close()
+
+	// 执行模板
+	if err := tmpl.Execute(destFile, cfg); err != nil {
+		return fmt.Errorf("failed to execute template %s: %w", srcPath, err)
 	}
 
 	return nil
