@@ -8,7 +8,7 @@ upstream backend{
 
 map $host $redirect_to_base_domain {
     default 0;
-    www.${BASE_DOMAIN_NAME} 1;
+    www.${ROOT_DOMAIN_NAME} 1;
     "~^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$" 1;
     "~^[0-9a-fA-F:]+$" 1;
 }
@@ -17,11 +17,11 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
     
-    server_name dev.${BASE_DOMAIN_NAME} cf.${BASE_DOMAIN_NAME} ${BASE_DOMAIN_NAME} www.${BASE_DOMAIN_NAME};
+    server_name ${ROOT_DOMAIN_NAME} www.${ROOT_DOMAIN_NAME};
 
 {{if .SSL.Enabled}}
     if ($host = $redirect_to_base_domain) {
-        return 301 https://${BASE_DOMAIN_NAME}$request_uri;
+        return 301 https://${ROOT_DOMAIN_NAME}$request_uri;
     }
 
     location / {
@@ -34,7 +34,7 @@ server {
     # }
 {{else}}
     if ($host = $redirect_to_base_domain) {
-        return 301 http://${BASE_DOMAIN_NAME}$request_uri;
+        return 301 http://${ROOT_DOMAIN_NAME}$request_uri;
     }
 
     location / {
@@ -68,7 +68,7 @@ server {
     listen [::]:443 ssl;
     http2 on;
     
-    server_name dev.${BASE_DOMAIN_NAME} cf.${BASE_DOMAIN_NAME} ${BASE_DOMAIN_NAME} www.${BASE_DOMAIN_NAME};
+    server_name ${ROOT_DOMAIN_NAME} www.${ROOT_DOMAIN_NAME};
 
     ssl_certificate /etc/ssl/certs/server.crt;
     ssl_certificate_key /etc/ssl/private/server.key;
@@ -82,7 +82,7 @@ server {
     add_header Strict-Transport-Security "max-age=63072000" always;
 
     if ($host = $redirect_to_base_domain) {
-        return 301 https://${BASE_DOMAIN_NAME}$request_uri;
+        return 301 https://${ROOT_DOMAIN_NAME}$request_uri;
     }
 
     location / {
