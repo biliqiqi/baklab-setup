@@ -176,8 +176,8 @@
       
       "domain_label": "Domain Name",
       "domain_placeholder": "example.com",
-      "domain_help": "Your production domain name",
       "domain_error": "Please enter a valid domain name (e.g., example.com) or localhost",
+      "use_setup_domain": "Use setup domain",
       
       "brand_label": "Brand Name",
       "brand_placeholder": "BakLab",
@@ -280,10 +280,12 @@
       "cert_path_label": "Certificate File Path",
       "cert_path_help": "Full path to SSL certificate file (e.g., /etc/ssl/certs/domain.crt or /etc/letsencrypt/live/domain.com/fullchain.pem)",
       "cert_path_required": "Certificate path is required when SSL is enabled",
-      
-      "key_path_label": "Private Key File Path", 
+
+      "key_path_label": "Private Key File Path",
       "key_path_help": "Full path to SSL private key file (e.g., /etc/ssl/private/domain.key or /etc/letsencrypt/live/domain.com/privkey.pem)",
-      "key_path_required": "Private key path is required when SSL is enabled"
+      "key_path_required": "Private key path is required when SSL is enabled",
+
+      "auto_selected_due_to_domain": "Automatically selected because you are using the setup program domain"
     },
     
     "goaccess": {

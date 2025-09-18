@@ -55,7 +55,8 @@ class SetupApp {
                 original_file_name: '',
                 file_size: 0,
                 cloudflare_site_key: '',
-                cloudflare_secret: ''
+                cloudflare_secret: '',
+                use_setup_domain: false
             },
             oauth: {
                 google_enabled: false,
@@ -1015,58 +1016,62 @@ class SetupApp {
                 <h3 data-i18n="setup.app.title"></h3>
                 <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.app.description"></p>
                 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="app-domain"><span data-i18n="setup.app.domain_label"></span> <span data-i18n="common.required"></span></label>
-                        <input 
-                            type="text" 
-                            id="app-domain" 
+                <div class="form-group">
+                    <label for="app-domain"><span data-i18n="setup.app.domain_label"></span> <span data-i18n="common.required"></span></label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input
+                            type="text"
+                            id="app-domain"
                             name="domain"
-                            value="${this.config.app.domain_name}" 
+                            value="${this.config.app.domain_name}"
                             data-i18n-placeholder="setup.app.domain_placeholder"
                             required
                             pattern="^([a-zA-Z0-9]([a-zA-Z0-9\\-]*[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$|^localhost$"
                             data-i18n-title="setup.app.domain_error"
+                            style="flex: 1;"
                         >
-                        <div class="form-help" data-i18n="setup.app.domain_help"></div>
-                        <div class="invalid-feedback" data-i18n="setup.app.domain_error"></div>
+                        <div style="display: flex; align-items: center; gap: 3px;">
+                            <input type="checkbox" id="use-setup-domain" name="use_setup_domain" ${this.config.app.use_setup_domain ? 'checked' : ''} style="margin: 0;">
+                            <label for="use-setup-domain" data-i18n="setup.app.use_setup_domain" style="margin: 0; white-space: nowrap; line-height: 1;"></label>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="app-brand"><span data-i18n="setup.app.brand_label"></span> <span data-i18n="common.required"></span></label>
-                        <input
-                            type="text"
-                            id="app-brand"
-                            name="brand"
-                            value="${this.config.app.brand_name}"
-                            data-i18n-placeholder="setup.app.brand_placeholder"
-                            required
-                            minlength="2"
-                            maxlength="50"
-                        >
-                    </div>
-                    <div class="form-group">
-                        <label for="app-version" data-i18n="setup.app.version_label"></label>
-                        <select
-                            id="app-version"
-                            name="version"
-                        >
-                            <option value="latest" ${this.config.app.version === 'latest' ? 'selected' : ''}>latest</option>
-                            <!-- Temporarily commented out specific versions, using latest only -->
-                            <!-- <option value="v2.0.0" ${this.config.app.version === 'v2.0.0' ? 'selected' : ''}>v2.0.0</option> -->
-                            <!-- <option value="v1.9.0" ${this.config.app.version === 'v1.9.0' ? 'selected' : ''}>v1.9.0</option> -->
-                            <!-- <option value="v1.8.0" ${this.config.app.version === 'v1.8.0' ? 'selected' : ''}>v1.8.0</option> -->
-                        </select>
-                        <div class="form-help" data-i18n="setup.app.version_help"></div>
-                    </div>
+                    <div class="invalid-feedback" data-i18n="setup.app.domain_error"></div>
                 </div>
-                
+                <div class="form-group">
+                    <label for="app-brand"><span data-i18n="setup.app.brand_label"></span> <span data-i18n="common.required"></span></label>
+                    <input
+                        type="text"
+                        id="app-brand"
+                        name="brand"
+                        value="${this.config.app.brand_name}"
+                        data-i18n-placeholder="setup.app.brand_placeholder"
+                        required
+                        minlength="2"
+                        maxlength="50"
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="app-version" data-i18n="setup.app.version_label"></label>
+                    <select
+                        id="app-version"
+                        name="version"
+                    >
+                        <option value="latest" ${this.config.app.version === 'latest' ? 'selected' : ''}>latest</option>
+                        <!-- Temporarily commented out specific versions, using latest only -->
+                        <!-- <option value="v2.0.0" ${this.config.app.version === 'v2.0.0' ? 'selected' : ''}>v2.0.0</option> -->
+                        <!-- <option value="v1.9.0" ${this.config.app.version === 'v1.9.0' ? 'selected' : ''}>v1.9.0</option> -->
+                        <!-- <option value="v1.8.0" ${this.config.app.version === 'v1.8.0' ? 'selected' : ''}>v1.8.0</option> -->
+                    </select>
+                    <div class="form-help" data-i18n="setup.app.version_help"></div>
+                </div>
+
                 <div class="form-group">
                     <label for="app-email"><span data-i18n="setup.app.email_label"></span> <span data-i18n="common.required"></span></label>
-                    <input 
-                        type="email" 
-                        id="app-email" 
+                    <input
+                        type="email"
+                        id="app-email"
                         name="email"
-                        value="${this.config.app.admin_email}" 
+                        value="${this.config.app.admin_email}"
                         data-i18n-placeholder="setup.app.email_placeholder"
                         required
                         data-i18n-title="setup.app.email_error"
@@ -1074,13 +1079,13 @@ class SetupApp {
                     <div class="form-help" data-i18n="setup.app.email_help"></div>
                     <div class="invalid-feedback" data-i18n="setup.app.email_error"></div>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="app-cors" data-i18n="setup.app.cors_label"></label>
-                    <textarea 
-                        id="app-cors" 
+                    <textarea
+                        id="app-cors"
                         name="cors"
-                        rows="3" 
+                        rows="3"
                         data-i18n-placeholder="setup.app.cors_placeholder"
                         pattern="^(https?:\\/\\/[a-zA-Z0-9.\\-]+(?:\\:[0-9]+)?(?:\\/.*)?\\s*)*$"
                         data-i18n-title="setup.app.cors_error"
@@ -1198,6 +1203,44 @@ class SetupApp {
         document.getElementById('jwt-key-path').addEventListener('input', (e) => {
             e.target.setCustomValidity('');
         });
+
+        // 域名复选框事件监听
+        document.getElementById('use-setup-domain').addEventListener('change', (e) => {
+            const domainInput = document.getElementById('app-domain');
+            if (e.target.checked) {
+                // 获取设置程序使用的域名（从URL中获取）
+                const setupDomain = window.location.hostname;
+                domainInput.value = setupDomain;
+                domainInput.readOnly = true;
+                domainInput.style.backgroundColor = '#f8f9fa';
+
+                // 如果启用了HTTPS，自动勾选使用设置程序证书
+                if (this.config.ssl && this.config.ssl.enabled) {
+                    this.config.ssl.use_setup_cert = true;
+                    // 标记需要在SSL步骤中应用这个状态
+                    this._shouldAutoSetSSLCert = true;
+                }
+            } else {
+                domainInput.readOnly = false;
+                domainInput.style.backgroundColor = '';
+
+                // 取消域名使用时，恢复SSL证书选择的自由度
+                this._shouldAutoSetSSLCert = false;
+                this.clearSSLAutoSelection();
+            }
+            // 更新配置状态
+            this.config.app.use_setup_domain = e.target.checked;
+        });
+
+        // 初始化复选框状态
+        const useSetupDomainCheckbox = document.getElementById('use-setup-domain');
+        if (this.config.app.use_setup_domain) {
+            const domainInput = document.getElementById('app-domain');
+            const setupDomain = window.location.hostname;
+            domainInput.value = setupDomain;
+            domainInput.readOnly = true;
+            domainInput.style.backgroundColor = '#f8f9fa';
+        }
     }
 
     renderOAuthStep(container) {
@@ -1409,17 +1452,25 @@ class SetupApp {
             const configDiv = document.getElementById('ssl-config');
             const certPath = document.getElementById('ssl-cert-path');
             const keyPath = document.getElementById('ssl-key-path');
-            
+
             if (e.target.checked) {
                 configDiv.style.display = 'block';
                 certPath.required = true;
                 keyPath.required = true;
+
+                // 更新配置并触发域名SSL整合
+                this.config.ssl.enabled = true;
+                setTimeout(() => this.handleDomainSSLIntegration(), 0);
             } else {
                 configDiv.style.display = 'none';
                 certPath.required = false;
                 keyPath.required = false;
                 // 清除验证错误
                 this.clearFormErrors(document.getElementById('ssl-form'));
+
+                // 更新配置并重置SSL证书选择的自由度
+                this.config.ssl.enabled = false;
+                this.clearSSLAutoSelection();
             }
         });
 
@@ -1453,6 +1504,9 @@ class SetupApp {
                 keyPath.readOnly = false;
             }
         });
+
+        // 处理域名复选框对SSL证书的影响
+        this.handleDomainSSLIntegration();
 
         // 表单提交处理
         document.getElementById('ssl-form').addEventListener('submit', async (e) => {
@@ -1490,7 +1544,74 @@ class SetupApp {
             }
         });
     }
-    
+
+    // 处理域名复选框对SSL证书选择的影响
+    handleDomainSSLIntegration() {
+        const sslUseSetupCertCheckbox = document.getElementById('ssl-use-setup-cert');
+        const sslEnabled = document.getElementById('ssl-enabled');
+
+        if (!sslUseSetupCertCheckbox || !sslEnabled) {
+            return; // SSL元素不存在时跳过
+        }
+
+        // 检查域名复选框是否勾选且SSL已启用
+        if (this.config.app.use_setup_domain && this.config.ssl.enabled) {
+            // 自动勾选使用设置程序证书
+            sslUseSetupCertCheckbox.checked = true;
+            sslUseSetupCertCheckbox.readOnly = true;
+            sslUseSetupCertCheckbox.disabled = true;
+
+            // 触发证书路径的自动填充
+            const event = new Event('change');
+            sslUseSetupCertCheckbox.dispatchEvent(event);
+
+            // 更新配置
+            this.config.ssl.use_setup_cert = true;
+
+            // 添加提示样式和说明
+            const parentLabel = sslUseSetupCertCheckbox.closest('.checkbox-label');
+            if (parentLabel) {
+                parentLabel.style.opacity = '0.7';
+                parentLabel.title = window.i18n ?
+                    window.i18n.t('setup.ssl.auto_selected_due_to_domain') :
+                    'Automatically selected because you are using the setup program domain';
+
+                // 添加说明文本
+                let autoNote = parentLabel.querySelector('.auto-selection-note');
+                if (!autoNote) {
+                    autoNote = document.createElement('div');
+                    autoNote.className = 'auto-selection-note';
+                    autoNote.style.cssText = 'font-size: 0.85em; color: var(--gray-600); margin-top: 0.25rem; font-style: italic;';
+                    parentLabel.appendChild(autoNote);
+                }
+                autoNote.textContent = window.i18n ?
+                    window.i18n.t('setup.ssl.auto_selected_due_to_domain') :
+                    'Automatically selected because you are using the setup program domain';
+            }
+        }
+    }
+
+    // 清理SSL证书的自动选择状态
+    clearSSLAutoSelection() {
+        const sslUseSetupCertCheckbox = document.getElementById('ssl-use-setup-cert');
+        if (sslUseSetupCertCheckbox) {
+            sslUseSetupCertCheckbox.readOnly = false;
+            sslUseSetupCertCheckbox.disabled = false;
+
+            const parentLabel = sslUseSetupCertCheckbox.closest('.checkbox-label');
+            if (parentLabel) {
+                parentLabel.style.opacity = '';
+                parentLabel.title = '';
+
+                // 移除自动选择说明文本
+                const autoNote = parentLabel.querySelector('.auto-selection-note');
+                if (autoNote) {
+                    autoNote.remove();
+                }
+            }
+        }
+    }
+
     renderGoAccessStep(container) {
         container.innerHTML = `
             <form id="goaccess-form" class="form-section" novalidate>
@@ -2447,7 +2568,8 @@ class SetupApp {
             default_lang: document.getElementById('app-lang').value,
             debug: document.getElementById('app-debug').checked,
             jwt_key_from_file: jwtKeyFromFile,
-            jwt_key_file_path: jwtKeyFilePath
+            jwt_key_file_path: jwtKeyFilePath,
+            use_setup_domain: document.getElementById('use-setup-domain').checked
         };
         
         // 保存到本地缓存并调用后端验证

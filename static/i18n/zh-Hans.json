@@ -176,8 +176,8 @@
       
       "domain_label": "域名",
       "domain_placeholder": "example.com",
-      "domain_help": "您的生产域名",
       "domain_error": "请输入有效的域名（例如：example.com）或 localhost",
+      "use_setup_domain": "使用设置程序域名",
       
       "brand_label": "品牌名称",
       "brand_placeholder": "BakLab",
@@ -280,10 +280,12 @@
       "cert_path_label": "证书文件路径",
       "cert_path_help": "SSL 证书文件的完整路径（例如：/etc/ssl/certs/domain.crt 或 /etc/letsencrypt/live/domain.com/fullchain.pem）",
       "cert_path_required": "启用 SSL 时证书路径为必填项",
-      
+
       "key_path_label": "私钥文件路径",
       "key_path_help": "SSL 私钥文件的完整路径（例如：/etc/ssl/private/domain.key 或 /etc/letsencrypt/live/domain.com/privkey.pem）",
-      "key_path_required": "启用 SSL 时私钥路径为必填项"
+      "key_path_required": "启用 SSL 时私钥路径为必填项",
+
+      "auto_selected_due_to_domain": "因为您使用了设置程序域名而自动选择"
     },
     
     "goaccess": {
