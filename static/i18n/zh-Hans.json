@@ -269,7 +269,9 @@
     "ssl": {
       "title": "SSL/HTTPS 配置",
       "description": "配置 SSL 证书以启用 HTTPS。您可以选择禁用 HTTPS（仅使用 HTTP）或提供证书文件路径以启用安全连接。",
-      
+
+      "domain_match_warning_text": "您的 SSL 证书必须与应用程序的托管域名 ({{domain}}) 匹配，否则 nginx 将无法启动。",
+
       "enable_label": "启用 HTTPS",
       
       "use_setup_cert_label": "使用与设置程序相同的证书",

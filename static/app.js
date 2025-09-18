@@ -89,10 +89,10 @@ class SetupApp {
             { key: 'redis', titleKey: 'setup.steps.redis', handler: this.renderRedisStep },
             { key: 'smtp', titleKey: 'setup.steps.smtp', handler: this.renderSMTPStep },
             { key: 'app', titleKey: 'setup.steps.application', handler: this.renderAppStep },
-            { key: 'oauth', titleKey: 'setup.steps.oauth', handler: this.renderOAuthStep },
             { key: 'ssl', titleKey: 'setup.steps.ssl', handler: this.renderSSLStep },
-            { key: 'goaccess', titleKey: 'setup.steps.goaccess', handler: this.renderGoAccessStep },
             { key: 'admin', titleKey: 'setup.steps.admin_user', handler: this.renderAdminStep },
+            { key: 'oauth', titleKey: 'setup.steps.oauth', handler: this.renderOAuthStep },
+            { key: 'goaccess', titleKey: 'setup.steps.goaccess', handler: this.renderGoAccessStep },
             { key: 'review', titleKey: 'setup.steps.review', handler: this.renderReviewStep },
             { key: 'config_complete', titleKey: 'setup.steps.config_complete', handler: this.renderConfigCompleteStep }
         ];
@@ -1359,7 +1359,11 @@ class SetupApp {
             <form id="ssl-form" class="form-section" novalidate>
                 <h3 data-i18n="setup.ssl.title"></h3>
                 <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.ssl.description"></p>
-                
+
+                <div class="alert alert-warning" style="margin-bottom: 1.5rem; color: inherit;">
+                    <p style="margin: 0;" data-i18n="setup.ssl.domain_match_warning_text" data-i18n-params='{"domain":"${this.config.app.domain_name || 'example.com'}"}'></p>
+                </div>
+
                 <div class="form-group">
                     <label class="checkbox-label">
                         <input type="checkbox" id="ssl-enabled" name="enabled" ${this.config.ssl.enabled ? 'checked' : ''}>

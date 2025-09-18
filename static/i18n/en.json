@@ -269,7 +269,9 @@
     "ssl": {
       "title": "SSL/HTTPS Configuration",
       "description": "Configure SSL certificates for HTTPS. You can either disable HTTPS (HTTP only) or provide certificate file paths for secure connections.",
-      
+
+      "domain_match_warning_text": "Your SSL certificate must match the application's hosting domain ({{domain}}), otherwise nginx will fail to start.",
+
       "enable_label": "Enable HTTPS",
       
       "use_setup_cert_label": "Use same certificates as setup program",
