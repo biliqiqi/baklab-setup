@@ -219,6 +219,7 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+
 	// 创建验证器并验证配置
 	validator := services.NewValidatorService()
 	errors := validator.ValidateConfig(&cfg)

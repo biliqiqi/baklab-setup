@@ -558,23 +558,32 @@ class SetupApp {
         // 添加表单提交事件监听
         document.getElementById('database-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
+            // 获取当前服务类型
+            const serviceType = document.querySelector('input[name="db-service-type"]:checked').value;
+
             // 验证数据库密码强度
             const superPassword = document.getElementById('db-super-password').value;
             const appPassword = document.getElementById('db-app-password').value;
             const superPasswordField = document.getElementById('db-super-password');
             const appPasswordField = document.getElementById('db-app-password');
 
-            // 验证超级用户密码
-            if (superPassword && !this.validateDatabasePasswordStrength(superPassword)) {
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.super_password_error') : 'Super password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
-                superPasswordField.setCustomValidity(errorMsg);
+            // 验证超级用户密码 - 仅在Docker模式下验证
+            if (serviceType === 'docker') {
+                if (superPassword && !this.validateDatabasePasswordStrength(superPassword)) {
+                    const errorMsg = window.i18n ? window.i18n.t('setup.database.super_password_error') : 'Super password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                    superPasswordField.setCustomValidity(errorMsg);
+                } else {
+                    superPasswordField.setCustomValidity('');
+                }
             } else {
-                superPasswordField.setCustomValidity('');
+                // 外部服务模式清除超级用户密码验证错误
+                if (superPasswordField) {
+                    superPasswordField.setCustomValidity('');
+                }
             }
 
             // 验证应用用户密码 - 根据服务类型使用不同验证规则
-            const serviceType = document.querySelector('input[name="db-service-type"]:checked').value;
 
             if (appPassword) {
                 let isValid = true;
@@ -616,25 +625,31 @@ class SetupApp {
                     const errorMsg = window.i18n ? window.i18n.t('setup.database.password_duplicate_error') : 'Application password must be different from super user password';
                     appPasswordField.setCustomValidity(errorMsg);
                 } else if (appPassword) {
-                        // 根据服务类型重新验证密码强度（如果之前被密码重复错误覆盖）
-                        let isValid = true;
-                        let errorMsg = '';
+                    // 根据服务类型重新验证密码强度（如果之前被密码重复错误覆盖）
+                    let isValid = true;
+                    let errorMsg = '';
 
-                        if (serviceType === 'docker') {
-                            // Docker模式使用严格验证
-                            isValid = this.validateDatabasePasswordStrength(appPassword);
-                            errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
-                        } else {
-                            // 外部服务使用宽松验证
-                            isValid = this.validateExternalServicePassword(appPassword);
-                            errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_external_error') : 'App password must be 1-128 characters and cannot contain control characters';
-                        }
+                    if (serviceType === 'docker') {
+                        // Docker模式使用严格验证
+                        isValid = this.validateDatabasePasswordStrength(appPassword);
+                        errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                    } else {
+                        // 外部服务使用宽松验证
+                        isValid = this.validateExternalServicePassword(appPassword);
+                        errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_external_error') : 'App password must be 1-128 characters and cannot contain control characters';
+                    }
 
-                        if (!isValid) {
-                            appPasswordField.setCustomValidity(errorMsg);
-                        }
+                    if (!isValid) {
+                        appPasswordField.setCustomValidity(errorMsg);
                     }
                 }
+            } else {
+                // 外部服务模式下，清除可能存在的重复验证错误
+                const appUserField = document.getElementById('db-app-user');
+                if (appUserField) {
+                    appUserField.setCustomValidity('');
+                }
+            }
             
             if (e.target.checkValidity()) {
                 await app.saveDatabaseConfig();
@@ -821,9 +836,9 @@ class SetupApp {
             }
 
             // 验证Redis管理密码强度（仅Docker模式）
+            const adminPasswordField = document.getElementById('redis-admin-password');
             if (serviceType === 'docker') {
-                const adminPassword = document.getElementById('redis-admin-password').value;
-                const adminPasswordField = document.getElementById('redis-admin-password');
+                const adminPassword = adminPasswordField ? adminPasswordField.value : '';
 
                 if (adminPassword) {
                     const isValid = this.validateDatabasePasswordStrength(adminPassword);
@@ -833,7 +848,12 @@ class SetupApp {
                     } else {
                         adminPasswordField.setCustomValidity('');
                     }
-                } else {
+                } else if (adminPasswordField) {
+                    adminPasswordField.setCustomValidity('');
+                }
+            } else {
+                // 外部服务模式：清除管理密码的验证错误
+                if (adminPasswordField) {
                     adminPasswordField.setCustomValidity('');
                 }
             }
@@ -2050,6 +2070,7 @@ class SetupApp {
         const superPasswordField = document.getElementById('db-super-password');
         const appUserField = document.getElementById('db-app-user');
         const appPasswordField = document.getElementById('db-app-password');
+        const dbForm = document.getElementById('database-form');
 
         if (serviceType === 'docker') {
             hostField.value = 'localhost';
@@ -2064,9 +2085,11 @@ class SetupApp {
             }
             if (superUserField) {
                 superUserField.required = true;
+                superUserField.disabled = false;
             }
             if (superPasswordField) {
                 superPasswordField.required = true;
+                superPasswordField.disabled = false;
             }
             // Docker模式使用严格的用户名和密码验证
             if (appUserField) {
@@ -2082,21 +2105,41 @@ class SetupApp {
             // Docker模式显示帮助文本
             this.toggleHelpText('db-app-user', true);
             this.toggleHelpText('db-app-password', true);
+
+            // Docker模式也要清除所有自定义验证错误
+            if (appUserField) {
+                appUserField.setCustomValidity('');
+                this.hideCustomError(appUserField);
+            }
+            if (appPasswordField) {
+                appPasswordField.setCustomValidity('');
+                this.hideCustomError(appPasswordField);
+            }
+            if (superUserField) {
+                superUserField.setCustomValidity('');
+                this.hideCustomError(superUserField);
+            }
+            if (superPasswordField) {
+                superPasswordField.setCustomValidity('');
+                this.hideCustomError(superPasswordField);
+            }
         } else {
             hostField.readOnly = false;
             hostField.style.backgroundColor = '';
             if (testConnectionContainer) {
                 testConnectionContainer.style.display = 'block';
             }
-            // 外部服务模式隐藏超级用户配置并移除必填
+            // 外部服务模式隐藏超级用户配置并禁用字段
             if (superUserConfig) {
                 superUserConfig.style.display = 'none';
             }
             if (superUserField) {
                 superUserField.required = false;
+                superUserField.disabled = true;  // 禁用字段，表单验证会自动跳过
             }
             if (superPasswordField) {
                 superPasswordField.required = false;
+                superPasswordField.disabled = true;  // 禁用字段，表单验证会自动跳过
             }
             // 外部服务模式使用宽松的用户名和密码验证
             if (appUserField) {
@@ -2124,6 +2167,33 @@ class SetupApp {
                 appPasswordField.setCustomValidity('');
                 this.hideCustomError(appPasswordField);
             }
+            if (superUserField) {
+                superUserField.setCustomValidity('');
+                this.hideCustomError(superUserField);
+            }
+            if (superPasswordField) {
+                superPasswordField.setCustomValidity('');
+                this.hideCustomError(superPasswordField);
+            }
+        }
+
+        // 重置表单验证状态，清除所有验证错误
+        if (dbForm) {
+            // 获取所有表单输入元素并清除验证状态
+            const inputs = dbForm.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                if (input.style.display !== 'none' && !input.closest('[style*="display: none"]')) {
+                    // 仅处理可见的输入元素
+                    input.setCustomValidity('');
+                }
+            });
+
+            // 暂时禁用表单的原生验证
+            dbForm.noValidate = true;
+            // 异步恢复表单验证
+            setTimeout(() => {
+                dbForm.noValidate = false;
+            }, 10);
         }
     }
 
@@ -2184,6 +2254,7 @@ class SetupApp {
         const userField = document.getElementById('redis-user');
         const adminConfig = document.getElementById('redis-admin-config');
         const adminPasswordField = document.getElementById('redis-admin-password');
+        const redisForm = document.getElementById('redis-form');
 
         if (serviceType === 'docker') {
             hostField.value = 'localhost';
@@ -2199,6 +2270,7 @@ class SetupApp {
             }
             if (adminPasswordField) {
                 adminPasswordField.required = true;
+                adminPasswordField.disabled = false;
             }
 
             // Docker模式：用户名必填但不设置默认值
@@ -2225,6 +2297,20 @@ class SetupApp {
             this.toggleHelpText('redis-password', true);
             this.toggleHelpText('redis-user', true);
             this.toggleHelpText('redis-admin-password', true);
+
+            // Docker模式也要清除所有自定义验证错误
+            if (passwordField) {
+                passwordField.setCustomValidity('');
+                this.hideCustomError(passwordField);
+            }
+            if (userField) {
+                userField.setCustomValidity('');
+                this.hideCustomError(userField);
+            }
+            if (adminPasswordField) {
+                adminPasswordField.setCustomValidity('');
+                this.hideCustomError(adminPasswordField);
+            }
         } else {
             hostField.readOnly = false;
             hostField.style.backgroundColor = '';
@@ -2232,12 +2318,13 @@ class SetupApp {
                 testConnectionContainer.style.display = 'block';
             }
 
-            // 外部服务模式：隐藏管理密码配置并移除必填
+            // 外部服务模式：隐藏管理密码配置并禁用字段
             if (adminConfig) {
                 adminConfig.style.display = 'none';
             }
             if (adminPasswordField) {
                 adminPasswordField.required = false;
+                adminPasswordField.disabled = true;  // 禁用字段，表单验证会自动跳过
             }
 
             // 外部服务模式：用户名可选，兼容旧版Redis
@@ -2271,6 +2358,16 @@ class SetupApp {
                 adminPasswordField.setCustomValidity('');
                 this.hideCustomError(adminPasswordField);
             }
+        }
+
+        // 重置表单验证状态，清除所有验证错误
+        if (redisForm) {
+            // 暂时禁用表单的原生验证
+            redisForm.noValidate = true;
+            // 异步恢复表单验证
+            setTimeout(() => {
+                redisForm.noValidate = false;
+            }, 10);
         }
     }
     
