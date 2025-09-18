@@ -175,7 +175,6 @@ FRONTEND_SCRIPTS=
 FRONTEND_STYLES=
 
 # Service Configuration
-SERVICE_URL='http{{ if ne .App.DomainName "localhost" }}s{{ end }}://{{ .App.DomainName }}{{ if eq .App.DomainName "localhost" }}:3000{{ end }}'
 STATIC_HOST_NAME='{{ .App.DomainName }}{{ if eq .App.DomainName "localhost" }}:8787{{ end }}'
 
 # OAuth Configuration (optional)
@@ -336,7 +335,6 @@ services:
       CLOUDFLARE_SITE_KEY: $CLOUDFLARE_SITE_KEY
       CLOUDFLARE_SECRET: $CLOUDFLARE_SECRET
       JWT_KEY_FILE: $JWT_KEY_FILE
-      SERVICE_URL: $SERVICE_URL
       STATIC_HOST_NAME: $STATIC_HOST_NAME
       CORS_ALLOW_ORIGINS: $CORS_ALLOW_ORIGINS
       FRONTEND_ROOT_ID: $FRONTEND_ROOT_ID
