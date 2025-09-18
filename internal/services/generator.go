@@ -694,10 +694,27 @@ func (g *GeneratorService) GenerateNginxConfig(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to read webapp.conf.template: %w", err)
 	}
 
-	// 写入webapp.conf.template到config/nginx/templates/目录
+	// 解析webapp.conf模板
+	tmpl, err := template.New("webapp").Parse(string(webappTemplateContent))
+	if err != nil {
+		return fmt.Errorf("failed to parse webapp.conf template: %w", err)
+	}
+
+	// 创建输出文件
 	webappTemplatePath := filepath.Join(templatesDir, "webapp.conf.template")
-	if err := os.WriteFile(webappTemplatePath, webappTemplateContent, 0644); err != nil {
-		return fmt.Errorf("failed to write webapp.conf.template: %w", err)
+	file, err := os.Create(webappTemplatePath)
+	if err != nil {
+		return fmt.Errorf("failed to create webapp.conf.template file: %w", err)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("Warning: failed to close webapp.conf.template file: %v", err)
+		}
+	}()
+
+	// 执行模板，处理Go模板语法
+	if err := tmpl.Execute(file, cfg); err != nil {
+		return fmt.Errorf("failed to execute webapp.conf template: %w", err)
 	}
 
 	return nil
