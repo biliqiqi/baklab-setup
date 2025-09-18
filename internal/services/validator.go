@@ -676,26 +676,20 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 			}
 		}
 	} else {
-		// 外部模式下用户名可选，但如果提供了就需要验证格式
+		// 外部模式下用户名可选，允许使用"default"，但如果提供了就需要验证格式
 		if cfg.User != "" {
-			if cfg.User == "default" {
+			// 外部模式下允许"default"用户名，兼容旧版Redis
+			userRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+			if !userRegex.MatchString(cfg.User) {
 				errors = append(errors, model.ValidationError{
 					Field:   "redis.user",
-					Message: "key:validation.redis.user_default_forbidden",
+					Message: "key:validation.redis.user_format_error",
 				})
-			} else {
-				userRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-				if !userRegex.MatchString(cfg.User) {
-					errors = append(errors, model.ValidationError{
-						Field:   "redis.user",
-						Message: "key:validation.redis.user_format_error",
-					})
-				} else if len(cfg.User) > 128 {
-					errors = append(errors, model.ValidationError{
-						Field:   "redis.user",
-						Message: "key:validation.redis.user_length_error",
-					})
-				}
+			} else if len(cfg.User) > 128 {
+				errors = append(errors, model.ValidationError{
+					Field:   "redis.user",
+					Message: "key:validation.redis.user_length_error",
+				})
 			}
 		}
 	}
