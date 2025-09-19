@@ -32,25 +32,21 @@ var (
 	dataDir  = flag.String("data", "./data", "Directory to store setup data")
 	staticDir = flag.String("static", "./static", "Directory containing static files")
 	
-	// 强制要求的 HTTPS 参数
 	certFile = flag.String("cert", "", "TLS certificate file path (REQUIRED)")
 	keyFile  = flag.String("key", "", "TLS private key file path (REQUIRED)")
 	domain   = flag.String("domain", "", "Domain name for HTTPS access (REQUIRED)")
-	
-	// 安全选项
+
 	timeout  = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
 )
 
 func main() {
 	flag.Parse()
 
-	// 检查开发模式环境变量
 	devMode := os.Getenv("BAKLAB_DEV_MODE") == "true" || os.Getenv("BAKLAB_DEV") == "1"
 	if devMode {
 		log.Printf("Development mode enabled (environment variable detected)")
 	}
 
-	// 验证必需的 HTTPS 参数
 	if *certFile == "" {
 		log.Fatal("TLS certificate file is required. Use -cert flag.")
 	}
@@ -61,7 +57,6 @@ func main() {
 		log.Fatal("Domain name is required. Use -domain flag.")
 	}
 
-	// 验证证书文件并转换为绝对路径
 	certPath, err := filepath.Abs(*certFile)
 	if err != nil {
 		log.Fatalf("Failed to get absolute path for certificate: %v", err)
@@ -86,46 +81,34 @@ func main() {
 	log.Printf("Private key: %s", keyPath)
 	log.Printf("HTTPS port: %s", *port)
 
-	// 初始化存储
 	jsonStorage := storage.NewJSONStorage(*dataDir)
 
-	// 初始化服务
 	setupService := services.NewSetupService(jsonStorage)
 
-	// 初始化i18n管理器
 	i18nManager := i18n.NewI18nManager(language.English)
 
-	// 创建处理器，传递开发模式标志
 	handlers := web.NewSetupHandlers(setupService, i18nManager, devMode, certPath, keyPath)
 	middlewares := web.NewSetupMiddleware(setupService, devMode)
 
-	// 设置路由
 	r := chi.NewRouter()
 
-	// 全局中间件
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 
-	// 严格的基于域名的 CORS 配置
 	r.Use(setupStrictCORS(*domain, *port))
 
-	// HTTPS 安全头和 CSP 配置
 	r.Use(setupSecurityHeaders(*domain))
 
-	// setup阶段禁用缓存
 	r.Use(middleware.NoCache)
 
-	// i18n中间件
 	r.Use(web.I18nMiddleware)
 
-	// 静态文件服务
 	workDir, _ := os.Getwd()
 	staticPath := filepath.Join(workDir, *staticDir)
 	FileServer(r, "/static", http.Dir(staticPath))
 
-	// API路由（需要认证）
 	r.Route("/api", func(r chi.Router) {
 		r.Use(middlewares.SetupAuth)
 
@@ -138,7 +121,6 @@ func main() {
 		r.Post("/generate", handlers.GenerateConfigHandler)
 		r.Get("/current-cert-paths", handlers.GetCurrentCertPathsHandler)
 
-		// 文件上传路由
 		r.Post("/upload/geo-file", handlers.UploadGeoFileHandler)
 		// r.Post("/upload/jwt-key-file", handlers.UploadJWTKeyFileHandler) // 已注释：改为自动生成JWT密钥
 
@@ -146,20 +128,16 @@ func main() {
 		r.Post("/complete", handlers.CompleteSetupHandler)
 	})
 
-	// 主页路由
 	r.Get("/", handlers.IndexHandler)
 
-	// 生成访问令牌
-	clientIP := "0.0.0.0" // 允许任何IP，由令牌控制访问
+	clientIP := "0.0.0.0"
 	token, err := setupService.InitializeSetup(clientIP)
 	if err != nil {
 		log.Fatalf("Failed to initialize setup: %v", err)
 	}
 
-	// 构造安全的访问URL
 	accessURL := fmt.Sprintf("https://%s:%s?token=%s", *domain, *port, token.Token)
 	
-	// 输出访问信息
 	fmt.Println(strings.Repeat("=", 80))
 	fmt.Printf("BakLab HTTPS-Only Setup Service Started\n")
 	fmt.Printf("One-time Access URL:\n")
@@ -170,15 +148,14 @@ func main() {
 	fmt.Printf("WARNING: Service will auto-close after setup completion\n")
 	fmt.Println(strings.Repeat("=", 80))
 
-	// 启动 HTTPS 服务器
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", *port),
 		Handler: r,
 		TLSConfig: &tls.Config{
 			MinVersion: tls.VersionTLS12,
 			CipherSuites: []uint16{
-				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,   // Required for HTTP/2
-				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, // Required for HTTP/2
+				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
 				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
@@ -188,16 +165,13 @@ func main() {
 		},
 	}
 
-	// 优雅关闭处理
 	go func() {
-		// 监听中断信号
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
 		<-sigint
 
 		log.Println("Received interrupt signal, shutting down...")
 
-		// 优雅关闭服务器
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer shutdownCancel()
 
@@ -206,7 +180,6 @@ func main() {
 		}
 	}()
 
-	// 设置全局超时
 	go func() {
 		time.Sleep(*timeout)
 		log.Printf("Setup timeout (%v) reached, shutting down...", *timeout)
@@ -241,10 +214,9 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 
 // setupStrictCORS 配置严格的基于域名的 CORS
 func setupStrictCORS(domain, port string) func(http.Handler) http.Handler {
-	// 仅允许指定域名的 HTTPS 访问
 	allowedOrigins := []string{
 		fmt.Sprintf("https://%s:%s", domain, port),
-		fmt.Sprintf("https://%s", domain), // 支持不带端口的访问
+		fmt.Sprintf("https://%s", domain),
 	}
 	
 	return cors.Handler(cors.Options{
@@ -258,15 +230,15 @@ func setupStrictCORS(domain, port string) func(http.Handler) http.Handler {
 			"Content-Type",
 			"Content-Language",
 			"Origin",
-			"Setup-Token",     // 自定义认证头
-			"X-Language",      // i18n 头
+			"Setup-Token",
+			"X-Language",
 			"X-Requested-With",
 			"Authorization",
 		},
 		ExposedHeaders: []string{
-			"Setup-Token-Status", // 令牌状态信息
+			"Setup-Token-Status",
 		},
-		AllowCredentials: false, // 禁用凭据，提高安全性
+		AllowCredentials: false,
 		MaxAge:           300,
 	})
 }
@@ -275,21 +247,19 @@ func setupStrictCORS(domain, port string) func(http.Handler) http.Handler {
 func setupSecurityHeaders(domain string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// CSP 策略 - 严格限制资源加载
 			cspDirectives := []string{
 				"default-src 'self'",
 				fmt.Sprintf("connect-src 'self' https://%s", domain),
-				"script-src 'self' 'unsafe-inline'", // setup 阶段允许内联脚本
-				"style-src 'self' 'unsafe-inline'",  // setup 阶段允许内联样式
+				"script-src 'self' 'unsafe-inline'",
+				"style-src 'self' 'unsafe-inline'",
 				"img-src 'self' data:",
 				"font-src 'self'",
-				"frame-ancestors 'none'", // 禁止在框架中加载
+				"frame-ancestors 'none'",
 				"base-uri 'self'",
 				"form-action 'self'",
 			}
 			w.Header().Set("Content-Security-Policy", strings.Join(cspDirectives, "; "))
 			
-			// HTTPS 安全头
 			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 			w.Header().Set("X-Frame-Options", "DENY")
@@ -297,7 +267,6 @@ func setupSecurityHeaders(domain string) func(http.Handler) http.Handler {
 			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 			w.Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
 			
-			// 禁止缓存敏感页面
 			w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 			w.Header().Set("Pragma", "no-cache")
 			w.Header().Set("Expires", "0")
@@ -311,7 +280,6 @@ func setupSecurityHeaders(domain string) func(http.Handler) http.Handler {
 func cleanupSensitiveData(dataDir string) {
 	log.Println("Starting security cleanup...")
 	
-	// 清理令牌文件
 	sensitiveFiles := []string{
 		"setup-token.json",
 		"setup-config.json",
@@ -327,7 +295,6 @@ func cleanupSensitiveData(dataDir string) {
 		}
 	}
 	
-	// 强制垃圾回收清理内存
 	runtime.GC()
 	log.Println("Security cleanup completed")
 }
