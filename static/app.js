@@ -1226,10 +1226,18 @@ class SetupApp {
 
                 // 取消域名使用时，恢复SSL证书选择的自由度
                 this._shouldAutoSetSSLCert = false;
+
+                // 更新SSL配置，取消使用设置程序证书
+                this.config.ssl.use_setup_cert = false;
+
+                // 清理当前页面的SSL自动选择状态（如果SSL步骤已渲染）
                 this.clearSSLAutoSelection();
             }
             // 更新配置状态
             this.config.app.use_setup_domain = e.target.checked;
+
+            // 立即保存配置状态到本地缓存
+            this.saveToLocalCache();
         });
 
         // 初始化复选框状态
@@ -1579,15 +1587,25 @@ class SetupApp {
                 // 添加说明文本
                 let autoNote = parentLabel.querySelector('.auto-selection-note');
                 if (!autoNote) {
-                    autoNote = document.createElement('div');
+                    autoNote = document.createElement('span');
                     autoNote.className = 'auto-selection-note';
-                    autoNote.style.cssText = 'font-size: 0.85em; color: var(--gray-600); margin-top: 0.25rem; font-style: italic;';
-                    parentLabel.appendChild(autoNote);
+                    autoNote.style.cssText = 'font-size: 0.85em; color: var(--gray-600); margin-left: 0.5rem; font-style: italic; display: inline;';
+                    // 插入到label的span元素后面
+                    const labelSpan = parentLabel.querySelector('span');
+                    if (labelSpan) {
+                        labelSpan.parentNode.insertBefore(autoNote, labelSpan.nextSibling);
+                    } else {
+                        parentLabel.appendChild(autoNote);
+                    }
                 }
-                autoNote.textContent = window.i18n ?
+                const noteText = window.i18n ?
                     window.i18n.t('setup.ssl.auto_selected_due_to_domain') :
                     'Automatically selected because you are using the setup program domain';
+                autoNote.textContent = ` (${noteText})`;
             }
+        } else if (!this.config.app.use_setup_domain) {
+            // 如果域名复选框未勾选，确保SSL证书复选框也不会被自动勾选
+            this.clearSSLAutoSelection();
         }
     }
 
@@ -1595,8 +1613,24 @@ class SetupApp {
     clearSSLAutoSelection() {
         const sslUseSetupCertCheckbox = document.getElementById('ssl-use-setup-cert');
         if (sslUseSetupCertCheckbox) {
+            // 取消勾选复选框
+            sslUseSetupCertCheckbox.checked = false;
             sslUseSetupCertCheckbox.readOnly = false;
             sslUseSetupCertCheckbox.disabled = false;
+
+            // 清除证书路径输入框的内容和只读状态
+            const certPath = document.getElementById('ssl-cert-path');
+            const keyPath = document.getElementById('ssl-key-path');
+            if (certPath) {
+                certPath.value = '';
+                certPath.readOnly = false;
+                certPath.style.backgroundColor = '';
+            }
+            if (keyPath) {
+                keyPath.value = '';
+                keyPath.readOnly = false;
+                keyPath.style.backgroundColor = '';
+            }
 
             const parentLabel = sslUseSetupCertCheckbox.closest('.checkbox-label');
             if (parentLabel) {
@@ -1609,6 +1643,9 @@ class SetupApp {
                     autoNote.remove();
                 }
             }
+
+            // 更新配置
+            this.config.ssl.use_setup_cert = false;
         }
     }
 
