@@ -18,7 +18,6 @@ import (
 	"golang.org/x/text/language"
 )
 
-// SetupHandlers Web处理程序
 type SetupHandlers struct {
 	setupService *services.SetupService
 	i18nManager  *i18n.I18nManager
@@ -27,7 +26,6 @@ type SetupHandlers struct {
 	keyPath      string
 }
 
-// NewSetupHandlers 创建处理程序实例
 func NewSetupHandlers(setupService *services.SetupService, i18nManager *i18n.I18nManager, devMode bool, certPath, keyPath string) *SetupHandlers {
 	return &SetupHandlers{
 		setupService: setupService,
@@ -38,7 +36,6 @@ func NewSetupHandlers(setupService *services.SetupService, i18nManager *i18n.I18
 	}
 }
 
-// getLocalizerFromContext 从请求上下文获取localizer
 func (h *SetupHandlers) getLocalizerFromContext(r *http.Request) *i18n.I18nCustom {
 	if h.i18nManager != nil {
 		// Get language from context (set by middleware)
@@ -53,7 +50,6 @@ func (h *SetupHandlers) getLocalizerFromContext(r *http.Request) *i18n.I18nCusto
 	return i18n.New(language.English)
 }
 
-// localizeMessage 本地化消息
 func (h *SetupHandlers) localizeMessage(r *http.Request, messageKey string, data ...interface{}) string {
 	localizer := h.getLocalizerFromContext(r)
 	if len(data) > 0 {
@@ -62,7 +58,6 @@ func (h *SetupHandlers) localizeMessage(r *http.Request, messageKey string, data
 	return localizer.LocalTpl(messageKey)
 }
 
-// translateValidationErrors 统一翻译验证错误列表
 func (h *SetupHandlers) translateValidationErrors(r *http.Request, errors []model.ValidationError) {
 	for i := range errors {
 		if strings.HasPrefix(errors[i].Message, "key:") {
@@ -72,7 +67,6 @@ func (h *SetupHandlers) translateValidationErrors(r *http.Request, errors []mode
 	}
 }
 
-// translateConnectionResults 统一翻译连接测试结果
 func (h *SetupHandlers) translateConnectionResults(r *http.Request, results []model.ConnectionTestResult) {
 	for i := range results {
 		if strings.HasPrefix(results[i].Message, "key:") {
@@ -82,7 +76,6 @@ func (h *SetupHandlers) translateConnectionResults(r *http.Request, results []mo
 	}
 }
 
-// IndexHandler 主页处理程序
 func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	// 开发模式下跳过token验证
 	if h.devMode {
@@ -133,7 +126,6 @@ func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	h.renderSetupPage(w, r)
 }
 
-// InitializeHandler 初始化setup
 func (h *SetupHandlers) InitializeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		h.writeJSONResponse(w, model.SetupResponse{
@@ -166,7 +158,6 @@ func (h *SetupHandlers) InitializeHandler(w http.ResponseWriter, r *http.Request
 	}, http.StatusOK)
 }
 
-// StatusHandler 获取setup状态
 func (h *SetupHandlers) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		h.writeJSONResponse(w, model.SetupResponse{
@@ -200,7 +191,6 @@ func (h *SetupHandlers) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	}, http.StatusOK)
 }
 
-// SaveConfigHandler 保存配置
 func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		h.writeJSONResponse(w, model.SetupResponse{
@@ -250,7 +240,6 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 	}, http.StatusOK)
 }
 
-// GetConfigHandler 获取保存的配置
 func (h *SetupHandlers) GetConfigHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		h.writeJSONResponse(w, model.SetupResponse{
@@ -284,7 +273,6 @@ func (h *SetupHandlers) GetConfigHandler(w http.ResponseWriter, r *http.Request)
 	}, http.StatusOK)
 }
 
-// TestConnectionsHandler 测试连接
 func (h *SetupHandlers) TestConnectionsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		h.writeJSONResponse(w, model.SetupResponse{
@@ -322,7 +310,6 @@ func (h *SetupHandlers) TestConnectionsHandler(w http.ResponseWriter, r *http.Re
 	}, http.StatusOK)
 }
 
-// GenerateConfigHandler 生成配置文件
 func (h *SetupHandlers) GenerateConfigHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		h.writeJSONResponse(w, model.SetupResponse{
@@ -367,7 +354,6 @@ func (h *SetupHandlers) GenerateConfigHandler(w http.ResponseWriter, r *http.Req
 	}, http.StatusOK)
 }
 
-// CompleteSetupHandler 完成setup
 func (h *SetupHandlers) CompleteSetupHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		h.writeJSONResponse(w, model.SetupResponse{
@@ -411,7 +397,6 @@ func (h *SetupHandlers) CompleteSetupHandler(w http.ResponseWriter, r *http.Requ
 	}, http.StatusOK)
 }
 
-// ValidateConfigHandler 验证配置
 func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		h.writeJSONResponse(w, model.SetupResponse{
@@ -452,7 +437,6 @@ func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Req
 }
 
 
-// writeJSONResponse 写入JSON响应
 func (h *SetupHandlers) writeJSONResponse(w http.ResponseWriter, response model.SetupResponse, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
@@ -462,7 +446,6 @@ func (h *SetupHandlers) writeJSONResponse(w http.ResponseWriter, response model.
 }
 
 
-// UploadGeoFileHandler 处理 GeoIP 数据库文件上传
 func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Request) {
 	// 限制请求体大小为100MB
 	maxSize := int64(100 * 1024 * 1024) // 100MB
@@ -709,7 +692,6 @@ func validateJWTKeyFile(keyBytes []byte) error {
 	}
 }
 
-// GetCurrentCertPathsHandler 获取当前设置程序使用的证书路径
 func (h *SetupHandlers) GetCurrentCertPathsHandler(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"success": true,
@@ -726,7 +708,6 @@ func (h *SetupHandlers) GetCurrentCertPathsHandler(w http.ResponseWriter, r *htt
 	}
 }
 
-// renderUnauthorizedPage 渲染未授权页面
 func (h *SetupHandlers) renderUnauthorizedPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusUnauthorized)
@@ -739,7 +720,6 @@ func (h *SetupHandlers) renderUnauthorizedPage(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// renderSetupPage 渲染setup界面
 func (h *SetupHandlers) renderSetupPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
@@ -765,7 +745,7 @@ func (h *SetupHandlers) renderSetupPage(w http.ResponseWriter, r *http.Request) 
         <p>%s</p>
     </div>
     <script src="/static/i18n.js?v=1.0"></script>
-    <script src="/static/app.js?v=1.2"></script>
+    <script type="module" src="/static/app.js?v=1.2"></script>
 </body>
 </html>`, pageTitle, loadingMessage)
 	if err != nil {
