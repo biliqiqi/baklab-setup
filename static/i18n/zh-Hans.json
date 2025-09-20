@@ -178,6 +178,11 @@
       "domain_placeholder": "example.com",
       "domain_error": "请输入有效的域名（例如：example.com）或 localhost",
       "use_setup_domain": "使用设置程序域名",
+
+      "static_host_label": "静态文件主机",
+      "static_host_placeholder": "static.example.com",
+      "static_host_help": "用于 CSP 安全策略的静态文件资源主机（例如：static.example.com、cdn.example.com）",
+      "static_host_error": "请输入有效的主机名或主机名:端口格式",
       
       "brand_label": "品牌名称",
       "brand_placeholder": "BakLab",

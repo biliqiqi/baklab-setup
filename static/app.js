@@ -42,6 +42,7 @@ class SetupApp {
             },
             app: {
                 domain_name: '',
+                static_host_name: '',
                 brand_name: 'BakLab',
                 admin_email: '',
                 default_lang: 'en',
@@ -1037,6 +1038,23 @@ class SetupApp {
                     </div>
                     <div class="invalid-feedback" data-i18n="setup.app.domain_error"></div>
                 </div>
+
+                <div class="form-group">
+                    <label for="app-static-host"><span data-i18n="setup.app.static_host_label"></span> <span data-i18n="common.required"></span></label>
+                    <input
+                        type="text"
+                        id="app-static-host"
+                        name="static_host"
+                        value="${this.config.app.static_host_name || ''}"
+                        data-i18n-placeholder="setup.app.static_host_placeholder"
+                        required
+                        pattern="^([a-zA-Z0-9]([a-zA-Z0-9\\-]*[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}(:[0-9]{1,5})?$|^localhost(:[0-9]{1,5})?$"
+                        data-i18n-title="setup.app.static_host_error"
+                    >
+                    <div class="form-help" data-i18n="setup.app.static_host_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.app.static_host_error"></div>
+                </div>
+
                 <div class="form-group">
                     <label for="app-brand"><span data-i18n="setup.app.brand_label"></span> <span data-i18n="common.required"></span></label>
                     <input
@@ -2598,6 +2616,7 @@ class SetupApp {
         this.config.app = {
             ...this.config.app,
             domain_name: document.getElementById('app-domain').value,
+            static_host_name: document.getElementById('app-static-host').value,
             brand_name: document.getElementById('app-brand').value,
             admin_email: document.getElementById('app-email').value,
             version: document.getElementById('app-version').value,

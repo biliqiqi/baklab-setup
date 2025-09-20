@@ -175,7 +175,7 @@ FRONTEND_SCRIPTS=
 FRONTEND_STYLES=
 
 # Service Configuration
-STATIC_HOST_NAME='{{ .App.DomainName }}{{ if eq .App.DomainName "localhost" }}:8787{{ end }}'
+STATIC_HOST_NAME='{{ .App.StaticHostName }}'
 
 # OAuth Configuration (optional)
 {{ if .OAuth.GoogleClientID }}GOOGLE_CLIENT_ID='{{ .OAuth.GoogleClientID }}'{{ else }}GOOGLE_CLIENT_ID={{ end }}

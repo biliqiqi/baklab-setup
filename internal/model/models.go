@@ -88,6 +88,7 @@ type OAuthConfig struct {
 // AppConfig 应用配置
 type AppConfig struct {
 	DomainName        string      `json:"domain_name" validate:"required"`
+	StaticHostName    string      `json:"static_host_name" validate:"required"`
 	BrandName         string      `json:"brand_name" validate:"required"`
 	AdminEmail        string      `json:"admin_email" validate:"required,email"`
 	DefaultLang       string      `json:"default_lang" validate:"required"`
