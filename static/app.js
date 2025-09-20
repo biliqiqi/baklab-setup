@@ -280,24 +280,11 @@ class SetupApp {
                     <h4 style="margin: 0 0 0.75rem 0;" data-i18n="setup.init.prerequisites_title"></h4>
                     <p style="margin: 0 0 0.75rem 0;" data-i18n="setup.init.prerequisites_description"></p>
 
-                    <div style="margin-bottom: 0.75rem;">
-                        <strong data-i18n="setup.init.required_services"></strong>
-                        <ul style="margin: 0.25rem 0 0 1rem;">
-                            <li data-i18n="setup.init.required_smtp"></li>
-                            <li data-i18n="setup.init.required_https"></li>
-                            <li data-i18n="setup.init.required_static"></li>
-                        </ul>
-                    </div>
-
-                    <div style="margin-bottom: 0.75rem;">
-                        <strong data-i18n="setup.init.optional_services"></strong>
-                        <ul style="margin: 0.25rem 0 0 1rem;">
-                            <li data-i18n="setup.init.optional_database"></li>
-                            <li data-i18n="setup.init.optional_redis"></li>
-                            <li data-i18n="setup.init.optional_oauth"></li>
-                            <li data-i18n="setup.init.optional_goaccess"></li>
-                        </ul>
-                    </div>
+                    <ul style="margin: 0.25rem 0 0.75rem 1rem;">
+                        <li data-i18n="setup.init.required_smtp"></li>
+                        <li data-i18n="setup.init.required_https"></li>
+                        <li data-i18n="setup.init.required_static"></li>
+                    </ul>
 
                     <p style="margin: 0; font-size: 0.9rem; font-style: italic;" data-i18n="setup.init.prerequisites_note"></p>
                 </div>
