@@ -677,6 +677,8 @@ class SetupApp {
                 app.showFormErrors(e.target);
             }
         });
+
+        this.addFieldTouchListeners(container);
     }
     
     renderRedisStep(container) {
@@ -884,6 +886,8 @@ class SetupApp {
                 app.showFormErrors(e.target);
             }
         });
+
+        this.addFieldTouchListeners(container);
     }
 
     renderSMTPStep(container) {
@@ -999,6 +1003,8 @@ class SetupApp {
                 app.showFormErrors(e.target);
             }
         });
+
+        this.addFieldTouchListeners(container);
     }
 
     addSMTPFieldListeners() {
@@ -1327,6 +1333,8 @@ class SetupApp {
             domainInput.readOnly = true;
             domainInput.style.backgroundColor = '#f8f9fa';
         }
+
+        this.addFieldTouchListeners(container);
     }
 
     renderOAuthStep(container) {
@@ -1481,6 +1489,8 @@ class SetupApp {
                 app.showFormErrors(e.target);
             }
         });
+
+        this.addFieldTouchListeners(container);
     }
 
     renderSSLStep(container) {
@@ -1629,6 +1639,8 @@ class SetupApp {
                 this.nextStep();
             }
         });
+
+        this.addFieldTouchListeners(container);
     }
 
     // 处理域名复选框对SSL证书选择的影响
@@ -2006,6 +2018,8 @@ class SetupApp {
                 this.showGeoUploadArea();
             }, 2000); // 2秒后重置界面，让用户看到错误信息
         }
+
+        this.addFieldTouchListeners(container);
     }
     
 
@@ -2187,6 +2201,8 @@ class SetupApp {
                 e.target.setCustomValidity('');
             }
         });
+
+        this.addFieldTouchListeners(container);
     }
     
     renderReviewStep(container) {
@@ -3200,8 +3216,7 @@ class SetupApp {
                 }
             }
         });
-        
-        // 滚动到第一个错误字段
+
         if (invalidFields.length > 0) {
             invalidFields[0].focus();
             invalidFields[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -3209,7 +3224,6 @@ class SetupApp {
     }
     
     clearFormErrors(form) {
-        // 清除所有错误状态
         const errorGroups = form.querySelectorAll('.form-group.error');
         errorGroups.forEach(group => {
             group.classList.remove('error');
@@ -3218,6 +3232,22 @@ class SetupApp {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
             }
+        });
+    }
+
+    addFieldTouchListeners(container) {
+        const formFields = container.querySelectorAll('input, select, textarea');
+        formFields.forEach(field => {
+            const markTouched = () => {
+                const formGroup = field.closest('.form-group');
+                if (formGroup) {
+                    formGroup.classList.add('touched');
+                }
+            };
+
+            field.addEventListener('input', markTouched);
+            field.addEventListener('change', markTouched);
+            field.addEventListener('blur', markTouched);
         });
     }
     
