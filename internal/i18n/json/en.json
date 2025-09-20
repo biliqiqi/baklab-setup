@@ -177,6 +177,11 @@
     "validation.app.static_host_required": "Static host name is required",
     "validation.app.brand_required": "Brand name is required",
     "validation.app.language_required": "Default language is required",
+    "validation.app.frontend_scripts_required": "Frontend scripts are required when SSR is enabled",
+    "validation.app.frontend_scripts_error": "Please enter valid HTTPS URLs for frontend scripts",
+    "validation.app.frontend_styles_required": "Frontend styles are required when SSR is enabled",
+    "validation.app.frontend_styles_error": "Please enter valid HTTPS URLs for frontend styles",
+    "validation.app.frontend_container_id_required": "Frontend container ID is required when SSR is enabled",
     "validation.admin.username_required": "Admin username is required",
     "validation.admin.email_required": "Admin email is required",
     "validation.admin.password_required": "Admin password is required"

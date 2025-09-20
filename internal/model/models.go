@@ -101,6 +101,11 @@ type AppConfig struct {
 	OAuth             OAuthConfig `json:"oauth"`             // 第三方登录配置
 	CloudflareSiteKey string      `json:"cloudflare_site_key"`
 	CloudflareSecret  string      `json:"cloudflare_secret"`
+	// 服务端渲染配置
+	SSREnabled          bool     `json:"ssr_enabled"`
+	FrontendScripts     []string `json:"frontend_scripts" validate:"required_if=SSREnabled true"`
+	FrontendStyles      []string `json:"frontend_styles" validate:"required_if=SSREnabled true"`
+	FrontendContainerId string   `json:"frontend_container_id" validate:"required_if=SSREnabled true"`
 }
 
 // AdminUserConfig 管理员用户配置

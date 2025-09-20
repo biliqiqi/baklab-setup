@@ -1152,7 +1152,60 @@ class SetupApp {
                         <div class="form-help" data-i18n="setup.app.debug_help"></div>
                     </div>
                 </div>
-                
+
+                <h4 style="margin: 2rem 0 1rem 0; color: var(--gray-700);" data-i18n="setup.app.ssr_section_title"></h4>
+                <p style="margin-bottom: 1rem; color: var(--gray-600);" data-i18n="setup.app.ssr_section_description"></p>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="app-ssr-enabled" name="ssr_enabled" ${this.config.app.ssr_enabled ? 'checked' : ''} onchange="app.updateSSRDisplay()">
+                        <span data-i18n="setup.app.ssr_enabled_label"></span>
+                    </label>
+                    <div class="form-help" data-i18n="setup.app.ssr_enabled_help"></div>
+                </div>
+
+                <div id="ssr-config" style="display: ${this.config.app.ssr_enabled ? 'block' : 'none'};">
+                    <div class="form-group">
+                        <label for="frontend-scripts"><span data-i18n="setup.app.frontend_scripts_label"></span> <span data-i18n="common.required"></span></label>
+                        <textarea
+                            id="frontend-scripts"
+                            name="frontend_scripts"
+                            rows="3"
+                            data-i18n-placeholder="setup.app.frontend_scripts_placeholder"
+                            data-i18n-title="setup.app.frontend_scripts_error"
+                        >${(this.config.app.frontend_scripts || []).join('\\n')}</textarea>
+                        <div class="form-help" data-i18n="setup.app.frontend_scripts_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.app.frontend_scripts_error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="frontend-styles"><span data-i18n="setup.app.frontend_styles_label"></span> <span data-i18n="common.required"></span></label>
+                        <textarea
+                            id="frontend-styles"
+                            name="frontend_styles"
+                            rows="3"
+                            data-i18n-placeholder="setup.app.frontend_styles_placeholder"
+                            data-i18n-title="setup.app.frontend_styles_error"
+                        >${(this.config.app.frontend_styles || []).join('\\n')}</textarea>
+                        <div class="form-help" data-i18n="setup.app.frontend_styles_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.app.frontend_styles_error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="frontend-container-id"><span data-i18n="setup.app.frontend_container_id_label"></span> <span data-i18n="common.required"></span></label>
+                        <input
+                            type="text"
+                            id="frontend-container-id"
+                            name="frontend_container_id"
+                            value="${this.config.app.frontend_container_id || ''}"
+                            data-i18n-placeholder="setup.app.frontend_container_id_placeholder"
+                            data-i18n-title="setup.app.frontend_container_id_error"
+                        >
+                        <div class="form-help" data-i18n="setup.app.frontend_container_id_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.app.frontend_container_id_error"></div>
+                    </div>
+                </div>
+
                 <h4 style="margin: 2rem 0 1rem 0; color: var(--gray-700);" data-i18n="setup.app.jwt_section_title"></h4>
                 <p style="margin-bottom: 1rem; color: var(--gray-600);" data-i18n="setup.app.jwt_section_description"></p>
                 
@@ -1233,6 +1286,9 @@ class SetupApp {
         // 初始化 JWT method 显示状态和样式
         this.updateJWTMethodDisplay();
         this.updateRadioStyles('jwt_method');
+
+        // 初始化 SSR 显示状态
+        this.updateSSRDisplay();
         
         // JWT key 路径输入框变化时清除验证错误
         document.getElementById('jwt-key-path').addEventListener('input', (e) => {
@@ -2607,6 +2663,29 @@ class SetupApp {
             }
         }
     }
+
+    updateSSRDisplay() {
+        const ssrEnabled = document.getElementById('app-ssr-enabled')?.checked;
+        const ssrConfig = document.getElementById('ssr-config');
+        const frontendScripts = document.getElementById('frontend-scripts');
+        const frontendStyles = document.getElementById('frontend-styles');
+        const frontendContainerId = document.getElementById('frontend-container-id');
+
+        if (ssrConfig) {
+            ssrConfig.style.display = ssrEnabled ? 'block' : 'none';
+        }
+
+        // 更新必填状态
+        if (frontendScripts) {
+            frontendScripts.required = ssrEnabled;
+        }
+        if (frontendStyles) {
+            frontendStyles.required = ssrEnabled;
+        }
+        if (frontendContainerId) {
+            frontendContainerId.required = ssrEnabled;
+        }
+    }
     
     async saveAppConfig() {
         const corsText = document.getElementById('app-cors').value.trim();
@@ -2629,7 +2708,21 @@ class SetupApp {
                 return;
             }
         }
-        
+
+        // 处理服务端渲染配置
+        const ssrEnabled = document.getElementById('app-ssr-enabled').checked;
+        let frontendScripts = [];
+        let frontendStyles = [];
+        let frontendContainerId = '';
+
+        if (ssrEnabled) {
+            const scriptsText = document.getElementById('frontend-scripts').value.trim();
+            const stylesText = document.getElementById('frontend-styles').value.trim();
+            frontendScripts = scriptsText ? scriptsText.split('\n').map(url => url.trim()).filter(url => url) : [];
+            frontendStyles = stylesText ? stylesText.split('\n').map(url => url.trim()).filter(url => url) : [];
+            frontendContainerId = document.getElementById('frontend-container-id').value.trim();
+        }
+
         this.config.app = {
             ...this.config.app,
             domain_name: document.getElementById('app-domain').value,
@@ -2641,7 +2734,11 @@ class SetupApp {
             debug: document.getElementById('app-debug').checked,
             jwt_key_from_file: jwtKeyFromFile,
             jwt_key_file_path: jwtKeyFilePath,
-            use_setup_domain: document.getElementById('use-setup-domain').checked
+            use_setup_domain: document.getElementById('use-setup-domain').checked,
+            ssr_enabled: ssrEnabled,
+            frontend_scripts: frontendScripts,
+            frontend_styles: frontendStyles,
+            frontend_container_id: frontendContainerId
         };
         
         // 保存到本地缓存并调用后端验证
@@ -2868,6 +2965,12 @@ class SetupApp {
                     <p><strong data-i18n="setup.review.fields.jwt_mode"></strong>: ${config.app.jwt_key_from_file ? (window.i18n ? window.i18n.t('setup.review.jwt_from_file') : 'From File') : (window.i18n ? window.i18n.t('setup.review.jwt_auto_generate') : 'Auto Generate')}</p>
                     ${config.app.jwt_key_from_file ? `
                         <p><strong data-i18n="setup.review.fields.jwt_file_path"></strong>: ${config.app.jwt_key_file_path}</p>
+                    ` : ''}
+                    <p><strong data-i18n="setup.review.fields.ssr_enabled"></strong>: ${config.app.ssr_enabled ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
+                    ${config.app.ssr_enabled ? `
+                        <p><strong data-i18n="setup.review.fields.frontend_scripts"></strong>: ${config.app.frontend_scripts ? config.app.frontend_scripts.join(', ') : ''}</p>
+                        <p><strong data-i18n="setup.review.fields.frontend_styles"></strong>: ${config.app.frontend_styles ? config.app.frontend_styles.join(', ') : ''}</p>
+                        <p><strong data-i18n="setup.review.fields.frontend_container_id"></strong>: ${config.app.frontend_container_id || ''}</p>
                     ` : ''}
 
                     <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.ssl"></h4>
