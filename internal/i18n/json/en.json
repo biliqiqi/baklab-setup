@@ -176,7 +176,6 @@
     "validation.app.domain_required": "Domain name is required",
     "validation.app.static_host_required": "Static host name is required",
     "validation.app.brand_required": "Brand name is required",
-    "validation.app.admin_email_required": "Admin email is required",
     "validation.app.language_required": "Default language is required",
     "validation.admin.username_required": "Admin username is required",
     "validation.admin.email_required": "Admin email is required",

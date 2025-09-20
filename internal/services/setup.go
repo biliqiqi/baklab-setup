@@ -259,7 +259,6 @@ func (s *SetupService) CompleteSetup() error {
 	return nil
 }
 
-
 // IsSetupCompleted 检查setup是否已完成
 func (s *SetupService) IsSetupCompleted() (bool, error) {
 	return s.storage.IsSetupCompleted()

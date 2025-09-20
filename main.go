@@ -26,17 +26,16 @@ import (
 	"github.com/biliqiqi/baklab-setup/internal/web"
 )
 
-
 var (
-	port     = flag.String("port", "8443", "HTTPS port to run the setup server on")
-	dataDir  = flag.String("data", "./data", "Directory to store setup data")
+	port      = flag.String("port", "8443", "HTTPS port to run the setup server on")
+	dataDir   = flag.String("data", "./data", "Directory to store setup data")
 	staticDir = flag.String("static", "./static", "Directory containing static files")
-	
+
 	certFile = flag.String("cert", "", "TLS certificate file path (REQUIRED)")
 	keyFile  = flag.String("key", "", "TLS private key file path (REQUIRED)")
 	domain   = flag.String("domain", "", "Domain name for HTTPS access (REQUIRED)")
 
-	timeout  = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
+	timeout = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
 )
 
 func main() {
@@ -65,11 +64,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to get absolute path for private key: %v", err)
 	}
-	
+
 	if _, err := os.Stat(certPath); os.IsNotExist(err) {
 		log.Fatalf("Certificate file not found: %s", certPath)
 	}
-	
+
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
 		log.Fatalf("Private key file not found: %s", keyPath)
 	}
@@ -124,7 +123,6 @@ func main() {
 		r.Post("/upload/geo-file", handlers.UploadGeoFileHandler)
 		// r.Post("/upload/jwt-key-file", handlers.UploadJWTKeyFileHandler) // 已注释：改为自动生成JWT密钥
 
-
 		r.Post("/complete", handlers.CompleteSetupHandler)
 	})
 
@@ -137,7 +135,7 @@ func main() {
 	}
 
 	accessURL := fmt.Sprintf("https://%s:%s?token=%s", *domain, *port, token.Token)
-	
+
 	fmt.Println(strings.Repeat("=", 80))
 	fmt.Printf("BakLab HTTPS-Only Setup Service Started\n")
 	fmt.Printf("One-time Access URL:\n")
@@ -218,7 +216,7 @@ func setupStrictCORS(domain, port string) func(http.Handler) http.Handler {
 		fmt.Sprintf("https://%s:%s", domain, port),
 		fmt.Sprintf("https://%s", domain),
 	}
-	
+
 	return cors.Handler(cors.Options{
 		AllowedOrigins: allowedOrigins,
 		AllowedMethods: []string{
@@ -259,18 +257,18 @@ func setupSecurityHeaders(domain string) func(http.Handler) http.Handler {
 				"form-action 'self'",
 			}
 			w.Header().Set("Content-Security-Policy", strings.Join(cspDirectives, "; "))
-			
+
 			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 			w.Header().Set("X-Frame-Options", "DENY")
 			w.Header().Set("X-XSS-Protection", "1; mode=block")
 			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 			w.Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-			
+
 			w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 			w.Header().Set("Pragma", "no-cache")
 			w.Header().Set("Expires", "0")
-			
+
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -279,13 +277,13 @@ func setupSecurityHeaders(domain string) func(http.Handler) http.Handler {
 // cleanupSensitiveData 清理敏感数据
 func cleanupSensitiveData(dataDir string) {
 	log.Println("Starting security cleanup...")
-	
+
 	sensitiveFiles := []string{
 		"setup-token.json",
 		"setup-config.json",
 		"setup-state.json",
 	}
-	
+
 	for _, file := range sensitiveFiles {
 		filePath := filepath.Join(dataDir, file)
 		if err := os.Remove(filePath); err != nil {
@@ -294,7 +292,7 @@ func cleanupSensitiveData(dataDir string) {
 			log.Printf("Removed sensitive file: %s", file)
 		}
 	}
-	
+
 	runtime.GC()
 	log.Println("Security cleanup completed")
 }

@@ -41,9 +41,27 @@
     
     "init": {
       "welcome_title": "欢迎使用 BakLab 设置向导",
-      "welcome_description": "此设置向导将帮助您配置 BakLab 应用程序用于生产。点击下面的按钮生成安全设置令牌并开始配置过程。",
+      "welcome_description_part1": "此设置向导将帮助您配置 BakLab 应用程序用于生产部署。本工具主要生成 Docker Compose 配置文件。请注意出于安全考虑，此设置会话将在",
+      "timeout_highlight": "30 分钟",
+      "welcome_description_part2": "后或完成配置时自动关闭。点击下面的按钮开始配置过程。",
       "language_label": "设置向导界面语言",
-      "initialize_button": "初始化设置"
+      "initialize_button": "初始化设置",
+
+      "prerequisites_title": "准备工作清单",
+      "prerequisites_description": "开始设置之前，请确保您已准备好以下服务和资源：",
+
+      "required_services": "必需服务：",
+      "required_smtp": "SMTP 邮箱服务（Gmail、SendGrid、AWS SES 等）用于系统通知",
+      "required_https": "HTTPS/SSL 证书文件（.crt 和 .key）用于安全连接",
+      "required_static": "静态文件托管服务或 CDN 用于资源服务",
+
+      "optional_services": "可选服务：",
+      "optional_database": "外部 PostgreSQL 数据库服务器",
+      "optional_redis": "外部 Redis 服务器",
+      "optional_oauth": "Google/GitHub OAuth 应用配置用于第三方登录",
+      "optional_goaccess": "GeoIP 数据库文件（.mmdb）用于 GoAccess 分析",
+
+      "prerequisites_note": "不用担心，如果您还没有准备好所有服务 - 您可以在设置过程中进行配置。"
     },
     
     "database": {
@@ -189,11 +207,6 @@
       
       "version_label": "应用程序版本",
       "version_help": "选择 BakLab 应用版本",
-      
-      "email_label": "管理员邮箱",
-      "email_placeholder": "admin@example.com",
-      "email_help": "系统管理员邮箱（用于TLS证书和系统通知）",
-      "email_error": "请输入有效的邮箱地址",
       
       "cors_label": "CORS 允许来源",
       "cors_placeholder": "https://app.example.com\nhttps://admin.example.com", 
@@ -370,6 +383,7 @@
         "goaccess_enabled": "启用分析服务",
         "goaccess_geo_file": "GeoIP 数据库文件",
         "domain": "域名",
+        "static_host": "静态文件主机",
         "brand": "品牌",
         "version": "版本",
         "language": "语言",
