@@ -482,9 +482,12 @@ a:hover {
     border-color: var(--success-color);
 }
 
-.form-group input:invalid,
-.form-group select:invalid,
-.form-group textarea:invalid {
+.form-group.touched input:invalid,
+.form-group.touched select:invalid,
+.form-group.touched textarea:invalid,
+.form-group.error input,
+.form-group.error select,
+.form-group.error textarea {
     border-color: var(--error-color);
 }
 
