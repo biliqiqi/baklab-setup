@@ -41,9 +41,27 @@
     
     "init": {
       "welcome_title": "Welcome to BakLab Setup",
-      "welcome_description": "This setup wizard will help you configure your BakLab application for production. Click the button below to generate a secure setup token and begin the configuration process.",
+      "welcome_description_part1": "This setup wizard will help you configure your BakLab application for production. It generates Docker Compose configuration files for deployment. Please note that this setup session will automatically close after",
+      "timeout_highlight": "30 minutes",
+      "welcome_description_part2": "or upon completion for security reasons. Click the button below to begin the configuration process.",
       "language_label": "Setup Interface Language",
-      "initialize_button": "Initialize Setup"
+      "initialize_button": "Initialize Setup",
+
+      "prerequisites_title": "Prerequisites Checklist",
+      "prerequisites_description": "Before starting the setup, please ensure you have prepared the following services and resources:",
+
+      "required_services": "Required Services:",
+      "required_smtp": "SMTP email service (Gmail, SendGrid, AWS SES, etc.) for system notifications",
+      "required_https": "HTTPS/SSL certificate files (.crt and .key) for secure connections",
+      "required_static": "Static file hosting service or CDN for serving assets",
+
+      "optional_services": "Optional Services:",
+      "optional_database": "External PostgreSQL database server",
+      "optional_redis": "External Redis server",
+      "optional_oauth": "OAuth applications from Google/GitHub for third-party login",
+      "optional_goaccess": "GeoIP database file (.mmdb) for GoAccess analytics",
+
+      "prerequisites_note": "Don't worry if you don't have all services ready - you can configure them during the setup process."
     },
     
     "database": {
@@ -189,11 +207,6 @@
       
       "version_label": "Application Version",
       "version_help": "Select BakLab application version",
-      
-      "email_label": "Admin Email",
-      "email_placeholder": "admin@example.com",
-      "email_help": "System administrator email (used for TLS certificates and system notifications)",
-      "email_error": "Please enter a valid email address",
       
       "cors_label": "CORS Allow Origins",
       "cors_placeholder": "https://app.example.com\nhttps://admin.example.com",
@@ -370,6 +383,7 @@
         "goaccess_enabled": "Analytics Enabled",
         "goaccess_geo_file": "GeoIP Database File",
         "domain": "Domain",
+        "static_host": "Static Files Host",
         "brand": "Brand",
         "version": "Version",
         "language": "Language",

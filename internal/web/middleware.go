@@ -156,14 +156,14 @@ func GetAcceptLang(r *http.Request) language.Tag {
 	acceptLangs := r.Header.Get("Accept-Language")
 
 	var langTags []language.Tag
-	
+
 	// Highest priority: X-Language header (for frontend language switching)
 	if xLang != "" {
 		if xLangTag, err := language.Parse(xLang); err == nil {
 			langTags = append(langTags, xLangTag)
 		}
 	}
-	
+
 	// Second priority: lang cookie
 	if cookieLang != nil {
 		if cookieLangTag, err := language.Parse(cookieLang.Value); err == nil {
@@ -181,7 +181,7 @@ func GetAcceptLang(r *http.Request) language.Tag {
 		language.English,
 		language.SimplifiedChinese,
 	})
-	
+
 	if len(langTags) == 0 {
 		return language.English
 	}
@@ -190,7 +190,7 @@ func GetAcceptLang(r *http.Request) language.Tag {
 	return tag
 }
 
-// GetLangFromContext extracts the language tag from request context  
+// GetLangFromContext extracts the language tag from request context
 func GetLangFromContext(r *http.Request) language.Tag {
 	if lang, ok := r.Context().Value(MiddlewareI18nLangKey).(language.Tag); ok {
 		return lang
@@ -201,9 +201,9 @@ func GetLangFromContext(r *http.Request) language.Tag {
 // logAPIAccess 记录API访问日志
 func (m *SetupMiddleware) logAPIAccess(r *http.Request) {
 	clientIP := getClientIP(r)
-	message := fmt.Sprintf("[SETUP-ACCESS] %s %s from %s UA:%s", 
+	message := fmt.Sprintf("[SETUP-ACCESS] %s %s from %s UA:%s",
 		r.Method, r.URL.Path, clientIP, r.UserAgent())
-	
+
 	// 同时输出到控制台和文件
 	log.Print(message)
 	m.writeToLogFile(message)
@@ -212,9 +212,9 @@ func (m *SetupMiddleware) logAPIAccess(r *http.Request) {
 // logSecurityEvent 记录安全事件
 func (m *SetupMiddleware) logSecurityEvent(r *http.Request, event, details string) {
 	clientIP := getClientIP(r)
-	message := fmt.Sprintf("[SETUP-SECURITY] %s: %s from %s %s UA:%s", 
+	message := fmt.Sprintf("[SETUP-SECURITY] %s: %s from %s %s UA:%s",
 		event, details, clientIP, r.URL.Path, r.UserAgent())
-	
+
 	// 同时输出到控制台和文件
 	log.Print(message)
 	m.writeToLogFile(message)

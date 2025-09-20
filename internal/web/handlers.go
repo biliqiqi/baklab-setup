@@ -103,7 +103,6 @@ func (h *SetupHandlers) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	// 检查setup是否已完成
 	completed, err := h.setupService.IsSetupCompleted()
 	if err != nil {
@@ -208,7 +207,6 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 		}, http.StatusBadRequest)
 		return
 	}
-
 
 	// 创建验证器并验证配置
 	validator := services.NewValidatorService()
@@ -436,7 +434,6 @@ func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Req
 	}, http.StatusOK)
 }
 
-
 func (h *SetupHandlers) writeJSONResponse(w http.ResponseWriter, response model.SetupResponse, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
@@ -444,7 +441,6 @@ func (h *SetupHandlers) writeJSONResponse(w http.ResponseWriter, response model.
 		log.Printf("Warning: failed to encode JSON response: %v", err)
 	}
 }
-
 
 func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Request) {
 	// 限制请求体大小为100MB
@@ -661,7 +657,6 @@ func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.R
 }
 */
 
-
 // validateJWTKeyFile 验证 JWT 私钥文件格式
 // 支持 RSA 和 Ed25519 私钥，格式要求与 BakLab JWT 模块一致
 func validateJWTKeyFile(keyBytes []byte) error {
@@ -669,7 +664,7 @@ func validateJWTKeyFile(keyBytes []byte) error {
 	if block == nil {
 		return fmt.Errorf("invalid PEM format")
 	}
-	
+
 	switch block.Type {
 	case "PRIVATE KEY":
 		// PKCS#8 format - 支持 RSA 和 Ed25519
@@ -678,7 +673,7 @@ func validateJWTKeyFile(keyBytes []byte) error {
 			return fmt.Errorf("invalid PKCS#8 private key: %w", err)
 		}
 		return nil
-		
+
 	case "RSA PRIVATE KEY":
 		// PKCS#1 format - 仅支持 RSA
 		_, err := x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -686,7 +681,7 @@ func validateJWTKeyFile(keyBytes []byte) error {
 			return fmt.Errorf("invalid PKCS#1 RSA private key: %w", err)
 		}
 		return nil
-		
+
 	default:
 		return fmt.Errorf("unsupported PEM block type: %s. Expected 'PRIVATE KEY' (PKCS#8) or 'RSA PRIVATE KEY' (PKCS#1)", block.Type)
 	}
@@ -700,7 +695,7 @@ func (h *SetupHandlers) GetCurrentCertPathsHandler(w http.ResponseWriter, r *htt
 			"key_path":  h.keyPath,
 		},
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)

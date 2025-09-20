@@ -81,7 +81,6 @@ func TestValidateAppConfigDomainField(t *testing.T) {
 			config: model.AppConfig{
 				DomainName:  "staging-32194.baklab.app",
 				BrandName:   "Test Brand",
-				AdminEmail:  "admin@example.com",
 				DefaultLang: "en",
 			},
 			expected: true,
@@ -91,7 +90,6 @@ func TestValidateAppConfigDomainField(t *testing.T) {
 			config: model.AppConfig{
 				DomainName:  "invalid-domain",
 				BrandName:   "Test Brand",
-				AdminEmail:  "admin@example.com",
 				DefaultLang: "en",
 			},
 			expected: false,
@@ -101,7 +99,6 @@ func TestValidateAppConfigDomainField(t *testing.T) {
 			config: model.AppConfig{
 				DomainName:  "localhost",
 				BrandName:   "Test Brand",
-				AdminEmail:  "admin@example.com",
 				DefaultLang: "en",
 			},
 			expected: true,
@@ -355,7 +352,6 @@ func TestValidatorService_ValidateConfig_PasswordValidation(t *testing.T) {
 				App: model.AppConfig{
 					DomainName:  "test.com",
 					BrandName:   "Test",
-					AdminEmail:  "admin@test.com",
 					DefaultLang: "en",
 				},
 				AdminUser: model.AdminUserConfig{

@@ -354,7 +354,7 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 	// 定义步骤顺序
 	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "oauth", "ssl", "goaccess", "admin", "review", "complete"}
 	currentStepIndex := -1
-	
+
 	// 找到当前步骤的索引
 	for i, step := range stepOrder {
 		if step == cfg.CurrentStep {
@@ -362,7 +362,7 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 			break
 		}
 	}
-	
+
 	// 如果没找到当前步骤，默认验证所有（向后兼容）
 	if currentStepIndex == -1 {
 		currentStepIndex = len(stepOrder) - 1
@@ -819,19 +819,6 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		})
 	}
 
-	// Admin email验证
-	if cfg.AdminEmail == "" {
-		errors = append(errors, model.ValidationError{
-			Field:   "app.admin_email",
-			Message: "key:validation.app.admin_email_required",
-		})
-	} else if !emailRegex.MatchString(cfg.AdminEmail) {
-		errors = append(errors, model.ValidationError{
-			Field:   "app.admin_email",
-			Message: "key:validation.app.email_error",
-		})
-	}
-
 	// CORS origins验证
 	for i, origin := range cfg.CORSAllowOrigins {
 		origin = strings.TrimSpace(origin)
@@ -856,7 +843,6 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 			Message: "key:validation.app.language_error",
 		})
 	}
-
 
 	return errors
 }

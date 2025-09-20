@@ -44,7 +44,6 @@ class SetupApp {
                 domain_name: '',
                 static_host_name: '',
                 brand_name: 'BakLab',
-                admin_email: '',
                 default_lang: 'en',
                 version: 'latest',
                 debug: false,
@@ -270,12 +269,44 @@ class SetupApp {
         container.innerHTML = `
             <div class="form-section">
                 <h3 data-i18n="setup.init.welcome_title"></h3>
-                <p style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;" data-i18n="setup.init.welcome_description"></p>
+                <div style="margin-bottom: 2rem; color: var(--gray-600); line-height: 1.6;">
+                    <span data-i18n="setup.init.welcome_description_part1"></span>
+                    <strong data-i18n="setup.init.timeout_highlight"></strong>
+                    <span data-i18n="setup.init.welcome_description_part2"></span>
+                </div>
+
+                <!-- 准备工作说明 -->
+                <div style="border: 1px solid #ddd; border-radius: 4px; padding: 1rem; margin: 1rem 0; background: #f9f9f9;">
+                    <h4 style="margin: 0 0 0.75rem 0;" data-i18n="setup.init.prerequisites_title"></h4>
+                    <p style="margin: 0 0 0.75rem 0;" data-i18n="setup.init.prerequisites_description"></p>
+
+                    <div style="margin-bottom: 0.75rem;">
+                        <strong data-i18n="setup.init.required_services"></strong>
+                        <ul style="margin: 0.25rem 0 0 1rem;">
+                            <li data-i18n="setup.init.required_smtp"></li>
+                            <li data-i18n="setup.init.required_https"></li>
+                            <li data-i18n="setup.init.required_static"></li>
+                        </ul>
+                    </div>
+
+                    <div style="margin-bottom: 0.75rem;">
+                        <strong data-i18n="setup.init.optional_services"></strong>
+                        <ul style="margin: 0.25rem 0 0 1rem;">
+                            <li data-i18n="setup.init.optional_database"></li>
+                            <li data-i18n="setup.init.optional_redis"></li>
+                            <li data-i18n="setup.init.optional_oauth"></li>
+                            <li data-i18n="setup.init.optional_goaccess"></li>
+                        </ul>
+                    </div>
+
+                    <p style="margin: 0; font-size: 0.9rem; font-style: italic;" data-i18n="setup.init.prerequisites_note"></p>
+                </div>
+
                 <div class="form-group" style="margin-bottom: 2rem;">
                     <label class="form-label" data-i18n="setup.init.language_label"></label>
                     <div class="language-switcher-container" id="language-switcher"></div>
                 </div>
-                
+
                 <div class="btn-group init-actions">
                     <button class="btn btn-primary" onclick="app.initializeSetup()">
                         <span data-i18n="setup.init.initialize_button"></span>
@@ -1083,20 +1114,6 @@ class SetupApp {
                     <div class="form-help" data-i18n="setup.app.version_help"></div>
                 </div>
 
-                <div class="form-group">
-                    <label for="app-email"><span data-i18n="setup.app.email_label"></span> <span data-i18n="common.required"></span></label>
-                    <input
-                        type="email"
-                        id="app-email"
-                        name="email"
-                        value="${this.config.app.admin_email}"
-                        data-i18n-placeholder="setup.app.email_placeholder"
-                        required
-                        data-i18n-title="setup.app.email_error"
-                    >
-                    <div class="form-help" data-i18n="setup.app.email_help"></div>
-                    <div class="invalid-feedback" data-i18n="setup.app.email_error"></div>
-                </div>
 
                 <div class="form-group">
                     <label for="app-cors" data-i18n="setup.app.cors_label"></label>
@@ -2038,8 +2055,8 @@ class SetupApp {
                         type="email" 
                         id="admin-email" 
                         name="email"
-                        value="${this.config.admin_user.email || this.config.app.admin_email}" 
-                        placeholder="${this.config.app.admin_email || 'admin@example.com'}"
+                        value="${this.config.admin_user.email}" 
+                        placeholder="admin@example.com"
                         required
                         data-i18n-title="setup.admin.email_error"
                     >
@@ -2618,7 +2635,6 @@ class SetupApp {
             domain_name: document.getElementById('app-domain').value,
             static_host_name: document.getElementById('app-static-host').value,
             brand_name: document.getElementById('app-brand').value,
-            admin_email: document.getElementById('app-email').value,
             version: document.getElementById('app-version').value,
             cors_allow_origins: corsOrigins,
             default_lang: document.getElementById('app-lang').value,
@@ -2836,28 +2852,15 @@ class SetupApp {
                     <p><strong data-i18n="setup.review.fields.service_type"></strong>: ${window.i18n ? window.i18n.t(`setup.redis.service_type_${config.redis.service_type}`) : config.redis.service_type}</p>
                     <p><strong data-i18n="setup.review.fields.host"></strong>: ${config.redis.host}:${config.redis.port}</p>
                     ${config.redis.user ? `<p><strong data-i18n="setup.review.fields.user"></strong>: ${config.redis.user}</p>` : ''}
-                    
+
                     <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.smtp"></h4>
                     <p><strong data-i18n="setup.review.fields.smtp_server"></strong>: ${config.smtp.server}:${config.smtp.port}</p>
                     <p><strong data-i18n="setup.review.fields.smtp_user"></strong>: ${config.smtp.user}</p>
                     <p><strong data-i18n="setup.review.fields.smtp_sender"></strong>: ${config.smtp.sender}</p>
 
-                    <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.ssl"></h4>
-                    <p><strong data-i18n="setup.review.fields.ssl_enabled"></strong>: ${config.ssl.enabled ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
-                    ${config.ssl.enabled ? `
-                        <p><strong data-i18n="setup.review.fields.ssl_cert_path"></strong>: ${config.ssl.cert_path}</p>
-                        <p><strong data-i18n="setup.review.fields.ssl_key_path"></strong>: ${config.ssl.key_path}</p>
-                        <p><strong data-i18n="setup.review.fields.ssl_use_setup_cert"></strong>: ${config.ssl.use_setup_cert ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
-                    ` : ''}
-
-                    <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.goaccess"></h4>
-                    <p><strong data-i18n="setup.review.fields.goaccess_enabled"></strong>: ${config.goaccess.enabled ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
-                    ${config.goaccess.enabled && config.goaccess.has_geo_file ? `
-                        <p><strong data-i18n="setup.review.fields.goaccess_geo_file"></strong>: ${config.goaccess.original_file_name || 'GeoLite2-City.mmdb'}</p>
-                    ` : ''}
-
                     <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.application"></h4>
                     <p><strong data-i18n="setup.review.fields.domain"></strong>: ${config.app.domain_name}</p>
+                    <p><strong data-i18n="setup.review.fields.static_host"></strong>: ${config.app.static_host_name}</p>
                     <p><strong data-i18n="setup.review.fields.brand"></strong>: ${config.app.brand_name}</p>
                     <p><strong data-i18n="setup.review.fields.version"></strong>: ${config.app.version || 'latest'}</p>
                     <p><strong data-i18n="setup.review.fields.language"></strong>: ${config.app.default_lang}</p>
@@ -2867,13 +2870,27 @@ class SetupApp {
                         <p><strong data-i18n="setup.review.fields.jwt_file_path"></strong>: ${config.app.jwt_key_file_path}</p>
                     ` : ''}
 
-                    <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.oauth"></h4>
-                    <p><strong data-i18n="setup.review.fields.google_oauth"></strong>: ${config.oauth.google_enabled ? (window.i18n ? window.i18n.t('setup.review.fields.oauth_enabled') : 'Enabled') : (window.i18n ? window.i18n.t('setup.review.fields.oauth_disabled') : 'Disabled')}</p>
-                    <p><strong data-i18n="setup.review.fields.github_oauth"></strong>: ${config.oauth.github_enabled ? (window.i18n ? window.i18n.t('setup.review.fields.oauth_enabled') : 'Enabled') : (window.i18n ? window.i18n.t('setup.review.fields.oauth_disabled') : 'Disabled')}</p>
+                    <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.ssl"></h4>
+                    <p><strong data-i18n="setup.review.fields.ssl_enabled"></strong>: ${config.ssl.enabled ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
+                    ${config.ssl.enabled ? `
+                        <p><strong data-i18n="setup.review.fields.ssl_cert_path"></strong>: ${config.ssl.cert_path}</p>
+                        <p><strong data-i18n="setup.review.fields.ssl_key_path"></strong>: ${config.ssl.key_path}</p>
+                        <p><strong data-i18n="setup.review.fields.ssl_use_setup_cert"></strong>: ${config.ssl.use_setup_cert ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
+                    ` : ''}
 
                     <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.administrator"></h4>
                     <p><strong data-i18n="setup.review.fields.username"></strong>: ${config.admin_user.username}</p>
                     <p><strong data-i18n="setup.review.fields.email"></strong>: ${config.admin_user.email}</p>
+
+                    <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.oauth"></h4>
+                    <p><strong data-i18n="setup.review.fields.google_oauth"></strong>: ${config.oauth.google_enabled ? (window.i18n ? window.i18n.t('setup.review.fields.oauth_enabled') : 'Enabled') : (window.i18n ? window.i18n.t('setup.review.fields.oauth_disabled') : 'Disabled')}</p>
+                    <p><strong data-i18n="setup.review.fields.github_oauth"></strong>: ${config.oauth.github_enabled ? (window.i18n ? window.i18n.t('setup.review.fields.oauth_enabled') : 'Enabled') : (window.i18n ? window.i18n.t('setup.review.fields.oauth_disabled') : 'Disabled')}</p>
+
+                    <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.goaccess"></h4>
+                    <p><strong data-i18n="setup.review.fields.goaccess_enabled"></strong>: ${config.goaccess.enabled ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
+                    ${config.goaccess.enabled && config.goaccess.has_geo_file ? `
+                        <p><strong data-i18n="setup.review.fields.goaccess_geo_file"></strong>: ${config.goaccess.original_file_name || 'GeoLite2-City.mmdb'}</p>
+                    ` : ''}
                 </div>
             `;
             
@@ -3156,7 +3173,6 @@ class SetupApp {
                 'redis.password': 'redis-password',
                 'app.domain_name': 'app-domain',
                 'app.brand_name': 'app-brand',
-                'app.admin_email': 'app-email',
                 'app.version': 'app-version',
                 'app.default_lang': 'app-lang',
                 'admin_user.username': 'admin-username',
