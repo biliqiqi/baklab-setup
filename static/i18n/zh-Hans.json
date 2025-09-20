@@ -219,7 +219,31 @@
       
       "debug_label": "启用调试模式",
       "debug_help": "仅在开发环境中启用",
-      
+
+      "ssr_section_title": "服务端渲染",
+      "ssr_section_description": "配置用于服务端渲染的前端资源。启用后，服务器将在渲染的 HTML 页面中注入前端 JavaScript 和 CSS 文件以便水合。",
+
+      "ssr_enabled_label": "启用服务端渲染",
+      "ssr_enabled_help": "启用服务端渲染，注入前端资源以支持 React/Vue 水合",
+
+      "frontend_scripts_label": "前端 JavaScript 文件",
+      "frontend_scripts_placeholder": "https://static.example.com/assets/main.js\nhttps://static.example.com/assets/vendor.js",
+      "frontend_scripts_help": "将注入到渲染页面中的 JavaScript 文件 URL。每行一个 URL。",
+      "frontend_scripts_error": "请输入有效的 HTTPS JavaScript 文件 URL",
+      "frontend_scripts_required": "启用 SSR 时，前端脚本为必填项",
+
+      "frontend_styles_label": "前端 CSS 文件",
+      "frontend_styles_placeholder": "https://static.example.com/assets/main.css\nhttps://static.example.com/assets/vendor.css",
+      "frontend_styles_help": "将注入到渲染页面中的 CSS 文件 URL。每行一个 URL。",
+      "frontend_styles_error": "请输入有效的 HTTPS CSS 文件 URL",
+      "frontend_styles_required": "启用 SSR 时，前端样式为必填项",
+
+      "frontend_container_id_label": "前端容器 ID",
+      "frontend_container_id_placeholder": "root",
+      "frontend_container_id_help": "前端应用挂载的 DOM 容器 ID。此 ID 必须与打包的前端 HTML 中的容器元素 ID 匹配（例如：'root'、'app'）",
+      "frontend_container_id_error": "请输入有效的容器 ID",
+      "frontend_container_id_required": "启用 SSR 时，前端容器 ID 为必填项",
+
       "jwt_section_title": "JWT 密钥配置",
       "jwt_section_description": "配置用于身份验证令牌的 JWT 签名密钥。BakLab 支持 RSA 和 Ed25519 私钥。您可以自动生成安全的密钥或指定宿主机文件路径用于 Docker 卷挂载。",
 
@@ -394,6 +418,10 @@
         "github_oauth": "GitHub OAuth",
         "oauth_enabled": "已启用",
         "oauth_disabled": "已禁用",
+        "ssr_enabled": "服务端渲染已启用",
+        "frontend_scripts": "前端脚本",
+        "frontend_styles": "前端样式",
+        "frontend_container_id": "前端容器 ID",
         "username": "用户名",
         "email": "邮箱"
       },

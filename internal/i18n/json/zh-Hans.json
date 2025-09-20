@@ -177,6 +177,11 @@
     "validation.app.static_host_required": "静态主机名为必填项",
     "validation.app.brand_required": "品牌名称为必填项",
     "validation.app.language_required": "默认语言为必填项",
+    "validation.app.frontend_scripts_required": "启用 SSR 时，前端脚本为必填项",
+    "validation.app.frontend_scripts_error": "请输入有效的前端脚本 HTTPS URL",
+    "validation.app.frontend_styles_required": "启用 SSR 时，前端样式为必填项",
+    "validation.app.frontend_styles_error": "请输入有效的前端样式 HTTPS URL",
+    "validation.app.frontend_container_id_required": "启用 SSR 时，前端容器 ID 为必填项",
     "validation.admin.username_required": "管理员用户名为必填项",
     "validation.admin.email_required": "管理员邮箱为必填项",
     "validation.admin.password_required": "管理员密码为必填项"

@@ -219,7 +219,31 @@
       
       "debug_label": "Enable Debug Mode",
       "debug_help": "Only enable for development environments",
-      
+
+      "ssr_section_title": "Server-Side Rendering",
+      "ssr_section_description": "Configure frontend resources for server-side rendering. When enabled, the server will inject frontend JavaScript and CSS files into rendered HTML pages for hydration.",
+
+      "ssr_enabled_label": "Enable Server-Side Rendering",
+      "ssr_enabled_help": "Enable server-side rendering with frontend resource injection for React/Vue hydration",
+
+      "frontend_scripts_label": "Frontend JavaScript Files",
+      "frontend_scripts_placeholder": "https://static.example.com/assets/main.js\nhttps://static.example.com/assets/vendor.js",
+      "frontend_scripts_help": "URLs to JavaScript files that will be injected into rendered pages. One URL per line.",
+      "frontend_scripts_error": "Please enter valid HTTPS URLs for JavaScript files",
+      "frontend_scripts_required": "Frontend scripts are required when SSR is enabled",
+
+      "frontend_styles_label": "Frontend CSS Files",
+      "frontend_styles_placeholder": "https://static.example.com/assets/main.css\nhttps://static.example.com/assets/vendor.css",
+      "frontend_styles_help": "URLs to CSS files that will be injected into rendered pages. One URL per line.",
+      "frontend_styles_error": "Please enter valid HTTPS URLs for CSS files",
+      "frontend_styles_required": "Frontend styles are required when SSR is enabled",
+
+      "frontend_container_id_label": "Frontend Container ID",
+      "frontend_container_id_placeholder": "root",
+      "frontend_container_id_help": "ID of the DOM element where the frontend application mounts. This must match the container element ID in your bundled frontend HTML (e.g., 'root', 'app')",
+      "frontend_container_id_error": "Please enter a valid container ID",
+      "frontend_container_id_required": "Frontend container ID is required when SSR is enabled",
+
       "jwt_section_title": "JWT Key Configuration",
       "jwt_section_description": "Configure JWT signing key for authentication tokens. BakLab supports RSA and Ed25519 private keys. You can auto-generate a secure key or specify a host machine path for Docker volume mounting.",
 
@@ -394,6 +418,10 @@
         "github_oauth": "GitHub OAuth",
         "oauth_enabled": "Enabled",
         "oauth_disabled": "Disabled",
+        "ssr_enabled": "Server-Side Rendering Enabled",
+        "frontend_scripts": "Frontend Scripts",
+        "frontend_styles": "Frontend Styles",
+        "frontend_container_id": "Frontend Container ID",
         "username": "Username",
         "email": "Email"
       },

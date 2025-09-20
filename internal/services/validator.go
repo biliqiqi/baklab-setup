@@ -844,6 +844,50 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		})
 	}
 
+	// 服务端渲染配置验证
+	if cfg.SSREnabled {
+		if len(cfg.FrontendScripts) == 0 {
+			errors = append(errors, model.ValidationError{
+				Field:   "app.frontend_scripts",
+				Message: "key:validation.app.frontend_scripts_required",
+			})
+		} else {
+			urlRegex := regexp.MustCompile(`^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(:[0-9]+)?(/.*)?$`)
+			for i, script := range cfg.FrontendScripts {
+				if !urlRegex.MatchString(script) {
+					errors = append(errors, model.ValidationError{
+						Field:   fmt.Sprintf("app.frontend_scripts[%d]", i),
+						Message: "key:validation.app.frontend_scripts_error",
+					})
+				}
+			}
+		}
+
+		if len(cfg.FrontendStyles) == 0 {
+			errors = append(errors, model.ValidationError{
+				Field:   "app.frontend_styles",
+				Message: "key:validation.app.frontend_styles_required",
+			})
+		} else {
+			urlRegex := regexp.MustCompile(`^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(:[0-9]+)?(/.*)?$`)
+			for i, style := range cfg.FrontendStyles {
+				if !urlRegex.MatchString(style) {
+					errors = append(errors, model.ValidationError{
+						Field:   fmt.Sprintf("app.frontend_styles[%d]", i),
+						Message: "key:validation.app.frontend_styles_error",
+					})
+				}
+			}
+		}
+
+		if cfg.FrontendContainerId == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "app.frontend_container_id",
+				Message: "key:validation.app.frontend_container_id_required",
+			})
+		}
+	}
+
 	return errors
 }
 

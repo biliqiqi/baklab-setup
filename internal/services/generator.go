@@ -168,9 +168,9 @@ NGINX_SSL_PORT=443
 {{ if .CORSOrigins }}CORS_ALLOW_ORIGINS='{{ .CORSOrigins }}'{{ else }}CORS_ALLOW_ORIGINS='http{{ if ne .App.DomainName "localhost" }}s{{ end }}://{{ .App.DomainName }}'{{ end }}
 
 # Frontend Configuration
-FRONTEND_ROOT_ID=root
-FRONTEND_SCRIPTS=
-FRONTEND_STYLES=
+{{ if .App.SSREnabled }}FRONTEND_CONTAINER_ID='{{ .App.FrontendContainerId }}'{{ else }}FRONTEND_CONTAINER_ID=root{{ end }}
+{{ if .App.SSREnabled }}FRONTEND_SCRIPTS='{{ join .App.FrontendScripts "," }}'{{ else }}FRONTEND_SCRIPTS={{ end }}
+{{ if .App.SSREnabled }}FRONTEND_STYLES='{{ join .App.FrontendStyles "," }}'{{ else }}FRONTEND_STYLES={{ end }}
 
 # Service Configuration
 STATIC_HOST_NAME='{{ .App.StaticHostName }}'
@@ -232,6 +232,9 @@ SETUP_COMPLETED_AT={{ .Timestamp }}
 			//      local.example.com -> example.com
 			//      1.sub.example.com -> example.com
 			return strings.Join(parts[len(parts)-2:], ".")
+		},
+		"join": func(slice []string, sep string) string {
+			return strings.Join(slice, sep)
 		},
 	}
 
@@ -334,7 +337,7 @@ services:
       JWT_KEY_FILE: $JWT_KEY_FILE
       STATIC_HOST_NAME: $STATIC_HOST_NAME
       CORS_ALLOW_ORIGINS: $CORS_ALLOW_ORIGINS
-      FRONTEND_ROOT_ID: $FRONTEND_ROOT_ID
+      FRONTEND_CONTAINER_ID: $FRONTEND_CONTAINER_ID
       FRONTEND_SCRIPTS: $FRONTEND_SCRIPTS
       FRONTEND_STYLES: $FRONTEND_STYLES
       GEOIP_ENABLED: $GEOIP_ENABLED
