@@ -789,6 +789,23 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		})
 	}
 
+	// Static host name验证
+	if cfg.StaticHostName == "" {
+		errors = append(errors, model.ValidationError{
+			Field:   "app.static_host_name",
+			Message: "key:validation.app.static_host_required",
+		})
+	} else {
+		// 验证静态主机名格式（域名或域名:端口）
+		staticHostRegex := regexp.MustCompile(`^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(:[0-9]{1,5})?$|^localhost(:[0-9]{1,5})?$`)
+		if !staticHostRegex.MatchString(cfg.StaticHostName) {
+			errors = append(errors, model.ValidationError{
+				Field:   "app.static_host_name",
+				Message: "key:validation.app.static_host_error",
+			})
+		}
+	}
+
 	// Brand name验证 - 只验证长度，支持所有Unicode字符
 	if cfg.BrandName == "" {
 		errors = append(errors, model.ValidationError{
