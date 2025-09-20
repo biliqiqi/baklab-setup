@@ -51,7 +51,7 @@
       "prerequisites_description": "开始设置之前，请确保您已准备好以下服务和资源：",
 
       "required_services": "必需服务：",
-      "required_smtp": "SMTP 邮箱服务（Gmail、SendGrid、AWS SES 等）用于系统通知",
+      "required_smtp": "SMTP 邮箱服务用于系统通知",
       "required_https": "HTTPS/SSL 证书文件（.crt 和 .key）用于安全连接",
       "required_static": "静态文件托管服务或 CDN 用于资源服务",
 

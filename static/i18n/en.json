@@ -51,7 +51,7 @@
       "prerequisites_description": "Before starting the setup, please ensure you have prepared the following services and resources:",
 
       "required_services": "Required Services:",
-      "required_smtp": "SMTP email service (Gmail, SendGrid, AWS SES, etc.) for system notifications",
+      "required_smtp": "SMTP email service for system notifications",
       "required_https": "HTTPS/SSL certificate files (.crt and .key) for secure connections",
       "required_static": "Static file hosting service or CDN for serving assets",
 
