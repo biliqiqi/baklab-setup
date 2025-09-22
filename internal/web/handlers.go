@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/biliqiqi/baklab-setup/internal/i18n"
 	"github.com/biliqiqi/baklab-setup/internal/model"
@@ -199,6 +200,16 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// 先获取现有配置，保留已有的状态（如前端构建状态）
+	existingCfg, err := h.setupService.GetSetupConfig()
+	if err != nil {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Failed to get existing configuration",
+		}, http.StatusInternalServerError)
+		return
+	}
+
 	var cfg model.SetupConfig
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 		h.writeJSONResponse(w, model.SetupResponse{
@@ -207,6 +218,9 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 		}, http.StatusBadRequest)
 		return
 	}
+
+	// 保留现有的前端构建状态
+	cfg.Frontend = existingCfg.Frontend
 
 	// 创建验证器并验证配置
 	validator := services.NewValidatorService()
@@ -745,5 +759,234 @@ func (h *SetupHandlers) renderSetupPage(w http.ResponseWriter, r *http.Request) 
 </html>`, pageTitle, loadingMessage)
 	if err != nil {
 		log.Printf("Warning: failed to write setup page: %v", err)
+	}
+}
+
+// BuildFrontendHandler 构建前端
+func (h *SetupHandlers) BuildFrontendHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Method not allowed",
+		}, http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 获取当前配置
+	cfg, err := h.setupService.GetSetupConfig()
+	if err != nil {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.failed_get_config"),
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	// 创建生成器服务并构建前端
+	generator := services.NewGeneratorService()
+	if err := generator.BuildFrontend(cfg); err != nil {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "setup.frontend.build_failed") + ": " + err.Error(),
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	// 更新前端构建状态
+	cfg.Frontend.Built = true
+	cfg.Frontend.BuildTime = time.Now()
+	if err := h.setupService.SaveConfiguration(cfg); err != nil {
+		log.Printf("Warning: failed to save frontend build status: %v", err)
+	}
+
+	h.writeJSONResponse(w, model.SetupResponse{
+		Success: true,
+		Message: h.localizeMessage(r, "messages.frontend_build_success"),
+		Data: map[string]interface{}{
+			"built":      true,
+			"build_time": cfg.Frontend.BuildTime,
+		},
+	}, http.StatusOK)
+}
+
+// GetFrontendStatusHandler 获取前端构建状态
+func (h *SetupHandlers) GetFrontendStatusHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: "Method not allowed",
+		}, http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 验证令牌（生产模式）
+	if !h.devMode {
+		token := r.Header.Get("Setup-Token")
+		if token == "" {
+			token = r.URL.Query().Get("token")
+		}
+
+		if token == "" {
+			h.writeJSONResponse(w, model.SetupResponse{
+				Success: false,
+				Message: "Token required",
+			}, http.StatusUnauthorized)
+			return
+		}
+
+		clientIP := getClientIP(r)
+		if err := h.setupService.ValidateSetupToken(token, clientIP); err != nil {
+			h.writeJSONResponse(w, model.SetupResponse{
+				Success: false,
+				Message: "Invalid token",
+			}, http.StatusUnauthorized)
+			return
+		}
+	}
+
+	cfg, err := h.setupService.GetSetupConfig()
+	if err != nil {
+		// 如果配置不存在，返回默认状态
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: true,
+			Data: map[string]interface{}{
+				"built":      false,
+				"build_time": nil,
+				"build_logs": "",
+				"env_vars":   map[string]string{},
+			},
+		}, http.StatusOK)
+		return
+	}
+
+	// 生成前端环境变量预览
+	generator := services.NewGeneratorService()
+	envVars := generator.GenerateFrontendEnvVars(cfg)
+
+	envMap := make(map[string]string)
+	for _, env := range envVars {
+		parts := strings.SplitN(env, "=", 2)
+		if len(parts) == 2 {
+			envMap[parts[0]] = parts[1]
+		}
+	}
+
+	// 检查前端构建文件是否真实存在
+	frontendDistPath := "./frontend/dist"
+	_, err = os.Stat(frontendDistPath)
+	frontendFilesExist := err == nil
+
+	// 实际构建状态 = 配置中的状态 AND 文件实际存在
+	actualBuiltStatus := cfg.Frontend.Built && frontendFilesExist
+
+	// 如果配置显示已构建但文件不存在，自动修正配置状态
+	if cfg.Frontend.Built && !frontendFilesExist {
+		cfg.Frontend.Built = false
+		// 尝试保存修正后的配置（如果失败也不影响状态返回）
+		if saveErr := h.setupService.SaveConfiguration(cfg); saveErr != nil {
+			log.Printf("Warning: failed to update frontend build status: %v", saveErr)
+		}
+		actualBuiltStatus = false
+	}
+
+	h.writeJSONResponse(w, model.SetupResponse{
+		Success: true,
+		Data: map[string]interface{}{
+			"built":      actualBuiltStatus,
+			"build_time": cfg.Frontend.BuildTime,
+			"build_logs": cfg.Frontend.BuildLogs,
+			"env_vars":   envMap,
+		},
+	}, http.StatusOK)
+}
+
+// StreamFrontendBuildHandler 处理前端构建的Server-Sent Events流
+func (h *SetupHandlers) StreamFrontendBuildHandler(w http.ResponseWriter, r *http.Request) {
+	// 从URL参数获取token进行验证
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "event: error\ndata: Token required\n\n")
+		return
+	}
+
+	// 验证令牌
+	clientIP := getClientIP(r)
+	if err := h.setupService.ValidateSetupToken(token, clientIP); err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "event: error\ndata: Invalid token\n\n")
+		return
+	}
+
+	// 获取配置（在设置SSE headers之前）
+	cfg, err := h.setupService.GetSetupConfig()
+	if err != nil {
+		// 如果配置不存在，无法进行构建
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Configuration not found. Please complete the setup steps first.")
+		return
+	}
+
+	// 设置SSE headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// 发送初始连接确认
+	fmt.Fprintf(w, "event: connected\ndata: Connection established\n\n")
+	if f, ok := w.(http.Flusher); ok {
+		f.Flush()
+	}
+
+	// 创建输出通道
+	outputChan := make(chan string, 100)
+	errorChan := make(chan error, 1)
+
+	// 启动构建
+	go func() {
+		defer close(outputChan)
+		defer close(errorChan)
+
+		if err := h.setupService.BuildFrontendWithStream(cfg, outputChan); err != nil {
+			errorChan <- err
+		}
+	}()
+
+	// 流式发送输出
+	for {
+		select {
+		case output, ok := <-outputChan:
+			if !ok {
+				// 构建完成，更新状态
+				cfg.Frontend.Built = true
+				cfg.Frontend.BuildTime = time.Now()
+				if err := h.setupService.SaveConfiguration(cfg); err != nil {
+					log.Printf("Warning: failed to save frontend build status: %v", err)
+				}
+
+				fmt.Fprintf(w, "event: complete\ndata: Build completed successfully\n\n")
+				if f, ok := w.(http.Flusher); ok {
+					f.Flush()
+				}
+				return
+			}
+			// 发送输出
+			fmt.Fprintf(w, "event: output\ndata: %s\n\n", output)
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+		case err := <-errorChan:
+			if err != nil {
+				fmt.Fprintf(w, "event: error\ndata: %v\n\n", err)
+				if f, ok := w.(http.Flusher); ok {
+					f.Flush()
+				}
+				return
+			}
+		case <-r.Context().Done():
+			// 客户端断开连接
+			return
+		}
 	}
 }

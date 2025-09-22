@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bufio"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/x509"
@@ -9,8 +10,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
@@ -480,6 +483,7 @@ services:
     volumes:
       - ./static:/data/static
       - ./manage_static:/data/manage_static
+      - ./frontend_dist:/data/static/frontend:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates/webapp.conf.template:/etc/nginx/templates/webapp.conf.template:ro
       - ./nginx/logs:/etc/nginx/logs{{if .SSL.Enabled}}
@@ -979,6 +983,12 @@ func (g *GeneratorService) createRequiredDirectories(cfg *model.SetupConfig) err
 		return fmt.Errorf("failed to create manage_static directory: %w", err)
 	}
 
+	// 创建 frontend_dist 目录
+	frontendDistDir := filepath.Join(g.outputDir, "frontend_dist")
+	if err := os.MkdirAll(frontendDistDir, 0755); err != nil {
+		return fmt.Errorf("failed to create frontend_dist directory: %w", err)
+	}
+
 	// 创建 .gitkeep 文件
 	gitkeepPath := filepath.Join(manageStaticDir, ".gitkeep")
 	if err := os.WriteFile(gitkeepPath, []byte{}, 0644); err != nil {
@@ -1077,5 +1087,258 @@ func (g *GeneratorService) HandleJWTKeyFile(cfg *model.SetupConfig) error {
 
 	log.Printf("JWT key file automatically generated: %s", destPath)
 
+	return nil
+}
+
+// BuildFrontend 构建前端静态文件
+func (g *GeneratorService) BuildFrontend(cfg *model.SetupConfig) error {
+	frontendDir := "./frontend"
+
+	// 确保前端目录存在
+	if _, err := os.Stat(frontendDir); os.IsNotExist(err) {
+		return fmt.Errorf("frontend directory not found: %s", frontendDir)
+	}
+
+	// 生成前端环境变量
+	envVars := g.GenerateFrontendEnvVars(cfg)
+
+	// 检查前端依赖
+	packageLockPath := filepath.Join(frontendDir, "package-lock.json")
+	nodeModulesPath := filepath.Join(frontendDir, "node_modules")
+
+	if _, err := os.Stat(nodeModulesPath); os.IsNotExist(err) {
+		log.Printf("Installing frontend dependencies...")
+		if err := g.runNpmCommand(frontendDir, []string{"npm", "ci"}, nil); err != nil {
+			// 如果 npm ci 失败，尝试 npm install
+			log.Printf("npm ci failed, trying npm install...")
+			if err := g.runNpmCommand(frontendDir, []string{"npm", "install"}, nil); err != nil {
+				return fmt.Errorf("failed to install frontend dependencies: %w", err)
+			}
+		}
+	} else if _, err := os.Stat(packageLockPath); err == nil {
+		// 检查 package-lock.json 是否比 node_modules 新
+		packageLockInfo, _ := os.Stat(packageLockPath)
+		nodeModulesInfo, _ := os.Stat(nodeModulesPath)
+		if packageLockInfo.ModTime().After(nodeModulesInfo.ModTime()) {
+			log.Printf("Dependencies outdated, running npm ci...")
+			if err := g.runNpmCommand(frontendDir, []string{"npm", "ci"}, nil); err != nil {
+				return fmt.Errorf("failed to update frontend dependencies: %w", err)
+			}
+		}
+	}
+
+	// 构建前端
+	log.Printf("Building frontend with production configuration...")
+	log.Printf("Frontend environment variables: %v", envVars)
+	if err := g.runNpmCommand(frontendDir, []string{"npm", "run", "build"}, envVars); err != nil {
+		log.Printf("Frontend build failed with error: %v", err)
+		return fmt.Errorf("failed to build frontend: %w", err)
+	}
+	log.Printf("Frontend build completed successfully")
+
+	// 验证构建结果存在
+	frontendDistPath := filepath.Join(frontendDir, "dist")
+	if _, err := os.Stat(frontendDistPath); os.IsNotExist(err) {
+		return fmt.Errorf("frontend build output not found: %s", frontendDistPath)
+	}
+
+	log.Printf("Frontend built successfully to: %s", frontendDistPath)
+	return nil
+}
+
+// CopyFrontendToOutput 复制前端构建文件到输出目录
+func (g *GeneratorService) CopyFrontendToOutput() error {
+	frontendDistPath := "./frontend/dist"
+	outputFrontendDir := filepath.Join(g.outputDir, "frontend_dist")
+
+	// 检查前端构建文件是否存在
+	if _, err := os.Stat(frontendDistPath); os.IsNotExist(err) {
+		return fmt.Errorf("frontend build output not found: %s", frontendDistPath)
+	}
+
+	// 确保输出目录存在
+	if err := os.MkdirAll(outputFrontendDir, 0755); err != nil {
+		return fmt.Errorf("failed to create frontend output directory: %w", err)
+	}
+
+	// 复制构建文件
+	if err := g.copyDir(frontendDistPath, outputFrontendDir); err != nil {
+		return fmt.Errorf("failed to copy frontend build files: %w", err)
+	}
+
+	log.Printf("Frontend files copied to output directory: %s", outputFrontendDir)
+	return nil
+}
+
+// GenerateFrontendEnvVars 生成前端构建所需的环境变量
+func (g *GeneratorService) GenerateFrontendEnvVars(cfg *model.SetupConfig) []string {
+	protocol := "http"
+	if cfg.SSL.Enabled {
+		protocol = "https"
+	}
+
+	staticHost := fmt.Sprintf("%s://%s", protocol, cfg.App.StaticHostName)
+	apiHost := fmt.Sprintf("%s://%s", protocol, cfg.App.DomainName)
+	frontendHost := fmt.Sprintf("%s://%s", protocol, cfg.App.DomainName)
+
+	return []string{
+		fmt.Sprintf("VITE_STATIC_HOST=%s", staticHost),
+		fmt.Sprintf("VITE_BASE_URL=/static/frontend/"),
+		fmt.Sprintf("VITE_API_HOST=%s", apiHost),
+		fmt.Sprintf("VITE_API_PATH_PREFIX=/api/"),
+		fmt.Sprintf("VITE_FRONTEND_HOST=%s", frontendHost),
+	}
+}
+
+// runNpmCommand 运行 npm 命令
+func (g *GeneratorService) runNpmCommand(workDir string, args []string, envVars []string) error {
+	log.Printf("Running command: %v in directory: %s", args, workDir)
+
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Dir = workDir
+
+	// 设置环境变量
+	cmd.Env = os.Environ()
+	if envVars != nil {
+		cmd.Env = append(cmd.Env, envVars...)
+		log.Printf("Additional environment variables: %v", envVars)
+	}
+
+	// 捕获输出
+	output, err := cmd.CombinedOutput()
+	outputStr := string(output)
+
+	if err != nil {
+		log.Printf("Command failed: %v", err)
+		log.Printf("Command output (stdout/stderr): %s", outputStr)
+		return fmt.Errorf("command failed: %s\nOutput: %s", err, outputStr)
+	}
+
+	log.Printf("Command succeeded. Output: %s", outputStr)
+	return nil
+}
+
+// BuildFrontendWithStream 构建前端静态文件并流式输出
+func (g *GeneratorService) BuildFrontendWithStream(cfg *model.SetupConfig, outputChan chan<- string) error {
+	frontendDir := "./frontend"
+
+	outputChan <- "Starting frontend build process..."
+
+	// 确保前端目录存在
+	if _, err := os.Stat(frontendDir); os.IsNotExist(err) {
+		return fmt.Errorf("frontend directory not found: %s", frontendDir)
+	}
+
+	// 生成前端环境变量
+	envVars := g.GenerateFrontendEnvVars(cfg)
+	outputChan <- fmt.Sprintf("Generated %d environment variables", len(envVars))
+
+	// 检查前端依赖
+	packageLockPath := filepath.Join(frontendDir, "package-lock.json")
+	nodeModulesPath := filepath.Join(frontendDir, "node_modules")
+
+	if _, err := os.Stat(nodeModulesPath); os.IsNotExist(err) {
+		outputChan <- "Installing frontend dependencies..."
+		if err := g.runNpmCommandWithStream(frontendDir, []string{"npm", "ci"}, nil, outputChan); err != nil {
+			outputChan <- "npm ci failed, trying npm install..."
+			if err := g.runNpmCommandWithStream(frontendDir, []string{"npm", "install"}, nil, outputChan); err != nil {
+				return fmt.Errorf("failed to install frontend dependencies: %w", err)
+			}
+		}
+	} else if _, err := os.Stat(packageLockPath); err == nil {
+		// 检查 package-lock.json 是否比 node_modules 新
+		packageLockInfo, _ := os.Stat(packageLockPath)
+		nodeModulesInfo, _ := os.Stat(nodeModulesPath)
+		if packageLockInfo.ModTime().After(nodeModulesInfo.ModTime()) {
+			outputChan <- "Dependencies outdated, running npm ci..."
+			if err := g.runNpmCommandWithStream(frontendDir, []string{"npm", "ci"}, nil, outputChan); err != nil {
+				return fmt.Errorf("failed to update frontend dependencies: %w", err)
+			}
+		}
+	}
+
+	// 构建前端
+	outputChan <- "Building frontend with production configuration..."
+	if err := g.runNpmCommandWithStream(frontendDir, []string{"npm", "run", "build"}, envVars, outputChan); err != nil {
+		return fmt.Errorf("failed to build frontend: %w", err)
+	}
+
+	// 验证构建结果存在
+	frontendDistPath := filepath.Join(frontendDir, "dist")
+	if _, err := os.Stat(frontendDistPath); os.IsNotExist(err) {
+		return fmt.Errorf("frontend build output not found: %s", frontendDistPath)
+	}
+
+	outputChan <- "Frontend build completed successfully!"
+	outputChan <- "Build artifacts saved to ./frontend/dist"
+	return nil
+}
+
+// runNpmCommandWithStream 运行 npm 命令并流式输出
+func (g *GeneratorService) runNpmCommandWithStream(workDir string, args []string, envVars []string, outputChan chan<- string) error {
+	outputChan <- fmt.Sprintf("Running command: %v in directory: %s", args, workDir)
+
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Dir = workDir
+
+	// 设置环境变量
+	cmd.Env = os.Environ()
+	if envVars != nil {
+		cmd.Env = append(cmd.Env, envVars...)
+		outputChan <- fmt.Sprintf("Additional environment variables: %v", envVars)
+	}
+
+	// 创建管道来实时读取输出
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stdout pipe: %w", err)
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stderr pipe: %w", err)
+	}
+
+	// 启动命令
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start command: %w", err)
+	}
+
+	// 创建goroutine来读取输出
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// 读取stdout
+	go func() {
+		defer wg.Done()
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			line := scanner.Text()
+			outputChan <- fmt.Sprintf("[stdout] %s", line)
+		}
+	}()
+
+	// 读取stderr
+	go func() {
+		defer wg.Done()
+		scanner := bufio.NewScanner(stderr)
+		for scanner.Scan() {
+			line := scanner.Text()
+			outputChan <- fmt.Sprintf("[stderr] %s", line)
+		}
+	}()
+
+	// 等待输出读取完成
+	go func() {
+		wg.Wait()
+	}()
+
+	// 等待命令完成
+	if err := cmd.Wait(); err != nil {
+		outputChan <- fmt.Sprintf("Command failed: %v", err)
+		return fmt.Errorf("command failed: %w", err)
+	}
+
+	outputChan <- "Command completed successfully"
 	return nil
 }

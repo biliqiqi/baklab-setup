@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/biliqiqi/baklab-setup/internal/model"
@@ -196,6 +197,51 @@ func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to handle JWT key file: %w", err)
 	}
 
+	// 处理前端构建文件
+	// 检查前端构建文件是否存在
+	frontendDistPath := "./frontend/dist"
+	_, err := os.Stat(frontendDistPath)
+	frontendFilesExist := err == nil
+
+	if cfg.Frontend.Built && frontendFilesExist {
+		// 前端已经构建过，直接复制到输出目录
+		if err := s.updateSetupProgress("frontend_copy", 95, "Copying frontend files..."); err != nil {
+			return err
+		}
+
+		if err := s.generator.CopyFrontendToOutput(); err != nil {
+			return fmt.Errorf("failed to copy frontend files to output: %w", err)
+		}
+	} else {
+		// 前端未构建或构建文件不存在，需要先构建再复制
+		var message string
+		if !cfg.Frontend.Built {
+			message = "Building frontend..."
+		} else {
+			message = "Frontend files missing, rebuilding..."
+		}
+
+		if err := s.updateSetupProgress("frontend_build", 95, message); err != nil {
+			return err
+		}
+
+		if err := s.generator.BuildFrontend(cfg); err != nil {
+			return fmt.Errorf("failed to build frontend: %w", err)
+		}
+
+		// 复制前端构建文件到输出目录
+		if err := s.generator.CopyFrontendToOutput(); err != nil {
+			return fmt.Errorf("failed to copy frontend files to output: %w", err)
+		}
+
+		// 更新前端构建状态
+		cfg.Frontend.Built = true
+		cfg.Frontend.BuildTime = time.Now()
+		if err := s.SaveConfiguration(cfg); err != nil {
+			log.Printf("Warning: failed to save frontend build status: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -325,4 +371,9 @@ func (s *SetupService) ResetSetup() error {
 	}
 
 	return nil
+}
+
+// BuildFrontendWithStream 构建前端并流式输出
+func (s *SetupService) BuildFrontendWithStream(cfg *model.SetupConfig, outputChan chan<- string) error {
+	return s.generator.BuildFrontendWithStream(cfg, outputChan)
 }

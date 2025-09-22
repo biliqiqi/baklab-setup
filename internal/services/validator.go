@@ -352,7 +352,7 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 	var errors []model.ValidationError
 
 	// 定义步骤顺序
-	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "oauth", "ssl", "goaccess", "admin", "review", "complete"}
+	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "oauth", "ssl", "goaccess", "admin", "frontend", "review", "complete"}
 	currentStepIndex := -1
 
 	// 找到当前步骤的索引

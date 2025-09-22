@@ -67,6 +67,13 @@ type GoAccessConfig struct {
 	FileSize         int64  `json:"file_size"`          // 文件大小
 }
 
+// FrontendConfig 前端构建配置
+type FrontendConfig struct {
+	Built     bool      `json:"built"`               // 是否已构建
+	BuildTime time.Time `json:"build_time,omitempty"` // 构建时间
+	BuildLogs []string  `json:"build_logs,omitempty"` // 构建日志
+}
+
 // SSLConfig SSL证书配置
 type SSLConfig struct {
 	Enabled      bool   `json:"enabled"`                                       // 是否启用HTTPS
@@ -125,6 +132,7 @@ type SetupConfig struct {
 	AdminUser   AdminUserConfig `json:"admin_user"`
 	GoAccess    GoAccessConfig  `json:"goaccess"`
 	SSL         SSLConfig       `json:"ssl"`
+	Frontend    FrontendConfig  `json:"frontend"`
 	CurrentStep string          `json:"current_step,omitempty"` // 当前步骤，用于递增验证
 }
 

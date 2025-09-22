@@ -35,6 +35,7 @@
       "ssl": "SSL/HTTPS",
       "goaccess": "分析服务",
       "admin_user": "管理员用户",
+      "frontend": "前端构建",
       "review": "检查配置",
       "config_complete": "配置完成"
     },
@@ -349,7 +350,7 @@
       "file_too_large": "文件大小过大。最大允许大小为100MB",
       "geo_file_required": "启用 GoAccess 时必须上传 GeoIP 数据库文件"
     },
-    
+
     "admin": {
       "title": "管理员用户",
       "description": "创建应用程序的初始管理员账户。邮箱默认为系统管理员邮箱，但您可以根据需要更改。",
@@ -377,6 +378,9 @@
       "title": "检查配置",
       "description": "请在生成配置文件之前检查您的配置。",
       "generate_button": "生成配置",
+      "generating": "生成中...",
+      "generation_failed": "配置验证失败，请检查所有字段后重试。",
+      "generation_error": "配置生成失败，请重试。",
       
       "sections": {
         "database": "数据库",
@@ -443,8 +447,23 @@
       "ready_description": "手动部署命令: <code>cd {{outputPath}} && docker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
       "complete_button": "完成设置"
     },
-    
-    
+
+    "frontend": {
+      "title": "Web前端",
+      "description": "构建和配置Web前端应用",
+      "env_vars_title": "环境变量",
+      "no_env_vars": "未配置环境变量",
+      "build_status_title": "构建状态",
+      "status_built": "已构建",
+      "status_not_built": "未构建",
+      "last_build": "最后构建",
+      "build_button": "构建前端",
+      "building": "构建中...",
+      "build_logs": "构建日志",
+      "build_success": "前端构建成功！",
+      "build_failed": "前端构建失败，请检查日志详情。"
+    },
+
     "completed": {
       "title": "设置完成！",
       "description": "您的 BakLab 应用程序已成功配置。",
@@ -458,9 +477,10 @@
         "监控：使用 docker-compose ps 监控您的服务",
         "日志：使用 docker-compose logs -f 查看日志"
       ],
-      
+
       "run_again_button": "重新运行设置"
     }
+
   },
   
   "messages": {

@@ -94,6 +94,7 @@ class SetupApp {
             { key: 'admin', titleKey: 'setup.steps.admin_user', handler: this.renderAdminStep },
             { key: 'oauth', titleKey: 'setup.steps.oauth', handler: this.renderOAuthStep },
             { key: 'goaccess', titleKey: 'setup.steps.goaccess', handler: this.renderGoAccessStep },
+            { key: 'frontend', titleKey: 'setup.steps.frontend', handler: this.renderFrontendStep },
             { key: 'review', titleKey: 'setup.steps.review', handler: this.renderReviewStep },
             { key: 'config_complete', titleKey: 'setup.steps.config_complete', handler: this.renderConfigCompleteStep }
         ];
@@ -1882,6 +1883,236 @@ class SetupApp {
         });
     }
 
+    renderFrontendStep(container) {
+        container.innerHTML = `
+            <form id="frontend-form" class="form-section" novalidate>
+                <h3 data-i18n="setup.frontend.title"></h3>
+                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.frontend.description"></p>
+
+                <div class="info-section" style="margin-bottom: 1.5rem;">
+                    <h4 data-i18n="setup.frontend.env_vars_title"></h4>
+                    <div id="frontend-env-vars" class="env-vars-container">
+                        <div class="loading-spinner">
+                            <span data-i18n="common.loading"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section" style="margin-bottom: 1.5rem;">
+                    <h4 data-i18n="setup.frontend.build_status_title"></h4>
+                    <div id="frontend-status" class="build-status-container">
+                        <div class="loading-spinner">
+                            <span data-i18n="common.loading"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="build-actions" style="margin-bottom: 1.5rem;">
+                    <button type="button" id="build-frontend-btn" class="btn btn-primary">
+                        <span data-i18n="setup.frontend.build_button"></span>
+                    </button>
+                </div>
+
+
+                <div id="build-logs" class="build-logs" style="display: none;">
+                    <h4 data-i18n="setup.frontend.build_logs"></h4>
+                    <div class="log-content"></div>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()">
+                        <span data-i18n="common.previous"></span>
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <span data-i18n="common.next"></span>
+                    </button>
+                </div>
+            </form>
+        `;
+
+        // 初始化前端状态
+        this.loadFrontendStatus();
+
+        // 绑定事件
+        const buildBtn = container.querySelector('#build-frontend-btn');
+
+        buildBtn.addEventListener('click', () => this.buildFrontend());
+
+        // 表单提交
+        const self = this;
+        container.querySelector('#frontend-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            self.nextStep();
+        });
+    }
+
+    async loadFrontendStatus() {
+        try {
+            const response = await fetch('/api/frontend/status', {
+                method: 'GET',
+                headers: {
+                    'Setup-Token': this.token,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                this.displayFrontendStatus(result.data);
+            } else {
+                this.displayFrontendError('Failed to load frontend status');
+            }
+        } catch (error) {
+            console.error('Error loading frontend status:', error);
+            this.displayFrontendError('Failed to load frontend status');
+        }
+    }
+
+    displayFrontendStatus(data) {
+        const envVarsContainer = document.getElementById('frontend-env-vars');
+        const statusContainer = document.getElementById('frontend-status');
+
+        // 显示环境变量
+        const envVarsHtml = Object.entries(data.env_vars || {}).map(([key, value]) =>
+            `<div class="env-var"><strong>${key}</strong>: ${value}</div>`
+        ).join('');
+        envVarsContainer.innerHTML = envVarsHtml || '<p data-i18n="setup.frontend.no_env_vars"></p>';
+
+        // 如果没有环境变量，更新翻译
+        if (!envVarsHtml && window.i18n) {
+            window.i18n.applyTranslations();
+        }
+
+        // 显示构建状态
+        const buildTime = data.build_time ? new Date(data.build_time).toLocaleString() : 'Never';
+        const statusClass = data.built ? 'status-success' : 'status-pending';
+        const statusText = data.built ? 'Built' : 'Not built';
+
+        statusContainer.innerHTML = `
+            <div class="build-status ${statusClass}">
+                <span class="status-indicator"></span>
+                <span data-i18n="setup.frontend.status_${data.built ? 'built' : 'not_built'}"></span>
+            </div>
+            <div class="build-info">
+                <strong data-i18n="setup.frontend.last_build"></strong>: ${buildTime}
+            </div>
+        `;
+
+        // 更新翻译
+        if (window.i18n) {
+            window.i18n.applyTranslations();
+        }
+    }
+
+    displayFrontendError(message) {
+        const envVarsContainer = document.getElementById('frontend-env-vars');
+        const statusContainer = document.getElementById('frontend-status');
+
+        envVarsContainer.innerHTML = `<p class="error-text">${message}</p>`;
+        statusContainer.innerHTML = `<p class="error-text">${message}</p>`;
+    }
+
+    async buildFrontend() {
+        const buildBtn = document.getElementById('build-frontend-btn');
+        const buildLogs = document.getElementById('build-logs');
+
+        // 显示日志区域
+        buildLogs.style.display = 'block';
+        buildBtn.disabled = true;
+        buildBtn.innerHTML = '<span data-i18n="setup.frontend.building"></span>';
+        if (window.i18n) {
+            window.i18n.applyTranslations();
+        }
+
+        // 清空之前的日志
+        const logContent = buildLogs.querySelector('.log-content');
+        logContent.innerHTML = '';
+
+        // 创建 EventSource 连接
+        const eventSource = new EventSource(`/api/frontend/build/stream?token=${this.token}`);
+
+        eventSource.addEventListener('connected', (event) => {
+            this.appendBuildLog('Connected to build stream', 'success');
+        });
+
+        eventSource.onmessage = (event) => {
+            this.appendBuildLog(event.data);
+        };
+
+        eventSource.addEventListener('output', (event) => {
+            this.appendBuildLog(event.data);
+        });
+
+        let buildFinalized = false;
+
+        eventSource.addEventListener('error', (event) => {
+            this.appendBuildLog(`ERROR: ${event.data}`, 'error');
+            buildFinalized = true;
+            eventSource.close();
+            this.finalizeBuildProcess(buildBtn, false);
+        });
+
+        eventSource.addEventListener('complete', (event) => {
+            this.appendBuildLog(event.data, 'success');
+            buildFinalized = true;
+            eventSource.close();
+            this.finalizeBuildProcess(buildBtn, true);
+        });
+
+        eventSource.onerror = (error) => {
+            console.error('EventSource failed:', error);
+
+            // Don't show additional errors if build already finalized
+            if (buildFinalized) {
+                return;
+            }
+
+            if (eventSource.readyState === EventSource.CONNECTING) {
+                this.appendBuildLog('Reconnecting to build stream...', 'warning');
+                // Allow automatic reconnection - don't close
+            } else if (eventSource.readyState === EventSource.CLOSED) {
+                this.appendBuildLog('Build stream connection was closed.', 'error');
+                this.finalizeBuildProcess(buildBtn, false);
+            } else {
+                this.appendBuildLog('Connection to build stream lost, attempting to reconnect...', 'warning');
+                // Allow automatic reconnection - don't close
+            }
+        };
+    }
+
+    appendBuildLog(message, type = 'normal') {
+        const logContent = document.querySelector('#build-logs .log-content');
+        const logEntry = document.createElement('div');
+        logEntry.className = `log-entry log-${type}`;
+
+        const timestamp = new Date().toLocaleTimeString();
+        logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+
+        logContent.appendChild(logEntry);
+
+        // 自动滚动到底部
+        logContent.scrollTop = logContent.scrollHeight;
+    }
+
+    async finalizeBuildProcess(buildBtn, success) {
+        // 恢复按钮状态
+        buildBtn.disabled = false;
+        buildBtn.innerHTML = '<span data-i18n="setup.frontend.build_button"></span>';
+        if (window.i18n) {
+            window.i18n.applyTranslations();
+        }
+
+        if (success) {
+            // 构建成功，刷新状态
+            await this.loadFrontendStatus();
+            const successMsg = window.i18n ? window.i18n.t('setup.frontend.build_success') : 'Frontend built successfully!';
+            this.showAlert('success', successMsg);
+        } else {
+            const errorMsg = window.i18n ? window.i18n.t('setup.frontend.build_failed') : 'Frontend build failed. Check the logs for details.';
+            this.showAlert('error', errorMsg);
+        }
+    }
+
     async handleGeoFileSelect(file, fileInfoDivParam) {
         // 声明所有需要的DOM元素引用
         const fileInfoDiv = fileInfoDivParam || document.getElementById('geo-file-info');
@@ -2018,8 +2249,6 @@ class SetupApp {
                 this.showGeoUploadArea();
             }, 2000); // 2秒后重置界面，让用户看到错误信息
         }
-
-        this.addFieldTouchListeners(container);
     }
     
 
@@ -3138,7 +3367,15 @@ class SetupApp {
     }
     
     async generateConfig() {
+        const generateBtn = document.querySelector('button[onclick="app.generateConfig()"]');
+        const originalBtnText = generateBtn.innerHTML;
+
         try {
+            // 设置loading状态
+            generateBtn.disabled = true;
+            const generatingText = window.i18n ? window.i18n.t('setup.review.generating') : 'Generating...';
+            generateBtn.innerHTML = generatingText;
+
             await this.protectedApiCall('generateConfig', async () => {
                 // 首先提交完整配置到后端进行验证
                 await this.saveConfig();
@@ -3161,6 +3398,13 @@ class SetupApp {
                 return response;
             });
         } catch (error) {
+            // 恢复按钮状态
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = originalBtnText;
+            if (window.i18n) {
+                window.i18n.applyTranslations();
+            }
+
             // 处理后端验证错误
             if (error.message && error.message.includes('validation')) {
                 // 尝试解析并显示具体的验证错误
@@ -3169,8 +3413,13 @@ class SetupApp {
                     this.handleBackendValidationErrors(errorData);
                 } catch (parseError) {
                     // 如果解析失败，显示通用错误
-                    this.showAlert('error', 'Configuration validation failed. Please check all fields and try again.');
+                    const errorMsg = window.i18n ? window.i18n.t('setup.review.generation_failed') : 'Configuration validation failed. Please check all fields and try again.';
+                    this.showAlert('error', errorMsg);
                 }
+            } else {
+                // 显示生成失败的通用错误
+                const errorMsg = window.i18n ? window.i18n.t('setup.review.generation_error') : 'Configuration generation failed. Please try again.';
+                this.showAlert('error', errorMsg);
             }
             // 其他错误已在 protectedApiCall 中处理
         }
