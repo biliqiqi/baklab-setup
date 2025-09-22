@@ -6,12 +6,14 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/hex"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"text/template"
@@ -1143,6 +1145,12 @@ func (g *GeneratorService) BuildFrontend(cfg *model.SetupConfig) error {
 	}
 
 	log.Printf("Frontend built successfully to: %s", frontendDistPath)
+
+	// Auto-extract frontend assets for SSR configuration
+	if err := g.ExtractFrontendAssets(cfg); err != nil {
+		log.Printf("Warning: failed to extract frontend assets: %v", err)
+	}
+
 	return nil
 }
 
@@ -1271,6 +1279,15 @@ func (g *GeneratorService) BuildFrontendWithStream(cfg *model.SetupConfig, outpu
 
 	outputChan <- "Frontend build completed successfully!"
 	outputChan <- "Build artifacts saved to ./frontend/dist"
+
+	// Auto-extract frontend assets for SSR configuration
+	outputChan <- "Extracting frontend assets for SSR configuration..."
+	if err := g.ExtractFrontendAssets(cfg); err != nil {
+		outputChan <- fmt.Sprintf("Warning: failed to extract frontend assets: %v", err)
+	} else {
+		outputChan <- fmt.Sprintf("Extracted %d scripts and %d styles for SSR", len(cfg.App.FrontendScripts), len(cfg.App.FrontendStyles))
+	}
+
 	return nil
 }
 
@@ -1341,4 +1358,133 @@ func (g *GeneratorService) runNpmCommandWithStream(workDir string, args []string
 
 	outputChan <- "Command completed successfully"
 	return nil
+}
+
+// ExtractFrontendAssets automatically extracts JS and CSS assets from frontend build
+func (g *GeneratorService) ExtractFrontendAssets(cfg *model.SetupConfig) error {
+	frontendDistPath := "./frontend/dist"
+
+	// Check if dist directory exists
+	if _, err := os.Stat(frontendDistPath); os.IsNotExist(err) {
+		return fmt.Errorf("frontend build output not found: %s", frontendDistPath)
+	}
+
+	// Try to parse Vite manifest first
+	manifestPath := filepath.Join(frontendDistPath, ".vite", "manifest.json")
+
+	if scripts, styles, err := g.extractAssetsFromManifest(manifestPath, cfg); err == nil {
+		cfg.App.FrontendScripts = scripts
+		cfg.App.FrontendStyles = styles
+		return nil
+	} else {
+	}
+
+	// Fallback to parsing index.html
+	indexPath := filepath.Join(frontendDistPath, "index.html")
+
+	scripts, styles, err := g.extractAssetsFromHTML(indexPath, cfg)
+	if err != nil {
+		return fmt.Errorf("failed to extract assets from HTML: %w", err)
+	}
+
+	cfg.App.FrontendScripts = scripts
+	cfg.App.FrontendStyles = styles
+	return nil
+}
+
+// extractAssetsFromManifest extracts assets from Vite manifest.json
+func (g *GeneratorService) extractAssetsFromManifest(manifestPath string, cfg *model.SetupConfig) ([]string, []string, error) {
+	data, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var manifest map[string]interface{}
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse manifest: %w", err)
+	}
+
+	var scripts, styles []string
+
+	for _, entry := range manifest {
+		if entryMap, ok := entry.(map[string]interface{}); ok {
+			if file, exists := entryMap["file"].(string); exists {
+				fullURL := g.normalizeAssetPath(file, cfg)
+				if strings.HasSuffix(file, ".js") {
+					scripts = append(scripts, fullURL)
+				} else if strings.HasSuffix(file, ".css") {
+					styles = append(styles, fullURL)
+				}
+			}
+		}
+	}
+
+	return scripts, styles, nil
+}
+
+// extractAssetsFromHTML extracts assets from index.html
+func (g *GeneratorService) extractAssetsFromHTML(indexPath string, cfg *model.SetupConfig) ([]string, []string, error) {
+	data, err := os.ReadFile(indexPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var scripts, styles []string
+	content := string(data)
+
+	// Extract script tags
+	scriptRegex := regexp.MustCompile(`<script[^>]*src="([^"]+)"[^>]*></script>`)
+	scriptMatches := scriptRegex.FindAllStringSubmatch(content, -1)
+	for _, match := range scriptMatches {
+		if len(match) > 1 {
+			src := match[1]
+			src = g.normalizeAssetPath(src, cfg)
+			scripts = append(scripts, src)
+		}
+	}
+
+	// Extract link tags for CSS
+	linkRegex := regexp.MustCompile(`<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"[^>]*>`)
+	linkMatches := linkRegex.FindAllStringSubmatch(content, -1)
+	for _, match := range linkMatches {
+		if len(match) > 1 {
+			href := match[1]
+			href = g.normalizeAssetPath(href, cfg)
+			styles = append(styles, href)
+		}
+	}
+
+	return scripts, styles, nil
+}
+
+// normalizeAssetPath normalizes asset path and converts it to relative path
+func (g *GeneratorService) normalizeAssetPath(path string, cfg *model.SetupConfig) string {
+	// If already a full URL, extract the path part
+	if strings.HasPrefix(path, "http") {
+		// Extract path from URL (everything after domain)
+		if idx := strings.Index(path[8:], "/"); idx != -1 {
+			path = path[8+idx:]
+		} else {
+			// No path in URL, default to root
+			path = "/"
+		}
+	}
+
+	// Remove leading "./" if present
+	if strings.HasPrefix(path, "./") {
+		path = strings.TrimPrefix(path, "./")
+	}
+
+	// If path already starts with /static/, use it directly
+	if strings.HasPrefix(path, "/static/") {
+		return path
+	}
+
+	// If path doesn't start with /, assume it's relative to frontend assets
+	if !strings.HasPrefix(path, "/") {
+		return fmt.Sprintf("/static/frontend/%s", path)
+	}
+
+	// For absolute paths that don't start with /static/, assume they need /static/frontend/ prefix
+	return fmt.Sprintf("/static/frontend%s", path)
 }

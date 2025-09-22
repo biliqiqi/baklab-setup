@@ -879,6 +879,17 @@ func (h *SetupHandlers) GetFrontendStatusHandler(w http.ResponseWriter, r *http.
 	// 实际构建状态 = 配置中的状态 AND 文件实际存在
 	actualBuiltStatus := cfg.Frontend.Built && frontendFilesExist
 
+	// 获取构建资源的绝对路径信息
+	var buildArtifacts map[string]interface{}
+	if frontendFilesExist {
+		buildArtifacts = h.getBuildArtifactsInfo(frontendDistPath)
+	} else {
+		buildArtifacts = map[string]interface{}{
+			"dist_path": "",
+			"assets":    []interface{}{},
+		}
+	}
+
 	// 如果配置显示已构建但文件不存在，自动修正配置状态
 	if cfg.Frontend.Built && !frontendFilesExist {
 		cfg.Frontend.Built = false
@@ -892,10 +903,11 @@ func (h *SetupHandlers) GetFrontendStatusHandler(w http.ResponseWriter, r *http.
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,
 		Data: map[string]interface{}{
-			"built":      actualBuiltStatus,
-			"build_time": cfg.Frontend.BuildTime,
-			"build_logs": cfg.Frontend.BuildLogs,
-			"env_vars":   envMap,
+			"built":           actualBuiltStatus,
+			"build_time":      cfg.Frontend.BuildTime,
+			"build_logs":      cfg.Frontend.BuildLogs,
+			"env_vars":        envMap,
+			"build_artifacts": buildArtifacts,
 		},
 	}, http.StatusOK)
 }
@@ -988,5 +1000,113 @@ func (h *SetupHandlers) StreamFrontendBuildHandler(w http.ResponseWriter, r *htt
 			// 客户端断开连接
 			return
 		}
+	}
+}
+
+// ExtractFrontendAssetsHandler 实时从构建文件中提取前端资源
+func (h *SetupHandlers) ExtractFrontendAssetsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.method_not_allowed"),
+		}, http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 验证令牌
+	clientIP := getClientIP(r)
+	tokenStr := r.Header.Get("Setup-Token")
+	if err := h.setupService.ValidateSetupToken(tokenStr, clientIP); err != nil {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: h.localizeMessage(r, "messages.errors.invalid_token"),
+		}, http.StatusUnauthorized)
+		return
+	}
+
+	// 创建临时配置对象用于提取资源
+	tempCfg := &model.SetupConfig{
+		App: model.AppConfig{
+			FrontendScripts: []string{},
+			FrontendStyles:  []string{},
+		},
+	}
+
+	// 使用generator service从构建文件中提取资源
+	generator := services.NewGeneratorService()
+	if err := generator.ExtractFrontendAssets(tempCfg); err != nil {
+		h.writeJSONResponse(w, model.SetupResponse{
+			Success: false,
+			Message: fmt.Sprintf("Failed to extract frontend assets: %v", err),
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	// 返回提取的资源
+	h.writeJSONResponse(w, model.SetupResponse{
+		Success: true,
+		Message: h.localizeMessage(r, "messages.frontend_assets_extracted"),
+		Data: map[string]interface{}{
+			"frontend_scripts": tempCfg.App.FrontendScripts,
+			"frontend_styles":  tempCfg.App.FrontendStyles,
+		},
+	}, http.StatusOK)
+}
+
+// getBuildArtifactsInfo 获取构建产物的绝对路径信息
+func (h *SetupHandlers) getBuildArtifactsInfo(frontendDistPath string) map[string]interface{} {
+	// 获取绝对路径
+	absDistPath, err := filepath.Abs(frontendDistPath)
+	if err != nil {
+		log.Printf("Warning: failed to get absolute path for %s: %v", frontendDistPath, err)
+		absDistPath = frontendDistPath
+	}
+
+	assets := []map[string]interface{}{}
+
+	// 遍历构建目录，收集重要的构建产物信息
+	err = filepath.Walk(frontendDistPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil // 忽略错误，继续遍历
+		}
+
+		// 只收集重要的文件类型
+		if info.IsDir() {
+			return nil
+		}
+
+		ext := strings.ToLower(filepath.Ext(info.Name()))
+		if ext == ".js" || ext == ".css" || ext == ".html" || ext == ".map" || ext == ".json" {
+			absPath, pathErr := filepath.Abs(path)
+			if pathErr != nil {
+				absPath = path
+			}
+
+			// 计算相对于dist目录的路径
+			relPath, relErr := filepath.Rel(frontendDistPath, path)
+			if relErr != nil {
+				relPath = info.Name()
+			}
+
+			assets = append(assets, map[string]interface{}{
+				"name":         info.Name(),
+				"relative_path": relPath,
+				"absolute_path": absPath,
+				"size":         info.Size(),
+				"type":         ext,
+				"modified":     info.ModTime(),
+			})
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Printf("Warning: failed to walk frontend dist directory: %v", err)
+	}
+
+	return map[string]interface{}{
+		"dist_path": absDistPath,
+		"assets":    assets,
 	}
 }

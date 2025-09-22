@@ -351,8 +351,8 @@ func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.Connec
 func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	// 定义步骤顺序
-	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "oauth", "ssl", "goaccess", "admin", "frontend", "review", "complete"}
+	// 定义步骤顺序（与前端步骤顺序保持一致）
+	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "ssl", "admin", "oauth", "goaccess", "frontend", "review", "config_complete"}
 	currentStepIndex := -1
 
 	// 找到当前步骤的索引
@@ -385,18 +385,22 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 		errors = append(errors, v.validateAppConfig(cfg.App)...)
 	}
 
-	if currentStepIndex >= 5 { // oauth
-		errors = append(errors, v.validateOAuthConfig(cfg.OAuth)...)
+	if currentStepIndex >= 5 { // ssl
+		errors = append(errors, v.validateSSLConfig(cfg.SSL)...)
 	}
 
-	if currentStepIndex >= 6 { // ssl
-		errors = append(errors, v.validateSSLConfig(cfg.SSL)...)
+	if currentStepIndex >= 6 { // admin
+		errors = append(errors, v.validateAdminUserConfig(cfg.AdminUser)...)
+	}
+
+	if currentStepIndex >= 7 { // oauth
+		errors = append(errors, v.validateOAuthConfig(cfg.OAuth)...)
 	}
 
 	// goaccess 不需要强制验证，跳过
 
-	if currentStepIndex >= 8 { // admin
-		errors = append(errors, v.validateAdminUserConfig(cfg.AdminUser)...)
+	if currentStepIndex >= 9 { // frontend
+		errors = append(errors, v.validateFrontendConfig(cfg.App)...)
 	}
 
 	return errors
@@ -844,49 +848,6 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		})
 	}
 
-	// 服务端渲染配置验证
-	if cfg.SSREnabled {
-		if len(cfg.FrontendScripts) == 0 {
-			errors = append(errors, model.ValidationError{
-				Field:   "app.frontend_scripts",
-				Message: "key:validation.app.frontend_scripts_required",
-			})
-		} else {
-			urlRegex := regexp.MustCompile(`^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(:[0-9]+)?(/.*)?$`)
-			for i, script := range cfg.FrontendScripts {
-				if !urlRegex.MatchString(script) {
-					errors = append(errors, model.ValidationError{
-						Field:   fmt.Sprintf("app.frontend_scripts[%d]", i),
-						Message: "key:validation.app.frontend_scripts_error",
-					})
-				}
-			}
-		}
-
-		if len(cfg.FrontendStyles) == 0 {
-			errors = append(errors, model.ValidationError{
-				Field:   "app.frontend_styles",
-				Message: "key:validation.app.frontend_styles_required",
-			})
-		} else {
-			urlRegex := regexp.MustCompile(`^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(:[0-9]+)?(/.*)?$`)
-			for i, style := range cfg.FrontendStyles {
-				if !urlRegex.MatchString(style) {
-					errors = append(errors, model.ValidationError{
-						Field:   fmt.Sprintf("app.frontend_styles[%d]", i),
-						Message: "key:validation.app.frontend_styles_error",
-					})
-				}
-			}
-		}
-
-		if cfg.FrontendContainerId == "" {
-			errors = append(errors, model.ValidationError{
-				Field:   "app.frontend_container_id",
-				Message: "key:validation.app.frontend_container_id_required",
-			})
-		}
-	}
 
 	return errors
 }
@@ -1016,6 +977,59 @@ func (v *ValidatorService) validateSSLConfig(cfg model.SSLConfig) []model.Valida
 			errors = append(errors, model.ValidationError{
 				Field:   "ssl.key_path",
 				Message: "key:validation.ssl.key_path_required",
+			})
+		}
+	}
+
+	return errors
+}
+
+// validateFrontendConfig 验证前端和SSR配置
+func (v *ValidatorService) validateFrontendConfig(cfg model.AppConfig) []model.ValidationError {
+	var errors []model.ValidationError
+
+	// 服务端渲染配置验证
+	if cfg.SSREnabled {
+		if len(cfg.FrontendScripts) == 0 {
+			errors = append(errors, model.ValidationError{
+				Field:   "app.frontend_scripts",
+				Message: "key:validation.app.frontend_scripts_required",
+			})
+		} else {
+			// 支持相对路径（以/开头）和绝对URL（以https?://开头）
+			urlRegex := regexp.MustCompile(`^(https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?|/[^/].*\.(js|mjs)(\?.*)?$)`)
+			for i, script := range cfg.FrontendScripts {
+				if !urlRegex.MatchString(script) {
+					errors = append(errors, model.ValidationError{
+						Field:   fmt.Sprintf("app.frontend_scripts[%d]", i),
+						Message: "key:validation.app.frontend_scripts_error",
+					})
+				}
+			}
+		}
+
+		if len(cfg.FrontendStyles) == 0 {
+			errors = append(errors, model.ValidationError{
+				Field:   "app.frontend_styles",
+				Message: "key:validation.app.frontend_styles_required",
+			})
+		} else {
+			// 支持相对路径（以/开头）和绝对URL（以https?://开头）
+			urlRegex := regexp.MustCompile(`^(https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?|/[^/].*\.(css)(\?.*)?$)`)
+			for i, style := range cfg.FrontendStyles {
+				if !urlRegex.MatchString(style) {
+					errors = append(errors, model.ValidationError{
+						Field:   fmt.Sprintf("app.frontend_styles[%d]", i),
+						Message: "key:validation.app.frontend_styles_error",
+					})
+				}
+			}
+		}
+
+		if cfg.FrontendContainerId == "" {
+			errors = append(errors, model.ValidationError{
+				Field:   "app.frontend_container_id",
+				Message: "key:validation.app.frontend_container_id_required",
 			})
 		}
 	}

@@ -390,7 +390,8 @@
         "ssl": "SSL/HTTPS",
         "goaccess": "分析服务",
         "application": "应用程序",
-        "administrator": "管理员"
+        "administrator": "管理员",
+        "frontend_build": "前端构建"
       },
       
       "fields": {
@@ -426,6 +427,8 @@
         "frontend_scripts": "前端脚本",
         "frontend_styles": "前端样式",
         "frontend_container_id": "前端容器 ID",
+        "build_status": "构建状态",
+        "output_directory": "输出目录",
         "username": "用户名",
         "email": "邮箱"
       },
@@ -457,11 +460,15 @@
       "status_built": "已构建",
       "status_not_built": "未构建",
       "last_build": "最后构建",
+      "output_directory": "输出目录",
       "build_button": "构建前端",
       "building": "构建中...",
       "build_logs": "构建日志",
       "build_success": "前端构建成功！",
-      "build_failed": "前端构建失败，请检查日志详情。"
+      "build_failed": "前端构建失败，请检查日志详情。",
+      "ssr_auto_detected_notice": "前端资源将在构建完成后自动检测并填充。",
+      "ssr_auto_extracted_help": "这些资源是从前端构建中自动提取的。如果需要，您可以手动编辑它们。",
+      "ssr_auto_filled_notice": "前端资源已从已构建的前端中自动检测并填充。"
     },
 
     "completed": {

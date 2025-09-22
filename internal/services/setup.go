@@ -237,6 +237,13 @@ func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 		// 更新前端构建状态
 		cfg.Frontend.Built = true
 		cfg.Frontend.BuildTime = time.Now()
+
+		// 保存提取的前端资源到配置中
+		if len(cfg.App.FrontendScripts) > 0 || len(cfg.App.FrontendStyles) > 0 {
+			log.Printf("Saving extracted frontend assets: %d scripts, %d styles",
+				len(cfg.App.FrontendScripts), len(cfg.App.FrontendStyles))
+		}
+
 		if err := s.SaveConfiguration(cfg); err != nil {
 			log.Printf("Warning: failed to save frontend build status: %v", err)
 		}
@@ -375,5 +382,26 @@ func (s *SetupService) ResetSetup() error {
 
 // BuildFrontendWithStream 构建前端并流式输出
 func (s *SetupService) BuildFrontendWithStream(cfg *model.SetupConfig, outputChan chan<- string) error {
-	return s.generator.BuildFrontendWithStream(cfg, outputChan)
+	// 执行构建
+	if err := s.generator.BuildFrontendWithStream(cfg, outputChan); err != nil {
+		return err
+	}
+
+	// 构建成功后，保存提取的前端资源到配置中
+	cfg.Frontend.Built = true
+	cfg.Frontend.BuildTime = time.Now()
+
+	// 保存提取的前端资源到配置中
+	if len(cfg.App.FrontendScripts) > 0 || len(cfg.App.FrontendStyles) > 0 {
+		log.Printf("Saving extracted frontend assets: %d scripts, %d styles",
+			len(cfg.App.FrontendScripts), len(cfg.App.FrontendStyles))
+	}
+
+	if err := s.SaveConfiguration(cfg); err != nil {
+		log.Printf("Warning: failed to save frontend assets and build status: %v", err)
+		return err
+	}
+
+	outputChan <- "Frontend assets saved to configuration"
+	return nil
 }

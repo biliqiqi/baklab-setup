@@ -1147,59 +1147,6 @@ class SetupApp {
                     </div>
                 </div>
 
-                <h4 style="margin: 2rem 0 1rem 0; color: var(--gray-700);" data-i18n="setup.app.ssr_section_title"></h4>
-                <p style="margin-bottom: 1rem; color: var(--gray-600);" data-i18n="setup.app.ssr_section_description"></p>
-
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="app-ssr-enabled" name="ssr_enabled" ${this.config.app.ssr_enabled ? 'checked' : ''} onchange="app.updateSSRDisplay()">
-                        <span data-i18n="setup.app.ssr_enabled_label"></span>
-                    </label>
-                    <div class="form-help" data-i18n="setup.app.ssr_enabled_help"></div>
-                </div>
-
-                <div id="ssr-config" style="display: ${this.config.app.ssr_enabled ? 'block' : 'none'};">
-                    <div class="form-group">
-                        <label for="frontend-scripts"><span data-i18n="setup.app.frontend_scripts_label"></span> <span data-i18n="common.required"></span></label>
-                        <textarea
-                            id="frontend-scripts"
-                            name="frontend_scripts"
-                            rows="3"
-                            data-i18n-placeholder="setup.app.frontend_scripts_placeholder"
-                            data-i18n-title="setup.app.frontend_scripts_error"
-                        >${(this.config.app.frontend_scripts || []).join('\\n')}</textarea>
-                        <div class="form-help" data-i18n="setup.app.frontend_scripts_help"></div>
-                        <div class="invalid-feedback" data-i18n="setup.app.frontend_scripts_error"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="frontend-styles"><span data-i18n="setup.app.frontend_styles_label"></span> <span data-i18n="common.required"></span></label>
-                        <textarea
-                            id="frontend-styles"
-                            name="frontend_styles"
-                            rows="3"
-                            data-i18n-placeholder="setup.app.frontend_styles_placeholder"
-                            data-i18n-title="setup.app.frontend_styles_error"
-                        >${(this.config.app.frontend_styles || []).join('\\n')}</textarea>
-                        <div class="form-help" data-i18n="setup.app.frontend_styles_help"></div>
-                        <div class="invalid-feedback" data-i18n="setup.app.frontend_styles_error"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="frontend-container-id"><span data-i18n="setup.app.frontend_container_id_label"></span> <span data-i18n="common.required"></span></label>
-                        <input
-                            type="text"
-                            id="frontend-container-id"
-                            name="frontend_container_id"
-                            value="${this.config.app.frontend_container_id || ''}"
-                            data-i18n-placeholder="setup.app.frontend_container_id_placeholder"
-                            data-i18n-title="setup.app.frontend_container_id_error"
-                        >
-                        <div class="form-help" data-i18n="setup.app.frontend_container_id_help"></div>
-                        <div class="invalid-feedback" data-i18n="setup.app.frontend_container_id_error"></div>
-                    </div>
-                </div>
-
                 <h4 style="margin: 2rem 0 1rem 0; color: var(--gray-700);" data-i18n="setup.app.jwt_section_title"></h4>
                 <p style="margin-bottom: 1rem; color: var(--gray-600);" data-i18n="setup.app.jwt_section_description"></p>
                 
@@ -1919,6 +1866,63 @@ class SetupApp {
                     <div class="log-content"></div>
                 </div>
 
+                <h4 style="margin: 2rem 0 1rem 0; color: var(--gray-700);" data-i18n="setup.app.ssr_section_title"></h4>
+                <p style="margin-bottom: 1rem; color: var(--gray-600);" data-i18n="setup.app.ssr_section_description"></p>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="app-ssr-enabled" name="ssr_enabled" ${this.config.app.ssr_enabled ? 'checked' : ''} onchange="app.updateSSRDisplay()">
+                        <span data-i18n="setup.app.ssr_enabled_label"></span>
+                    </label>
+                    <div class="form-help" data-i18n="setup.app.ssr_enabled_help"></div>
+                </div>
+
+                <div id="ssr-config" style="display: ${this.config.app.ssr_enabled ? 'block' : 'none'};">
+                    <div id="ssr-notice" class="info-section" style="margin-bottom: 1rem;">
+                        <div class="alert alert-info">
+                            <span data-i18n="setup.frontend.ssr_auto_detected_notice"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="frontend-scripts"><span data-i18n="setup.app.frontend_scripts_label"></span> <span data-i18n="common.required"></span></label>
+                        <textarea
+                            id="frontend-scripts"
+                            name="frontend_scripts"
+                            rows="3"
+                            data-i18n-placeholder="setup.app.frontend_scripts_placeholder"
+                            data-i18n-title="setup.app.frontend_scripts_error"
+                        >${(this.config.app.frontend_scripts || []).join('\\n')}</textarea>
+                        <div class="invalid-feedback" data-i18n="setup.app.frontend_scripts_error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="frontend-styles"><span data-i18n="setup.app.frontend_styles_label"></span> <span data-i18n="common.required"></span></label>
+                        <textarea
+                            id="frontend-styles"
+                            name="frontend_styles"
+                            rows="3"
+                            data-i18n-placeholder="setup.app.frontend_styles_placeholder"
+                            data-i18n-title="setup.app.frontend_styles_error"
+                        >${(this.config.app.frontend_styles || []).join('\\n')}</textarea>
+                        <div class="invalid-feedback" data-i18n="setup.app.frontend_styles_error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="frontend-container-id"><span data-i18n="setup.app.frontend_container_id_label"></span> <span data-i18n="common.required"></span></label>
+                        <input
+                            type="text"
+                            id="frontend-container-id"
+                            name="frontend_container_id"
+                            value="${this.config.app.frontend_container_id || 'root'}"
+                            data-i18n-placeholder="setup.app.frontend_container_id_placeholder"
+                            data-i18n-title="setup.app.frontend_container_id_error"
+                        >
+                        <div class="form-help" data-i18n="setup.app.frontend_container_id_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.app.frontend_container_id_error"></div>
+                    </div>
+                </div>
+
                 <div class="btn-group">
                     <button type="button" class="btn btn-secondary" onclick="app.previousStep()">
                         <span data-i18n="common.previous"></span>
@@ -1933,17 +1937,143 @@ class SetupApp {
         // 初始化前端状态
         this.loadFrontendStatus();
 
+        // 初始化 SSR 显示状态
+        this.updateSSRDisplay();
+
+        // 检测前端构建状态并自动填充资源 (延时确保DOM就绪)
+        setTimeout(() => this.checkAndAutoFillAssets(), 100);
+
         // 绑定事件
         const buildBtn = container.querySelector('#build-frontend-btn');
-
         buildBtn.addEventListener('click', () => this.buildFrontend());
 
         // 表单提交
         const self = this;
-        container.querySelector('#frontend-form').addEventListener('submit', (e) => {
+        container.querySelector('#frontend-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            self.nextStep();
+
+            // 收集 SSR 配置数据
+            const ssrEnabled = document.getElementById('app-ssr-enabled')?.checked;
+            if (ssrEnabled) {
+                const frontendScripts = document.getElementById('frontend-scripts').value.split('\\n').filter(s => s.trim());
+                const frontendStyles = document.getElementById('frontend-styles').value.split('\\n').filter(s => s.trim());
+                const frontendContainerId = document.getElementById('frontend-container-id').value.trim();
+
+                // 更新配置
+                self.config.app.ssr_enabled = ssrEnabled;
+                self.config.app.frontend_scripts = frontendScripts;
+                self.config.app.frontend_styles = frontendStyles;
+                self.config.app.frontend_container_id = frontendContainerId;
+            } else {
+                self.config.app.ssr_enabled = false;
+                // 保留自动提取的资源，不清空它们
+                // 只清空container_id，因为SSR禁用时不需要
+                self.config.app.frontend_container_id = '';
+            }
+
+            // 保存到本地缓存并调用后端验证
+            self.saveToLocalCache();
+
+            // 保存配置前，再次检查并清理SSR资源状态
+            await self.checkAndAutoFillAssets();
+            self.saveToLocalCache();
+
+            await self.saveConfigWithValidation();
         });
+    }
+
+    async checkAndAutoFillAssets() {
+        try {
+            // 检查前端构建状态
+            const statusResponse = await this.api('GET', '/api/frontend/status');
+
+            if (statusResponse.success && statusResponse.data && statusResponse.data.built) {
+                // 前端已构建，直接从构建产物提取资源（不依赖缓存）
+                const extractResponse = await this.api('POST', '/api/frontend/extract-assets');
+
+                if (extractResponse.success && extractResponse.data) {
+                    const { frontend_scripts, frontend_styles } = extractResponse.data;
+
+                    if (frontend_scripts && frontend_scripts.length > 0) {
+                        // 更新配置
+                        this.config.app.frontend_scripts = frontend_scripts;
+                        this.config.app.frontend_styles = frontend_styles || [];
+
+                        // 填充表单字段
+                        const scriptsTextarea = document.getElementById('frontend-scripts');
+                        const stylesTextarea = document.getElementById('frontend-styles');
+
+                        if (scriptsTextarea) {
+                            scriptsTextarea.value = frontend_scripts.join('\\n');
+                            scriptsTextarea.readOnly = true;
+                        }
+                        if (stylesTextarea) {
+                            stylesTextarea.value = (frontend_styles || []).join('\\n');
+                            stylesTextarea.readOnly = true;
+                        }
+
+                        // 更新提示信息
+                        this.updateSSRNoticeForBuiltState();
+                    }
+                }
+            } else {
+                // 前端未构建，清空SSR资源配置
+                this.config.app.frontend_scripts = [];
+                this.config.app.frontend_styles = [];
+
+                // 清空表单字段
+                const scriptsTextarea = document.getElementById('frontend-scripts');
+                const stylesTextarea = document.getElementById('frontend-styles');
+
+                if (scriptsTextarea) {
+                    scriptsTextarea.value = '';
+                    scriptsTextarea.readOnly = false;
+                }
+                if (stylesTextarea) {
+                    stylesTextarea.value = '';
+                    stylesTextarea.readOnly = false;
+                }
+
+                // 更新提示信息
+                this.updateSSRNoticeForNotBuiltState();
+            }
+        } catch (error) {
+            console.warn('Failed to auto-fill frontend assets:', error);
+        }
+    }
+
+    updateSSRNoticeForBuiltState() {
+        const noticeDiv = document.getElementById('ssr-notice');
+
+        if (noticeDiv) {
+            noticeDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <span data-i18n="setup.frontend.ssr_auto_filled_notice"></span>
+                </div>
+            `;
+        }
+
+        // 重新应用翻译
+        if (window.i18n) {
+            window.i18n.applyTranslations();
+        }
+    }
+
+    updateSSRNoticeForNotBuiltState() {
+        const noticeDiv = document.getElementById('ssr-notice');
+
+        if (noticeDiv) {
+            noticeDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <span data-i18n="setup.frontend.ssr_auto_detected_notice"></span>
+                </div>
+            `;
+        }
+
+        // 重新应用翻译
+        if (window.i18n) {
+            window.i18n.applyTranslations();
+        }
     }
 
     async loadFrontendStatus() {
@@ -1988,6 +2118,17 @@ class SetupApp {
         const statusClass = data.built ? 'status-success' : 'status-pending';
         const statusText = data.built ? 'Built' : 'Not built';
 
+        let buildArtifactsHtml = '';
+        if (data.built && data.build_artifacts && data.build_artifacts.dist_path) {
+            const distPath = data.build_artifacts.dist_path;
+
+            buildArtifactsHtml = `
+                <div class="build-info">
+                    <strong data-i18n="setup.frontend.output_directory"></strong>: <code>${distPath}</code>
+                </div>
+            `;
+        }
+
         statusContainer.innerHTML = `
             <div class="build-status ${statusClass}">
                 <span class="status-indicator"></span>
@@ -1996,6 +2137,7 @@ class SetupApp {
             <div class="build-info">
                 <strong data-i18n="setup.frontend.last_build"></strong>: ${buildTime}
             </div>
+            ${buildArtifactsHtml}
         `;
 
         // 更新翻译
@@ -2003,6 +2145,7 @@ class SetupApp {
             window.i18n.applyTranslations();
         }
     }
+
 
     displayFrontendError(message) {
         const envVarsContainer = document.getElementById('frontend-env-vars');
@@ -2105,6 +2248,35 @@ class SetupApp {
         if (success) {
             // 构建成功，刷新状态
             await this.loadFrontendStatus();
+
+            // 重新加载配置以获取自动提取的资源
+            try {
+                const configResponse = await this.api('GET', '/api/config');
+                if (configResponse.success && configResponse.data) {
+                    // 更新前端资源配置
+                    this.config.app.frontend_scripts = configResponse.data.app.frontend_scripts || [];
+                    this.config.app.frontend_styles = configResponse.data.app.frontend_styles || [];
+
+                    // 刷新 SSR 表单字段并设为只读
+                    const scriptsTextarea = document.getElementById('frontend-scripts');
+                    const stylesTextarea = document.getElementById('frontend-styles');
+
+                    if (scriptsTextarea) {
+                        scriptsTextarea.value = this.config.app.frontend_scripts.join('\\n');
+                        scriptsTextarea.readOnly = true; // 设为只读
+                    }
+                    if (stylesTextarea) {
+                        stylesTextarea.value = this.config.app.frontend_styles.join('\\n');
+                        stylesTextarea.readOnly = true; // 设为只读
+                    }
+
+                    // 更新提示信息和隐藏help文本
+                    this.updateSSRNoticeForBuiltState();
+                }
+            } catch (error) {
+                console.warn('Failed to reload frontend assets:', error);
+            }
+
             const successMsg = window.i18n ? window.i18n.t('setup.frontend.build_success') : 'Frontend built successfully!';
             this.showAlert('success', successMsg);
         } else {
@@ -2941,20 +3113,6 @@ class SetupApp {
             }
         }
 
-        // 处理服务端渲染配置
-        const ssrEnabled = document.getElementById('app-ssr-enabled').checked;
-        let frontendScripts = [];
-        let frontendStyles = [];
-        let frontendContainerId = '';
-
-        if (ssrEnabled) {
-            const scriptsText = document.getElementById('frontend-scripts').value.trim();
-            const stylesText = document.getElementById('frontend-styles').value.trim();
-            frontendScripts = scriptsText ? scriptsText.split('\n').map(url => url.trim()).filter(url => url) : [];
-            frontendStyles = stylesText ? stylesText.split('\n').map(url => url.trim()).filter(url => url) : [];
-            frontendContainerId = document.getElementById('frontend-container-id').value.trim();
-        }
-
         this.config.app = {
             ...this.config.app,
             domain_name: document.getElementById('app-domain').value,
@@ -2966,11 +3124,7 @@ class SetupApp {
             debug: document.getElementById('app-debug').checked,
             jwt_key_from_file: jwtKeyFromFile,
             jwt_key_file_path: jwtKeyFilePath,
-            use_setup_domain: document.getElementById('use-setup-domain').checked,
-            ssr_enabled: ssrEnabled,
-            frontend_scripts: frontendScripts,
-            frontend_styles: frontendStyles,
-            frontend_container_id: frontendContainerId
+            use_setup_domain: document.getElementById('use-setup-domain').checked
         };
         
         // 保存到本地缓存并调用后端验证
@@ -3153,6 +3307,17 @@ class SetupApp {
         try {
             // 从本地缓存读取配置显示
             const config = this.config;
+
+            // 获取实时前端构建状态
+            let frontendStatus = null;
+            try {
+                const statusResponse = await this.api('GET', '/api/frontend/status');
+                if (statusResponse.success) {
+                    frontendStatus = statusResponse.data;
+                }
+            } catch (error) {
+                console.warn('Failed to load frontend status:', error);
+            }
             
             // 使用i18n渲染配置审查
             const corsText = window.i18n ? window.i18n.t('setup.review.cors_configured', { count: config.app.cors_allow_origins.length }) : 
@@ -3198,12 +3363,6 @@ class SetupApp {
                     ${config.app.jwt_key_from_file ? `
                         <p><strong data-i18n="setup.review.fields.jwt_file_path"></strong>: ${config.app.jwt_key_file_path}</p>
                     ` : ''}
-                    <p><strong data-i18n="setup.review.fields.ssr_enabled"></strong>: ${config.app.ssr_enabled ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
-                    ${config.app.ssr_enabled ? `
-                        <p><strong data-i18n="setup.review.fields.frontend_scripts"></strong>: ${config.app.frontend_scripts ? config.app.frontend_scripts.join(', ') : ''}</p>
-                        <p><strong data-i18n="setup.review.fields.frontend_styles"></strong>: ${config.app.frontend_styles ? config.app.frontend_styles.join(', ') : ''}</p>
-                        <p><strong data-i18n="setup.review.fields.frontend_container_id"></strong>: ${config.app.frontend_container_id || ''}</p>
-                    ` : ''}
 
                     <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.ssl"></h4>
                     <p><strong data-i18n="setup.review.fields.ssl_enabled"></strong>: ${config.ssl.enabled ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
@@ -3225,6 +3384,19 @@ class SetupApp {
                     <p><strong data-i18n="setup.review.fields.goaccess_enabled"></strong>: ${config.goaccess.enabled ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
                     ${config.goaccess.enabled && config.goaccess.has_geo_file ? `
                         <p><strong data-i18n="setup.review.fields.goaccess_geo_file"></strong>: ${config.goaccess.original_file_name || 'GeoLite2-City.mmdb'}</p>
+                    ` : ''}
+
+                    <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.frontend_build"></h4>
+                    <p><strong data-i18n="setup.review.fields.build_status"></strong>: ${(frontendStatus && frontendStatus.built) ? (window.i18n ? window.i18n.t('setup.frontend.status_built') : 'Built') : (window.i18n ? window.i18n.t('setup.frontend.status_not_built') : 'Not Built')}</p>
+                    ${(frontendStatus && frontendStatus.built) ? `
+                        ${frontendStatus.build_time ? `<p><strong data-i18n="setup.frontend.last_build"></strong>: ${new Date(frontendStatus.build_time).toLocaleString()}</p>` : ''}
+                        ${(frontendStatus.build_artifacts && frontendStatus.build_artifacts.dist_path) ? `<p><strong data-i18n="setup.review.fields.output_directory"></strong>: <code>${frontendStatus.build_artifacts.dist_path}</code></p>` : ''}
+                        <p><strong data-i18n="setup.review.fields.ssr_enabled"></strong>: ${config.app.ssr_enabled ? (window.i18n ? window.i18n.t('common.yes') : 'Yes') : (window.i18n ? window.i18n.t('common.no') : 'No')}</p>
+                        ${config.app.ssr_enabled ? `
+                            <p><strong data-i18n="setup.review.fields.frontend_scripts"></strong>: ${config.app.frontend_scripts ? config.app.frontend_scripts.join(', ') : ''}</p>
+                            <p><strong data-i18n="setup.review.fields.frontend_styles"></strong>: ${config.app.frontend_styles ? config.app.frontend_styles.join(', ') : ''}</p>
+                            <p><strong data-i18n="setup.review.fields.frontend_container_id"></strong>: ${config.app.frontend_container_id || ''}</p>
+                        ` : ''}
                     ` : ''}
                 </div>
             `;

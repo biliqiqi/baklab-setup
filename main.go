@@ -127,6 +127,7 @@ func main() {
 		r.Get("/frontend/status", handlers.GetFrontendStatusHandler)
 		r.Post("/frontend/build", handlers.BuildFrontendHandler)
 		r.Get("/frontend/build/stream", handlers.StreamFrontendBuildHandler)
+		r.Post("/frontend/extract-assets", handlers.ExtractFrontendAssetsHandler)
 
 		r.Post("/complete", handlers.CompleteSetupHandler)
 	})

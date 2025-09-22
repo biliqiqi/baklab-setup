@@ -390,7 +390,8 @@
         "ssl": "SSL/HTTPS",
         "goaccess": "Analytics Service",
         "application": "Application",
-        "administrator": "Administrator"
+        "administrator": "Administrator",
+        "frontend_build": "Frontend Build"
       },
       
       "fields": {
@@ -426,6 +427,8 @@
         "frontend_scripts": "Frontend Scripts",
         "frontend_styles": "Frontend Styles",
         "frontend_container_id": "Frontend Container ID",
+        "build_status": "Build Status",
+        "output_directory": "Output Directory",
         "username": "Username",
         "email": "Email"
       },
@@ -457,11 +460,15 @@
       "status_built": "Built",
       "status_not_built": "Not Built",
       "last_build": "Last Build",
+      "output_directory": "Output Directory",
       "build_button": "Build Frontend",
       "building": "Building...",
       "build_logs": "Build Logs",
       "build_success": "Frontend built successfully!",
-      "build_failed": "Frontend build failed. Check the logs for details."
+      "build_failed": "Frontend build failed. Check the logs for details.",
+      "ssr_auto_detected_notice": "Frontend assets will be automatically detected and populated after building.",
+      "ssr_auto_extracted_help": "These assets are automatically extracted from the frontend build. You can edit them if needed.",
+      "ssr_auto_filled_notice": "Frontend assets have been automatically detected and filled from the built frontend."
     },
 
     "completed": {
