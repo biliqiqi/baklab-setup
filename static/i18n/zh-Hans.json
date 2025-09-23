@@ -455,7 +455,7 @@
       "title": "Web前端",
       "description": "构建和配置Web前端应用。BakLab 前端代码开源于 <a href='https://github.com/biliqiqi/baklab-web' target='_blank'>github.com/biliqiqi/baklab-web</a>。如果您希望自行构建和托管前端，可以跳过此步骤。",
       "preparation_title": "准备工作",
-      "preparation_description": "在构建前端之前，请确保服务端已安装 npm。",
+      "preparation_description": "在构建前端之前，请确保服务端已安装 Node.js >= 20.16.0。",
       "env_vars_title": "环境变量",
       "no_env_vars": "未配置环境变量",
       "build_status_title": "构建状态",

@@ -729,7 +729,7 @@ func (h *SetupHandlers) GetCurrentCertPathsHandler(w http.ResponseWriter, r *htt
 }
 
 func (h *SetupHandlers) renderUnauthorizedPage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusUnauthorized)
 
 	localizer := h.getLocalizerFromContext(r)
@@ -945,13 +945,14 @@ func (h *SetupHandlers) StreamFrontendBuildHandler(w http.ResponseWriter, r *htt
 	cfg, err := h.setupService.GetSetupConfig()
 	if err != nil {
 		// 如果配置不存在，无法进行构建
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "Configuration not found. Please complete the setup steps first.")
 		return
 	}
 
 	// 设置SSE headers
-	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
