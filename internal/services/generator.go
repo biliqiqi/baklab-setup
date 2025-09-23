@@ -1198,11 +1198,14 @@ func (g *GeneratorService) GenerateFrontendEnvVars(cfg *model.SetupConfig) []str
 	}
 }
 
+
 // runNpmCommand 运行 npm 命令
 func (g *GeneratorService) runNpmCommand(workDir string, args []string, envVars []string) error {
 	log.Printf("Running command: %v in directory: %s", args, workDir)
 
-	cmd := exec.Command(args[0], args[1:]...)
+	// 使用 shell 来执行命令，这样可以继承完整的环境变量
+	cmdStr := strings.Join(args, " ")
+	cmd := exec.Command("/bin/sh", "-c", cmdStr)
 	cmd.Dir = workDir
 
 	// 设置环境变量
@@ -1295,7 +1298,9 @@ func (g *GeneratorService) BuildFrontendWithStream(cfg *model.SetupConfig, outpu
 func (g *GeneratorService) runNpmCommandWithStream(workDir string, args []string, envVars []string, outputChan chan<- string) error {
 	outputChan <- fmt.Sprintf("Running command: %v in directory: %s", args, workDir)
 
-	cmd := exec.Command(args[0], args[1:]...)
+	// 使用 shell 来执行命令，这样可以继承完整的环境变量
+	cmdStr := strings.Join(args, " ")
+	cmd := exec.Command("/bin/sh", "-c", cmdStr)
 	cmd.Dir = workDir
 
 	// 设置环境变量
