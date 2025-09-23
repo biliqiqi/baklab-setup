@@ -1085,6 +1085,10 @@ p code {
 }
 
 /* Frontend Step Styles */
+.info-section details summary {
+    cursor: pointer;
+}
+
 .env-vars-container {
     background: var(--gray-50);
     border: 1px solid var(--gray-200);

@@ -110,8 +110,8 @@ type AppConfig struct {
 	CloudflareSecret  string      `json:"cloudflare_secret"`
 	// 服务端渲染配置
 	SSREnabled          bool     `json:"ssr_enabled"`
-	FrontendScripts     []string `json:"frontend_scripts" validate:"required_if=SSREnabled true"`
-	FrontendStyles      []string `json:"frontend_styles" validate:"required_if=SSREnabled true"`
+	FrontendScripts     []string `json:"frontend_scripts"`
+	FrontendStyles      []string `json:"frontend_styles"`
 	FrontendContainerId string   `json:"frontend_container_id" validate:"required_if=SSREnabled true"`
 }
 

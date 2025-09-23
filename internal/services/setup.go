@@ -204,12 +204,13 @@ func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to handle JWT key file: %w", err)
 	}
 
-	// 处理前端构建文件
+	// 处理前端构建文件（可选）
 	// 检查前端构建文件是否存在
 	frontendDistPath := "./frontend/dist"
 	_, err := os.Stat(frontendDistPath)
 	frontendFilesExist := err == nil
 
+	// 只有在已构建且文件存在时才复制前端文件
 	if cfg.Frontend.Built && frontendFilesExist {
 		// 前端已经构建过，直接复制到输出目录
 		if err := s.updateSetupProgress("frontend_copy", 95, "Copying frontend files..."); err != nil {
@@ -219,40 +220,12 @@ func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 		if err := s.generator.CopyFrontendToOutput(); err != nil {
 			return fmt.Errorf("failed to copy frontend files to output: %w", err)
 		}
+		log.Printf("Frontend files copied to output directory")
 	} else {
-		// 前端未构建或构建文件不存在，需要先构建再复制
-		var message string
-		if !cfg.Frontend.Built {
-			message = "Building frontend..."
-		} else {
-			message = "Frontend files missing, rebuilding..."
-		}
-
-		if err := s.updateSetupProgress("frontend_build", 95, message); err != nil {
+		// 前端未构建或文件不存在 - 跳过前端构建步骤
+		log.Printf("Frontend build skipped - files not built or missing")
+		if err := s.updateSetupProgress("frontend_skip", 95, "Frontend build skipped (optional)"); err != nil {
 			return err
-		}
-
-		if err := s.generator.BuildFrontend(cfg); err != nil {
-			return fmt.Errorf("failed to build frontend: %w", err)
-		}
-
-		// 复制前端构建文件到输出目录
-		if err := s.generator.CopyFrontendToOutput(); err != nil {
-			return fmt.Errorf("failed to copy frontend files to output: %w", err)
-		}
-
-		// 更新前端构建状态
-		cfg.Frontend.Built = true
-		cfg.Frontend.BuildTime = time.Now()
-
-		// 保存提取的前端资源到配置中
-		if len(cfg.App.FrontendScripts) > 0 || len(cfg.App.FrontendStyles) > 0 {
-			log.Printf("Saving extracted frontend assets: %d scripts, %d styles",
-				len(cfg.App.FrontendScripts), len(cfg.App.FrontendStyles))
-		}
-
-		if err := s.SaveConfiguration(cfg); err != nil {
-			log.Printf("Warning: failed to save frontend build status: %v", err)
 		}
 	}
 

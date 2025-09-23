@@ -1835,15 +1835,11 @@ class SetupApp {
         container.innerHTML = `
             <form id="frontend-form" class="form-section" novalidate>
                 <h3 data-i18n="setup.frontend.title"></h3>
-                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.frontend.description"></p>
+                <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n-html="setup.frontend.description"></p>
 
                 <div class="info-section" style="margin-bottom: 1.5rem;">
-                    <h4 data-i18n="setup.frontend.env_vars_title"></h4>
-                    <div id="frontend-env-vars" class="env-vars-container">
-                        <div class="loading-spinner">
-                            <span data-i18n="common.loading"></span>
-                        </div>
-                    </div>
+                    <h4 data-i18n="setup.frontend.preparation_title"></h4>
+                    <p style="color: var(--gray-600);" data-i18n="setup.frontend.preparation_description"></p>
                 </div>
 
                 <div class="info-section" style="margin-bottom: 1.5rem;">
@@ -1853,6 +1849,17 @@ class SetupApp {
                             <span data-i18n="common.loading"></span>
                         </div>
                     </div>
+                </div>
+
+                <div class="info-section" style="margin-bottom: 1.5rem;">
+                    <details>
+                        <summary data-i18n="setup.frontend.env_vars_title"></summary>
+                        <div id="frontend-env-vars" class="env-vars-container" style="margin-top: 0.75rem;">
+                            <div class="loading-spinner">
+                                <span data-i18n="common.loading"></span>
+                            </div>
+                        </div>
+                    </details>
                 </div>
 
                 <div class="build-actions" style="margin-bottom: 1.5rem;">

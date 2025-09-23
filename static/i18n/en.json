@@ -453,7 +453,9 @@
 
     "frontend": {
       "title": "Web Frontend",
-      "description": "Build and configure the web frontend application",
+      "description": "Build and configure the web frontend application. BakLab's frontend code is open source at <a href='https://github.com/biliqiqi/baklab-web' target='_blank'>github.com/biliqiqi/baklab-web</a>. You can skip this step if you prefer to build and host the frontend yourself.",
+      "preparation_title": "Preparation",
+      "preparation_description": "Before building the frontend, please ensure that npm is installed on the server.",
       "env_vars_title": "Environment Variables",
       "no_env_vars": "No environment variables configured",
       "build_status_title": "Build Status",

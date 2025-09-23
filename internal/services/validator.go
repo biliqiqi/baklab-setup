@@ -399,8 +399,12 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 
 	// goaccess 不需要强制验证，跳过
 
+	// frontend 步骤现在是可选的，不再强制验证
 	if currentStepIndex >= 9 { // frontend
-		errors = append(errors, v.validateFrontendConfig(cfg.App)...)
+		// 只有在用户明确启用 SSR 时才进行验证
+		if cfg.App.SSREnabled {
+			errors = append(errors, v.validateFrontendConfig(cfg.App)...)
+		}
 	}
 
 	return errors
@@ -984,18 +988,14 @@ func (v *ValidatorService) validateSSLConfig(cfg model.SSLConfig) []model.Valida
 	return errors
 }
 
-// validateFrontendConfig 验证前端和SSR配置
+// validateFrontendConfig 验证前端和SSR配置（前端构建现在是可选的）
 func (v *ValidatorService) validateFrontendConfig(cfg model.AppConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
 	// 服务端渲染配置验证
 	if cfg.SSREnabled {
-		if len(cfg.FrontendScripts) == 0 {
-			errors = append(errors, model.ValidationError{
-				Field:   "app.frontend_scripts",
-				Message: "key:validation.app.frontend_scripts_required",
-			})
-		} else {
+		// 只有当提供了前端脚本时才验证格式，不强制要求必须有
+		if len(cfg.FrontendScripts) > 0 {
 			// 支持相对路径（以/开头）和绝对URL（以https?://开头）
 			urlRegex := regexp.MustCompile(`^(https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?|/[^/].*\.(js|mjs)(\?.*)?$)`)
 			for i, script := range cfg.FrontendScripts {
@@ -1008,12 +1008,8 @@ func (v *ValidatorService) validateFrontendConfig(cfg model.AppConfig) []model.V
 			}
 		}
 
-		if len(cfg.FrontendStyles) == 0 {
-			errors = append(errors, model.ValidationError{
-				Field:   "app.frontend_styles",
-				Message: "key:validation.app.frontend_styles_required",
-			})
-		} else {
+		// 只有当提供了前端样式时才验证格式，不强制要求必须有
+		if len(cfg.FrontendStyles) > 0 {
 			// 支持相对路径（以/开头）和绝对URL（以https?://开头）
 			urlRegex := regexp.MustCompile(`^(https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?|/[^/].*\.(css)(\?.*)?$)`)
 			for i, style := range cfg.FrontendStyles {
@@ -1026,6 +1022,7 @@ func (v *ValidatorService) validateFrontendConfig(cfg model.AppConfig) []model.V
 			}
 		}
 
+		// Container ID 仍然是必须的，如果启用了 SSR
 		if cfg.FrontendContainerId == "" {
 			errors = append(errors, model.ValidationError{
 				Field:   "app.frontend_container_id",
