@@ -1252,13 +1252,15 @@ func (g *GeneratorService) findNpmPath() (string, error) {
 func (g *GeneratorService) runNpmCommand(workDir string, args []string, envVars []string) error {
 	log.Printf("Running command: %v in directory: %s", args, workDir)
 
-	// 查找 npm 路径
+	// 查找 npm 路径并设置 node 环境
+	var nodeDir string
 	if len(args) > 0 && args[0] == "npm" {
 		npmPath, err := g.findNpmPath()
 		if err != nil {
 			return fmt.Errorf("failed to find npm: %w", err)
 		}
 		args[0] = npmPath
+		nodeDir = filepath.Dir(npmPath) // npm 和 node 通常在同一目录
 		log.Printf("Using npm at: %s", npmPath)
 	}
 
@@ -1267,6 +1269,15 @@ func (g *GeneratorService) runNpmCommand(workDir string, args []string, envVars 
 
 	// 设置环境变量
 	cmd.Env = os.Environ()
+
+	// 如果我们找到了 npm，确保 node 也在 PATH 中
+	if nodeDir != "" {
+		currentPath := os.Getenv("PATH")
+		newPath := nodeDir + ":" + currentPath
+		cmd.Env = append(cmd.Env, "PATH="+newPath)
+		log.Printf("Updated PATH to include node directory: %s", nodeDir)
+	}
+
 	if envVars != nil {
 		cmd.Env = append(cmd.Env, envVars...)
 		log.Printf("Additional environment variables: %v", envVars)
@@ -1355,13 +1366,15 @@ func (g *GeneratorService) BuildFrontendWithStream(cfg *model.SetupConfig, outpu
 func (g *GeneratorService) runNpmCommandWithStream(workDir string, args []string, envVars []string, outputChan chan<- string) error {
 	outputChan <- fmt.Sprintf("Running command: %v in directory: %s", args, workDir)
 
-	// 查找 npm 路径
+	// 查找 npm 路径并设置 node 环境
+	var nodeDir string
 	if len(args) > 0 && args[0] == "npm" {
 		npmPath, err := g.findNpmPath()
 		if err != nil {
 			return fmt.Errorf("failed to find npm: %w", err)
 		}
 		args[0] = npmPath
+		nodeDir = filepath.Dir(npmPath) // npm 和 node 通常在同一目录
 		outputChan <- fmt.Sprintf("Using npm at: %s", npmPath)
 	}
 
@@ -1370,6 +1383,15 @@ func (g *GeneratorService) runNpmCommandWithStream(workDir string, args []string
 
 	// 设置环境变量
 	cmd.Env = os.Environ()
+
+	// 如果我们找到了 npm，确保 node 也在 PATH 中
+	if nodeDir != "" {
+		currentPath := os.Getenv("PATH")
+		newPath := nodeDir + ":" + currentPath
+		cmd.Env = append(cmd.Env, "PATH="+newPath)
+		outputChan <- fmt.Sprintf("Updated PATH to include node directory: %s", nodeDir)
+	}
+
 	if envVars != nil {
 		cmd.Env = append(cmd.Env, envVars...)
 		outputChan <- fmt.Sprintf("Additional environment variables: %v", envVars)
