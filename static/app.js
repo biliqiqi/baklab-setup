@@ -109,17 +109,18 @@ class SetupApp {
         try {
             // 从本地缓存加载配置
             this.loadFromLocalCache();
-            
-            // 检查是否有已存在的配置文件
-            
+
             // 检查URL中的token
             const urlParams = new URLSearchParams(window.location.search);
             const urlToken = urlParams.get('token');
             if (urlToken) {
                 this.token = urlToken;
                 this.currentStep = 0; // 从欢迎页开始
+
+                // 检查是否有导入的配置
+                await this.checkAndLoadImportedConfig();
             }
-            
+
             this.render();
         } catch (error) {
             console.error('Initialization error:', error);
@@ -3177,6 +3178,31 @@ class SetupApp {
             }
         } catch (error) {
             console.warn('Failed to load from localStorage:', error);
+        }
+    }
+
+    // 检查并加载导入的配置
+    async checkAndLoadImportedConfig() {
+        try {
+            // 获取状态信息，检查是否处于修订模式
+            const statusResponse = await this.api('GET', '/api/status');
+            if (statusResponse.success && statusResponse.data && statusResponse.data.revision_mode && statusResponse.data.revision_mode.enabled) {
+                console.log('Revision mode detected, loading imported configuration...');
+
+                // 获取导入的配置
+                const configResponse = await this.api('GET', '/api/config');
+                if (configResponse.success && configResponse.data) {
+                    // 将导入的配置合并到当前配置中
+                    this.config = { ...this.config, ...configResponse.data };
+
+                    // 使用现有的缓存机制保存配置
+                    this.saveToLocalCache();
+
+                    console.log('Imported configuration loaded and cached:', statusResponse.data.revision_mode);
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to check or load imported configuration:', error);
         }
     }
     

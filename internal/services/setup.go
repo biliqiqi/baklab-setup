@@ -3,9 +3,11 @@ package services
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/biliqiqi/baklab-setup/internal/model"
@@ -190,6 +192,11 @@ func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 	// 生成Docker配置文件
 	if err := s.generator.GenerateDockerConfig(cfg); err != nil {
 		return fmt.Errorf("failed to generate docker config: %w", err)
+	}
+
+	// 保存完整的配置到.baklab-setup目录
+	if err := s.generator.SaveSetupConfiguration(cfg); err != nil {
+		return fmt.Errorf("failed to save setup configuration: %w", err)
 	}
 
 	// 处理JWT密钥文件
@@ -404,4 +411,69 @@ func (s *SetupService) BuildFrontendWithStream(cfg *model.SetupConfig, outputCha
 
 	outputChan <- "Frontend assets saved to configuration"
 	return nil
+}
+
+// ImportConfiguration 导入配置文件
+func (s *SetupService) ImportConfiguration(configData []byte) (*model.SetupConfig, error) {
+	var cfg model.SetupConfig
+	if err := json.Unmarshal(configData, &cfg); err != nil {
+		return nil, fmt.Errorf("failed to parse configuration: %w", err)
+	}
+
+	// 检查是否包含敏感信息清理的标记
+	sanitizedImport := s.isSanitizedConfig(&cfg)
+
+	// 标记为修订模式
+	cfg.RevisionMode.Enabled = true
+	cfg.RevisionMode.ImportedAt = time.Now()
+
+	if sanitizedImport {
+		cfg.RevisionMode.ModifiedSteps = append(cfg.RevisionMode.ModifiedSteps,
+			"NOTICE: Passwords and secrets need to be re-entered")
+		log.Printf("Imported sanitized configuration - passwords and secrets need to be re-entered")
+	}
+
+	// 复用现有校验器进行格式校验，但允许部分字段缺失
+	// 对于导入的配置，校验错误只作为警告记录，不阻止导入
+	validationErrors := s.validator.ValidateConfig(&cfg)
+	if len(validationErrors) > 0 {
+		log.Printf("Imported configuration has %d validation warnings (will be addressed during setup):", len(validationErrors))
+		for _, err := range validationErrors {
+			log.Printf("  - %s: %s", err.Field, err.Message)
+		}
+		// 将警告信息添加到修订步骤中
+		cfg.RevisionMode.ModifiedSteps = append(cfg.RevisionMode.ModifiedSteps,
+			fmt.Sprintf("VALIDATION_WARNINGS: %d fields need attention", len(validationErrors)))
+	}
+
+	// 保存导入的配置
+	if err := s.storage.SaveSetupConfig(&cfg); err != nil {
+		return nil, fmt.Errorf("failed to save imported configuration: %w", err)
+	}
+
+	// 更新状态
+	statusMsg := "Configuration imported successfully"
+	if sanitizedImport {
+		statusMsg = "Sanitized configuration imported - passwords required"
+	}
+	if err := s.updateSetupProgress("import", 25, statusMsg); err != nil {
+		log.Printf("Warning: failed to update setup progress: %v", err)
+	}
+
+	return &cfg, nil
+}
+
+// isSanitizedConfig checks if the configuration has been sanitized (passwords removed)
+func (s *SetupService) isSanitizedConfig(cfg *model.SetupConfig) bool {
+	// Check for security notice in modified steps
+	for _, step := range cfg.RevisionMode.ModifiedSteps {
+		if strings.Contains(step, "SECURITY_NOTICE") {
+			return true
+		}
+	}
+
+	// Check if critical passwords are empty (likely sanitized)
+	return cfg.Database.AppPassword == "" &&
+		   cfg.Redis.Password == "" &&
+		   cfg.AdminUser.Password == ""
 }

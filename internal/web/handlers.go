@@ -176,13 +176,24 @@ func (h *SetupHandlers) StatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 检查是否有导入的配置
+	var revisionMode map[string]interface{}
+	if cfg, err := h.setupService.GetSetupConfig(); err == nil && cfg.RevisionMode.Enabled {
+		revisionMode = map[string]interface{}{
+			"enabled":        cfg.RevisionMode.Enabled,
+			"imported_at":    cfg.RevisionMode.ImportedAt,
+			"modified_steps": cfg.RevisionMode.ModifiedSteps,
+		}
+	}
+
 	// 只返回基本状态信息，不包含敏感数据
 	safeState := map[string]interface{}{
-		"status":       state.Status,
-		"current_step": state.CurrentStep,
-		"progress":     state.Progress,
-		"message":      state.Message,
-		"updated_at":   state.UpdatedAt,
+		"status":        state.Status,
+		"current_step":  state.CurrentStep,
+		"progress":      state.Progress,
+		"message":       state.Message,
+		"updated_at":    state.UpdatedAt,
+		"revision_mode": revisionMode,
 	}
 
 	h.writeJSONResponse(w, model.SetupResponse{

@@ -122,18 +122,26 @@ type AdminUserConfig struct {
 	Password string `json:"password" validate:"required,min=8"`
 }
 
+// RevisionMode 修订模式状态
+type RevisionMode struct {
+	Enabled       bool      `json:"enabled"`
+	ImportedAt    time.Time `json:"imported_at,omitempty"`
+	ModifiedSteps []string  `json:"modified_steps,omitempty"`
+}
+
 // SetupConfig 完整的setup配置
 type SetupConfig struct {
-	Database    DatabaseConfig  `json:"database"`
-	Redis       RedisConfig     `json:"redis"`
-	SMTP        SMTPConfig      `json:"smtp"`
-	App         AppConfig       `json:"app"`
-	OAuth       OAuthConfig     `json:"oauth"` // 第三方登录配置
-	AdminUser   AdminUserConfig `json:"admin_user"`
-	GoAccess    GoAccessConfig  `json:"goaccess"`
-	SSL         SSLConfig       `json:"ssl"`
-	Frontend    FrontendConfig  `json:"frontend"`
-	CurrentStep string          `json:"current_step,omitempty"` // 当前步骤，用于递增验证
+	Database     DatabaseConfig  `json:"database"`
+	Redis        RedisConfig     `json:"redis"`
+	SMTP         SMTPConfig      `json:"smtp"`
+	App          AppConfig       `json:"app"`
+	OAuth        OAuthConfig     `json:"oauth"` // 第三方登录配置
+	AdminUser    AdminUserConfig `json:"admin_user"`
+	GoAccess     GoAccessConfig  `json:"goaccess"`
+	SSL          SSLConfig       `json:"ssl"`
+	Frontend     FrontendConfig  `json:"frontend"`
+	CurrentStep  string          `json:"current_step,omitempty"`  // 当前步骤，用于递增验证
+	RevisionMode RevisionMode    `json:"revision_mode,omitempty"` // 修订模式状态
 }
 
 // SetupToken 访问令牌

@@ -1036,3 +1036,4 @@ func (v *ValidatorService) validateFrontendConfig(cfg model.AppConfig) []model.V
 
 	return errors
 }
+

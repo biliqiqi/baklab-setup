@@ -27,15 +27,15 @@ import (
 )
 
 var (
+	certFile   = flag.String("cert", "", "TLS certificate file path (REQUIRED)")
+	keyFile    = flag.String("key", "", "TLS private key file path (REQUIRED)")
+	domain     = flag.String("domain", "", "Domain name for HTTPS access (REQUIRED)")
+	
+	configFile = flag.String("config", "", "Import existing config.json file for revision")
+	timeout = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
 	port      = flag.String("port", "8443", "HTTPS port to run the setup server on")
 	dataDir   = flag.String("data", "./data", "Directory to store setup data")
 	staticDir = flag.String("static", "./static", "Directory containing static files")
-
-	certFile = flag.String("cert", "", "TLS certificate file path (REQUIRED)")
-	keyFile  = flag.String("key", "", "TLS private key file path (REQUIRED)")
-	domain   = flag.String("domain", "", "Domain name for HTTPS access (REQUIRED)")
-
-	timeout = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
 )
 
 func main() {
@@ -83,6 +83,14 @@ func main() {
 	jsonStorage := storage.NewJSONStorage(*dataDir)
 
 	setupService := services.NewSetupService(jsonStorage)
+
+	// Handle config file import if specified
+	if *configFile != "" {
+		if err := importConfigFile(setupService, *configFile); err != nil {
+			log.Fatalf("Failed to import config file: %v", err)
+		}
+		log.Printf("Configuration imported from: %s", *configFile)
+	}
 
 	i18nManager := i18n.NewI18nManager(language.English)
 
@@ -301,4 +309,26 @@ func cleanupSensitiveData(dataDir string) {
 
 	runtime.GC()
 	log.Println("Security cleanup completed")
+}
+
+// importConfigFile imports configuration from a JSON file
+func importConfigFile(setupService *services.SetupService, configPath string) error {
+	// Check if file exists
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return fmt.Errorf("config file not found: %s", configPath)
+	}
+
+	// Read config file
+	configData, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	// Import configuration
+	_, err = setupService.ImportConfiguration(configData)
+	if err != nil {
+		return fmt.Errorf("failed to import configuration: %w", err)
+	}
+
+	return nil
 }

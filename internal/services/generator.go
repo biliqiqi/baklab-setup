@@ -1488,3 +1488,85 @@ func (g *GeneratorService) normalizeAssetPath(path string, cfg *model.SetupConfi
 	// For absolute paths that don't start with /static/, assume they need /static/frontend/ prefix
 	return fmt.Sprintf("/static/frontend%s", path)
 }
+
+// SaveSetupConfiguration saves the complete setup configuration to .baklab-setup directory
+func (g *GeneratorService) SaveSetupConfiguration(cfg *model.SetupConfig) error {
+	// Create .baklab-setup directory
+	setupDir := filepath.Join(g.outputDir, ".baklab-setup")
+	if err := os.MkdirAll(setupDir, 0755); err != nil {
+		return fmt.Errorf("failed to create .baklab-setup directory: %w", err)
+	}
+
+	// Create a sanitized copy for saving
+	sanitizedCfg := g.sanitizeConfigForSaving(*cfg)
+
+	// Save sanitized configuration
+	configPath := filepath.Join(setupDir, "config.json")
+	configData, err := json.MarshalIndent(sanitizedCfg, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal configuration: %w", err)
+	}
+
+	if err := os.WriteFile(configPath, configData, 0644); err != nil {
+		return fmt.Errorf("failed to write config.json: %w", err)
+	}
+
+	// Save simple readme
+	readmeContent := fmt.Sprintf(`BakLab Setup Configuration - Generated: %s
+
+config.json: Setup configuration for revision and redeployment
+SECURITY: Passwords and secrets have been removed for safety
+Use this file with BakLab setup tool to modify existing deployment
+Domain: %s
+`,
+		time.Now().Format("2006-01-02 15:04:05"),
+		cfg.App.DomainName,
+	)
+
+	readmePath := filepath.Join(setupDir, "readme.txt")
+	if err := os.WriteFile(readmePath, []byte(readmeContent), 0644); err != nil {
+		return fmt.Errorf("failed to write readme.txt: %w", err)
+	}
+
+	log.Printf("Setup configuration saved to %s", setupDir)
+	return nil
+}
+
+// sanitizeConfigForSaving creates a copy of config with sensitive information removed
+func (g *GeneratorService) sanitizeConfigForSaving(cfg model.SetupConfig) model.SetupConfig {
+	// Create a deep copy
+	sanitized := cfg
+
+	// Clear sensitive database passwords
+	sanitized.Database.SuperPassword = ""
+	sanitized.Database.AppPassword = ""
+
+	// Clear sensitive Redis passwords
+	sanitized.Redis.Password = ""
+	sanitized.Redis.AdminPassword = ""
+
+	// Clear SMTP password
+	sanitized.SMTP.Password = ""
+
+	// Clear admin user password
+	sanitized.AdminUser.Password = ""
+
+	// Clear OAuth client secrets
+	sanitized.OAuth.GoogleSecret = ""
+	sanitized.OAuth.GithubSecret = ""
+	sanitized.App.OAuth.GoogleSecret = ""
+	sanitized.App.OAuth.GithubSecret = ""
+
+	// Clear Cloudflare secret
+	sanitized.App.CloudflareSecret = ""
+
+	// Clear temporary file paths that may contain sensitive data
+	sanitized.GoAccess.GeoTempPath = ""
+	sanitized.App.JWTKeyTempPath = ""
+
+	// Add security notice to revision mode
+	sanitized.RevisionMode.ModifiedSteps = append(sanitized.RevisionMode.ModifiedSteps,
+		"SECURITY_NOTICE: Passwords and secrets removed for safety")
+
+	return sanitized
+}
