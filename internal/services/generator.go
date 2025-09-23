@@ -1199,13 +1199,70 @@ func (g *GeneratorService) GenerateFrontendEnvVars(cfg *model.SetupConfig) []str
 }
 
 
+// findNpmPath 查找 npm 可执行文件路径
+func (g *GeneratorService) findNpmPath() (string, error) {
+	// 首先尝试直接查找
+	if npmPath, err := exec.LookPath("npm"); err == nil {
+		return npmPath, nil
+	}
+
+	// 检查是否在 sudo 环境下运行
+	isSudo := os.Getenv("SUDO_USER") != ""
+	if isSudo {
+		sudoUser := os.Getenv("SUDO_USER")
+		sudoUID := os.Getenv("SUDO_UID")
+		log.Printf("Detected sudo environment. Original user: %s (UID: %s)", sudoUser, sudoUID)
+
+		// 尝试在常见的 Node.js 安装路径中查找 npm
+		commonPaths := []string{
+			"/usr/local/bin/npm",
+			"/usr/bin/npm",
+			"/opt/homebrew/bin/npm",
+			fmt.Sprintf("/home/%s/.nvm/versions/node/*/bin/npm", sudoUser),
+			fmt.Sprintf("/home/%s/.local/bin/npm", sudoUser),
+		}
+
+		for _, path := range commonPaths {
+			// 处理通配符路径
+			if strings.Contains(path, "*") {
+				matches, _ := filepath.Glob(path)
+				for _, match := range matches {
+					if _, err := os.Stat(match); err == nil {
+						return match, nil
+					}
+				}
+			} else {
+				if _, err := os.Stat(path); err == nil {
+					return path, nil
+				}
+			}
+		}
+
+		// 如果都找不到，返回明确的错误信息
+		return "", fmt.Errorf("npm not found in sudo environment. Please try one of these solutions:\n" +
+			"1. Run setup without sudo: ./baklab-setup [options]\n" +
+			"2. Install Node.js globally: sudo apt install nodejs npm (Ubuntu/Debian) or sudo yum install nodejs npm (CentOS/RHEL)\n" +
+			"3. Add npm to PATH: export PATH=$PATH:/path/to/node/bin")
+	}
+
+	return "", fmt.Errorf("npm executable not found. Please ensure Node.js and npm are installed")
+}
+
 // runNpmCommand 运行 npm 命令
 func (g *GeneratorService) runNpmCommand(workDir string, args []string, envVars []string) error {
 	log.Printf("Running command: %v in directory: %s", args, workDir)
 
-	// 使用 shell 来执行命令，这样可以继承完整的环境变量
-	cmdStr := strings.Join(args, " ")
-	cmd := exec.Command("/bin/sh", "-c", cmdStr)
+	// 查找 npm 路径
+	if len(args) > 0 && args[0] == "npm" {
+		npmPath, err := g.findNpmPath()
+		if err != nil {
+			return fmt.Errorf("failed to find npm: %w", err)
+		}
+		args[0] = npmPath
+		log.Printf("Using npm at: %s", npmPath)
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Dir = workDir
 
 	// 设置环境变量
@@ -1298,9 +1355,17 @@ func (g *GeneratorService) BuildFrontendWithStream(cfg *model.SetupConfig, outpu
 func (g *GeneratorService) runNpmCommandWithStream(workDir string, args []string, envVars []string, outputChan chan<- string) error {
 	outputChan <- fmt.Sprintf("Running command: %v in directory: %s", args, workDir)
 
-	// 使用 shell 来执行命令，这样可以继承完整的环境变量
-	cmdStr := strings.Join(args, " ")
-	cmd := exec.Command("/bin/sh", "-c", cmdStr)
+	// 查找 npm 路径
+	if len(args) > 0 && args[0] == "npm" {
+		npmPath, err := g.findNpmPath()
+		if err != nil {
+			return fmt.Errorf("failed to find npm: %w", err)
+		}
+		args[0] = npmPath
+		outputChan <- fmt.Sprintf("Using npm at: %s", npmPath)
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Dir = workDir
 
 	// 设置环境变量
