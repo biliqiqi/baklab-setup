@@ -131,11 +131,11 @@ func main() {
 		r.Post("/upload/geo-file", handlers.UploadGeoFileHandler)
 		// r.Post("/upload/jwt-key-file", handlers.UploadJWTKeyFileHandler) // 已注释：改为自动生成JWT密钥
 
-		// Frontend build endpoints
-		r.Get("/frontend/status", handlers.GetFrontendStatusHandler)
-		r.Post("/frontend/build", handlers.BuildFrontendHandler)
-		r.Get("/frontend/build/stream", handlers.StreamFrontendBuildHandler)
-		r.Post("/frontend/extract-assets", handlers.ExtractFrontendAssetsHandler)
+		// Frontend build endpoints (temporarily disabled - using docker image instead)
+		// r.Get("/frontend/status", handlers.GetFrontendStatusHandler)
+		// r.Post("/frontend/build", handlers.BuildFrontendHandler)
+		// r.Get("/frontend/build/stream", handlers.StreamFrontendBuildHandler)
+		// r.Post("/frontend/extract-assets", handlers.ExtractFrontendAssetsHandler)
 
 		r.Post("/complete", handlers.CompleteSetupHandler)
 	})

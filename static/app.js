@@ -94,7 +94,7 @@ class SetupApp {
             { key: 'admin', titleKey: 'setup.steps.admin_user', handler: this.renderAdminStep },
             { key: 'oauth', titleKey: 'setup.steps.oauth', handler: this.renderOAuthStep },
             { key: 'goaccess', titleKey: 'setup.steps.goaccess', handler: this.renderGoAccessStep },
-            { key: 'frontend', titleKey: 'setup.steps.frontend', handler: this.renderFrontendStep },
+            // { key: 'frontend', titleKey: 'setup.steps.frontend', handler: this.renderFrontendStep }, // temporarily disabled - using docker image
             { key: 'review', titleKey: 'setup.steps.review', handler: this.renderReviewStep },
             { key: 'config_complete', titleKey: 'setup.steps.config_complete', handler: this.renderConfigCompleteStep }
         ];

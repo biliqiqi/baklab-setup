@@ -4,14 +4,13 @@ set -e
 # Temporarily disable statement logging to prevent password leakage
 export PGCLIENTENCODING=UTF8
 
-# Create user if not exists (using PGPASSWORD to avoid logging)
-PGPASSWORD="${POSTGRES_PASSWORD}" psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres -c "
-DO \$\$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${APP_DB_USER}') THEN
-        CREATE ROLE ${APP_DB_USER} LOGIN PASSWORD '${APP_DB_PASSWORD}';
-    END IF;
-END \$\$;" > /dev/null 2>&1
+# Create user if not exists (using CREATE ROLE IF NOT EXISTS - PostgreSQL 9.1+)
+PGPASSWORD="${POSTGRES_PASSWORD}" psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres \
+-v app_user="${APP_DB_USER}" -v app_password="${APP_DB_PASSWORD}" << EOF > /dev/null 2>&1
+SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_password')
+WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = :'app_user')
+\\gexec
+EOF
 
 # Create database if not exists
 cat > /tmp/create-db.sql << EOF

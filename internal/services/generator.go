@@ -74,6 +74,14 @@ func (g *GeneratorService) ClearOutputDir() error {
 			continue
 		}
 
+		// 特殊处理 frontend_dist 目录的权限问题
+		if entry.Name() == "frontend_dist" {
+			if err := g.clearFrontendDistDir(entryPath); err != nil {
+				return fmt.Errorf("failed to clear frontend_dist directory: %w", err)
+			}
+			continue
+		}
+
 		// 删除其他文件和目录
 		if err := os.RemoveAll(entryPath); err != nil {
 			return fmt.Errorf("failed to remove %s: %w", entryPath, err)
@@ -109,6 +117,61 @@ func (g *GeneratorService) clearNginxDir(nginxPath string) error {
 		}
 	}
 
+	return nil
+}
+
+// clearFrontendDistDir 清理 frontend_dist 目录并处理权限问题
+func (g *GeneratorService) clearFrontendDistDir(frontendDistPath string) error {
+	// 检查目录是否存在
+	if _, err := os.Stat(frontendDistPath); os.IsNotExist(err) {
+		return nil
+	}
+
+	log.Printf("Clearing frontend_dist directory with permission fixes: %s", frontendDistPath)
+
+	// 递归修改权限，让当前用户可以删除
+	err := filepath.Walk(frontendDistPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			// 忽略权限错误，继续处理
+			log.Printf("Warning: failed to access %s during permission walk: %v", path, err)
+			return nil
+		}
+
+		// 修改权限：目录755，文件644
+		var perm os.FileMode
+		if info.IsDir() {
+			perm = 0755
+		} else {
+			perm = 0644
+		}
+
+		if err := os.Chmod(path, perm); err != nil {
+			log.Printf("Warning: failed to change permissions for %s: %v", path, err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Printf("Warning: failed to walk frontend_dist directory: %v", err)
+	}
+
+	// 现在尝试删除目录
+	if err := os.RemoveAll(frontendDistPath); err != nil {
+		log.Printf("Warning: failed to remove frontend_dist after permission fix: %v", err)
+		// 如果仍然删除失败，至少确保目录是空的
+		entries, readErr := os.ReadDir(frontendDistPath)
+		if readErr == nil {
+			for _, entry := range entries {
+				entryPath := filepath.Join(frontendDistPath, entry.Name())
+				if removeErr := os.RemoveAll(entryPath); removeErr != nil {
+					log.Printf("Warning: failed to remove %s: %v", entryPath, removeErr)
+				}
+			}
+		}
+		return err
+	}
+
+	log.Printf("Successfully cleared frontend_dist directory")
 	return nil
 }
 
@@ -211,6 +274,10 @@ APP_LOCAL_HOST=172.17.0.1
 # Setup Status
 SETUP_COMPLETED=true
 SETUP_COMPLETED_AT={{ .Timestamp }}
+
+# User Configuration (for Docker permissions)
+UID={{ .UserID }}
+GID={{ .GroupID }}
 `
 
 	// 定义模板函数
@@ -260,10 +327,14 @@ SETUP_COMPLETED_AT={{ .Timestamp }}
 		*model.SetupConfig
 		Timestamp   string
 		CORSOrigins string
+		UserID      string
+		GroupID     string
 	}{
 		SetupConfig: cfg,
 		Timestamp:   time.Now().Format(time.RFC3339),
 		CORSOrigins: corsOrigins,
+		UserID:      fmt.Sprintf("%d", os.Getuid()),
+		GroupID:     fmt.Sprintf("%d", os.Getgid()),
 	}
 
 	// 创建输出文件
@@ -343,8 +414,6 @@ services:
       STATIC_HOST_NAME: $STATIC_HOST_NAME
       CORS_ALLOW_ORIGINS: $CORS_ALLOW_ORIGINS
       FRONTEND_CONTAINER_ID: $FRONTEND_CONTAINER_ID
-      FRONTEND_SCRIPTS: $FRONTEND_SCRIPTS
-      FRONTEND_STYLES: $FRONTEND_STYLES
       GEOIP_ENABLED: $GEOIP_ENABLED
       GEOIP_FILE: $GEOIP_FILE
       I18N_FILE_DIR: $I18N_FILE_DIR
@@ -360,8 +429,27 @@ services:
       {{- else -}}
       - ./keys:/app/keys
       {{- end }}
-    {{- if or (eq .Database.ServiceType "docker") (eq .Redis.ServiceType "docker") }}
+      - ./frontend_dist:/frontend:ro
+    command: >
+      sh -c "
+        if [ -f /frontend/.env.frontend ]; then
+          echo 'Loading frontend environment variables...' &&
+          while IFS= read -r line; do
+            if [ -n \"$$line\" ] && [ \"$${line#\\#}\" = \"$$line\" ]; then
+              export \"$$line\"
+            fi
+          done < /frontend/.env.frontend &&
+          echo \"Loaded: FRONTEND_SCRIPTS=$$FRONTEND_SCRIPTS\" &&
+          echo \"Loaded: FRONTEND_STYLES=$$FRONTEND_STYLES\"
+        else
+          echo 'Frontend env file not found, using defaults'
+        fi &&
+        echo 'Starting baklab with original command...' &&
+        ./baklab seed core && ./baklab serve
+      "
     depends_on:
+      frontend-builder:
+        condition: service_completed_successfully
       {{- if eq .Database.ServiceType "docker" }}
       db:
         condition: service_healthy
@@ -370,7 +458,6 @@ services:
       redis:
         condition: service_healthy
       {{- end }}
-    {{- end }}
     {{- if or (eq .Database.ServiceType "docker") (eq .Redis.ServiceType "docker") }}
     links:
       {{- if eq .Database.ServiceType "docker" }}
@@ -474,6 +561,58 @@ services:
       timeout: 5s
       retries: 5
 {{ end }}
+  frontend-builder:
+    image: ghcr.io/biliqiqi/baklab-web:latest
+    container_name: "baklab-frontend-builder"
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      {{- if .SSL.Enabled }}
+      - VITE_STATIC_HOST=https://$STATIC_HOST_NAME
+      - VITE_API_HOST=https://$DOMAIN_NAME
+      - VITE_FRONTEND_HOST=https://$DOMAIN_NAME
+      {{- else }}
+      - VITE_STATIC_HOST=http://$STATIC_HOST_NAME
+      - VITE_API_HOST=http://$DOMAIN_NAME
+      - VITE_FRONTEND_HOST=http://$DOMAIN_NAME
+      {{- end }}
+      - VITE_BASE_URL=/static/frontend/
+      - VITE_API_PATH_PREFIX=/api/
+    volumes:
+      - ./frontend_dist:/output
+    command: >
+      sh -c "
+        # Copy frontend assets
+        cp -r /usr/share/nginx/html/* /output/ &&
+        echo 'Frontend assets copied to ./frontend_dist' &&
+
+        # Extract asset paths and generate environment file
+        cd /usr/share/nginx/html &&
+
+        # Initialize variables
+        SCRIPTS='' &&
+        STYLES='' &&
+
+        # Try Vite manifest first
+        if [ -f '.vite/manifest.json' ]; then
+          echo 'Extracting assets from Vite manifest...' &&
+          SCRIPTS=$$(cat .vite/manifest.json | grep -o '\"file\":\"[^\"]*\\.js\"' | sed 's/\"file\":\"//' | sed 's/\"//' | sed 's|^|/static/frontend/|' | tr '\\n' ',' | sed 's/,$$//') &&
+          STYLES=$$(cat .vite/manifest.json | grep -o '\"file\":\"[^\"]*\\.css\"' | sed 's/\"file\":\"//' | sed 's/\"//' | sed 's|^|/static/frontend/|' | tr '\\n' ',' | sed 's/,$$//')
+        # Fallback to parsing index.html
+        elif [ -f 'index.html' ]; then
+          echo 'Extracting assets from HTML...' &&
+          SCRIPTS=$$(grep -o 'src=\"[^\"]*\\.js\"' index.html | sed 's|src=\"|/static/frontend|' | sed 's/\"//' | tr '\\n' ',' | sed 's/,$$//') &&
+          STYLES=$$(grep -o 'href=\"[^\"]*\\.css\"' index.html | sed 's|href=\"|/static/frontend|' | sed 's/\"//' | tr '\\n' ',' | sed 's/,$$//')
+        fi &&
+
+        # Write environment file for webapp
+        echo \"FRONTEND_SCRIPTS=$$SCRIPTS\" > /output/.env.frontend &&
+        echo \"FRONTEND_STYLES=$$STYLES\" >> /output/.env.frontend &&
+
+        echo 'Frontend environment variables generated:' &&
+        cat /output/.env.frontend &&
+        exit 0
+      "
+    restart: "no"
   nginx:
     image: nginx:1.25.2-alpine
     container_name: "baklab-nginx"
