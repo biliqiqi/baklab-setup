@@ -428,6 +428,9 @@ services:
       BRAND_NAME: $BRAND_NAME
       DEBUG: $DEBUG
       TEST: $TEST
+      SUPER_USER: $SUPER_USER
+      SUPER_PASSWORD: $SUPER_PASSWORD
+      SUPER_USER_EMAIL: $SUPER_USER_EMAIL
     volumes:
       {{ if .App.JWTKeyFromFile -}}
       - {{ .App.JWTKeyFilePath }}:/app/keys/jwt-private.pem
@@ -450,8 +453,8 @@ services:
           export FRONTEND_SCRIPTS='' &&
           export FRONTEND_STYLES=''
         fi &&
-        echo 'Starting baklab with original command...' &&
-        ./baklab seed core && ./baklab serve
+        echo 'Starting baklab with entrypoint script...' &&
+        ./docker-entrypoint.sh
       "
     depends_on:
       frontend-builder:
