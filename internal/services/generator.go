@@ -432,17 +432,18 @@ services:
       - ./frontend_dist:/frontend:ro
     command: >
       sh -c "
-        if [ -f /frontend/.env.frontend ]; then
-          echo 'Loading frontend environment variables...' &&
-          while IFS= read -r line; do
-            if [ -n \"$$line\" ] && [ \"$${line#\\#}\" = \"$$line\" ]; then
-              export \"$$line\"
-            fi
-          done < /frontend/.env.frontend &&
+        if [ -f /frontend/.frontend-manifest.json ]; then
+          echo 'Loading frontend configuration from manifest...' &&
+          FRONTEND_SCRIPTS=$$(cat /frontend/.frontend-manifest.json | grep -o '\"scripts\":[[:space:]]*\"[^\"]*\"' | cut -d'\"' -f4) &&
+          FRONTEND_STYLES=$$(cat /frontend/.frontend-manifest.json | grep -o '\"styles\":[[:space:]]*\"[^\"]*\"' | cut -d'\"' -f4) &&
+          export FRONTEND_SCRIPTS &&
+          export FRONTEND_STYLES &&
           echo \"Loaded: FRONTEND_SCRIPTS=$$FRONTEND_SCRIPTS\" &&
           echo \"Loaded: FRONTEND_STYLES=$$FRONTEND_STYLES\"
         else
-          echo 'Frontend env file not found, using defaults'
+          echo 'Frontend manifest not found, using defaults' &&
+          export FRONTEND_SCRIPTS='' &&
+          export FRONTEND_STYLES=''
         fi &&
         echo 'Starting baklab with original command...' &&
         ./baklab seed core && ./baklab serve
@@ -567,51 +568,18 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     environment:
       {{- if .SSL.Enabled }}
-      - VITE_STATIC_HOST=https://$STATIC_HOST_NAME
-      - VITE_API_HOST=https://$DOMAIN_NAME
-      - VITE_FRONTEND_HOST=https://$DOMAIN_NAME
+      - STATIC_HOST=https://$STATIC_HOST_NAME
+      - API_HOST=https://$DOMAIN_NAME
+      - FRONTEND_HOST=https://$DOMAIN_NAME
       {{- else }}
-      - VITE_STATIC_HOST=http://$STATIC_HOST_NAME
-      - VITE_API_HOST=http://$DOMAIN_NAME
-      - VITE_FRONTEND_HOST=http://$DOMAIN_NAME
+      - STATIC_HOST=http://$STATIC_HOST_NAME
+      - API_HOST=http://$DOMAIN_NAME
+      - FRONTEND_HOST=http://$DOMAIN_NAME
       {{- end }}
-      - VITE_BASE_URL=/static/frontend/
-      - VITE_API_PATH_PREFIX=/api/
+      - BASE_URL=/static/frontend/
+      - API_PATH_PREFIX=/api/
     volumes:
       - ./frontend_dist:/output
-    command: >
-      sh -c "
-        # Copy frontend assets
-        cp -r /usr/share/nginx/html/* /output/ &&
-        echo 'Frontend assets copied to ./frontend_dist' &&
-
-        # Extract asset paths and generate environment file
-        cd /usr/share/nginx/html &&
-
-        # Initialize variables
-        SCRIPTS='' &&
-        STYLES='' &&
-
-        # Try Vite manifest first
-        if [ -f '.vite/manifest.json' ]; then
-          echo 'Extracting assets from Vite manifest...' &&
-          SCRIPTS=$$(cat .vite/manifest.json | grep -o '\"file\":\"[^\"]*\\.js\"' | sed 's/\"file\":\"//' | sed 's/\"//' | sed 's|^|/static/frontend/|' | tr '\\n' ',' | sed 's/,$$//') &&
-          STYLES=$$(cat .vite/manifest.json | grep -o '\"file\":\"[^\"]*\\.css\"' | sed 's/\"file\":\"//' | sed 's/\"//' | sed 's|^|/static/frontend/|' | tr '\\n' ',' | sed 's/,$$//')
-        # Fallback to parsing index.html
-        elif [ -f 'index.html' ]; then
-          echo 'Extracting assets from HTML...' &&
-          SCRIPTS=$$(grep -o 'src=\"[^\"]*\\.js\"' index.html | sed 's|src=\"|/static/frontend|' | sed 's/\"//' | tr '\\n' ',' | sed 's/,$$//') &&
-          STYLES=$$(grep -o 'href=\"[^\"]*\\.css\"' index.html | sed 's|href=\"|/static/frontend|' | sed 's/\"//' | tr '\\n' ',' | sed 's/,$$//')
-        fi &&
-
-        # Write environment file for webapp
-        echo \"FRONTEND_SCRIPTS=$$SCRIPTS\" > /output/.env.frontend &&
-        echo \"FRONTEND_STYLES=$$STYLES\" >> /output/.env.frontend &&
-
-        echo 'Frontend environment variables generated:' &&
-        cat /output/.env.frontend &&
-        exit 0
-      "
     restart: "no"
   nginx:
     image: nginx:1.25.2-alpine
