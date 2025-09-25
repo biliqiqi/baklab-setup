@@ -260,6 +260,11 @@ SMTP_SERVER_PORT={{ if .SMTP.Port }}{{ .SMTP.Port }}{{ else }}587{{ end }}
 {{ if .SMTP.Password }}SMTP_PASSWORD='{{ .SMTP.Password }}'{{ else }}SMTP_PASSWORD={{ end }}
 {{ if .SMTP.Sender }}SMTP_SENDER='{{ .SMTP.Sender }}'{{ else }}SMTP_SENDER='noreply@{{ .App.DomainName }}'{{ end }}
 
+# Super User Configuration (Initial Admin User)
+SUPER_USER='{{ .AdminUser.Username }}'
+SUPER_PASSWORD='{{ .AdminUser.Password }}'
+SUPER_USER_EMAIL='{{ .AdminUser.Email }}'
+
 # File Paths
 GEOIP_ENABLED=false
 GEOIP_FILE=./geoip/Country.mmdb
