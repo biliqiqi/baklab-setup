@@ -25,7 +25,7 @@ server {
     }
 
     location / {
-        limit_req zone=one burst=5;
+        limit_req zone=one burst=20 nodelay;
         return 301 https://$host$request_uri;
     }
 
@@ -38,7 +38,7 @@ server {
     }
 
     location / {
-        limit_req zone=one burst=5;
+        limit_req zone=one burst=20 nodelay;
         proxy_pass http://backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -86,7 +86,7 @@ server {
     }
 
     location / {
-        limit_req zone=one burst=5;
+        limit_req zone=one burst=20 nodelay;
         proxy_pass http://backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
