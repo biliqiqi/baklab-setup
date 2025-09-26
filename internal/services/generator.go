@@ -216,7 +216,7 @@ REDIS_PASSWORD='{{ .Redis.Password }}'
 REDISCLI_AUTH='{{ .Redis.AdminPassword }}'
 
 # Application Configuration
-DOMAIN_NAME='{{ .App.DomainName }}'
+SERVER_DOMAIN_NAME='{{ .App.DomainName }}'
 ROOT_DOMAIN_NAME='{{ rootDomain .App.DomainName }}'
 BRAND_NAME='{{ .App.BrandName }}'
 DEBUG={{ .App.Debug }}
@@ -228,7 +228,7 @@ JWT_KEY_FILE=./keys/jwt-private.pem
 # Application Ports
 APP_PORT=3000
 APP_OUTER_PORT=3000
-FRONTEND_PORT=5173
+FRONTEND_ORIGIN=http://localhost:5173
 NGINX_PORT=80
 NGINX_SSL_PORT=443
 
@@ -385,7 +385,7 @@ services:
       DB_HOST: "{{.Database.Host}}"
       DB_PORT: {{.Database.Port}}
       {{- end }}
-      DOMAIN_NAME: $DOMAIN_NAME
+      SERVER_DOMAIN_NAME: $SERVER_DOMAIN_NAME
       APP_DB_NAME: $APP_DB_NAME
       APP_DB_USER: $APP_DB_USER
       APP_DB_PASSWORD: $APP_DB_PASSWORD
@@ -577,12 +577,12 @@ services:
     environment:
       {{- if .SSL.Enabled }}
       - STATIC_HOST=https://$STATIC_HOST_NAME
-      - API_HOST=https://$DOMAIN_NAME
-      - FRONTEND_HOST=https://$DOMAIN_NAME
+      - API_HOST=https://$SERVER_DOMAIN_NAME
+      - FRONTEND_HOST=https://$SERVER_DOMAIN_NAME
       {{- else }}
       - STATIC_HOST=http://$STATIC_HOST_NAME
-      - API_HOST=http://$DOMAIN_NAME
-      - FRONTEND_HOST=http://$DOMAIN_NAME
+      - API_HOST=http://$SERVER_DOMAIN_NAME
+      - FRONTEND_HOST=http://$SERVER_DOMAIN_NAME
       {{- end }}
       - BASE_URL=/static/frontend/
       - API_PATH_PREFIX=/api/
