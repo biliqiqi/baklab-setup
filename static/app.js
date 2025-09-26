@@ -64,7 +64,8 @@ class SetupApp {
                 google_client_secret: '',
                 github_enabled: false,
                 github_client_id: '',
-                github_client_secret: ''
+                github_client_secret: '',
+                frontend_origin: ''
             },
             admin_user: {
                 username: 'admin',
@@ -1384,6 +1385,23 @@ class SetupApp {
                     </div>
                 </div>
 
+                <!-- Frontend Origin Configuration (only when OAuth is enabled) -->
+                <div id="frontend-origin-section" style="display: ${this.config.oauth.google_enabled || this.config.oauth.github_enabled ? 'block' : 'none'}; margin-top: 2rem;">
+                    <h4 style="margin: 1.5rem 0 1rem 0; color: var(--gray-700);" data-i18n="setup.oauth.frontend_origin_title"></h4>
+                    <div class="form-group">
+                        <label for="frontend-origin"><span data-i18n="setup.oauth.frontend_origin_label"></span></label>
+                        <input
+                            type="url"
+                            id="frontend-origin"
+                            name="frontend_origin"
+                            value="${this.config.oauth.frontend_origin || (this.config.ssl?.enabled ? 'https://' : 'http://') + this.config.app.domain_name}"
+                            data-i18n-placeholder="setup.oauth.frontend_origin_placeholder"
+                        >
+                        <div class="form-help" data-i18n="setup.oauth.frontend_origin_help"></div>
+                        <div class="invalid-feedback" data-i18n="setup.oauth.frontend_origin_error"></div>
+                    </div>
+                </div>
+
                 <div class="btn-group">
                     <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
                     <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
@@ -1408,6 +1426,8 @@ class SetupApp {
                 // 清除验证错误
                 this.clearFormErrors(document.getElementById('oauth-form'));
             }
+            // 更新前端源配置显示
+            this.updateFrontendOriginVisibility();
         });
 
         // GitHub OAuth 启用状态切换
@@ -1427,6 +1447,8 @@ class SetupApp {
                 // 清除验证错误
                 this.clearFormErrors(document.getElementById('oauth-form'));
             }
+            // 更新前端源配置显示
+            this.updateFrontendOriginVisibility();
         });
 
         // 表单提交处理
@@ -3140,6 +3162,17 @@ class SetupApp {
         await this.saveConfigWithValidation();
     }
 
+    // 更新前端源配置的显示状态
+    updateFrontendOriginVisibility() {
+        const googleEnabled = document.getElementById('google-enabled').checked;
+        const githubEnabled = document.getElementById('github-enabled').checked;
+        const frontendOriginSection = document.getElementById('frontend-origin-section');
+
+        if (frontendOriginSection) {
+            frontendOriginSection.style.display = (googleEnabled || githubEnabled) ? 'block' : 'none';
+        }
+    }
+
     async saveOAuthConfig() {
         this.config.oauth = {
             google_enabled: document.getElementById('google-enabled').checked,
@@ -3147,7 +3180,8 @@ class SetupApp {
             google_client_secret: document.getElementById('google-client-secret').value.trim(),
             github_enabled: document.getElementById('github-enabled').checked,
             github_client_id: document.getElementById('github-client-id').value.trim(),
-            github_client_secret: document.getElementById('github-client-secret').value.trim()
+            github_client_secret: document.getElementById('github-client-secret').value.trim(),
+            frontend_origin: document.getElementById('frontend-origin').value.trim()
         };
 
         // 保存到本地缓存并调用后端验证

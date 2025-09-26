@@ -223,12 +223,16 @@ DEBUG={{ .App.Debug }}
 TEST=false
 APP_VERSION={{ if .App.Version }}{{ .App.Version }}{{ else }}latest{{ end }}
 
+# HTTPS Configuration
+# Set to true when using HTTPS (nginx SSL configuration)
+USE_HTTPS={{ .SSL.Enabled }}
+
 JWT_KEY_FILE=./keys/jwt-private.pem
 
 # Application Ports
 APP_PORT=3000
 APP_OUTER_PORT=3000
-FRONTEND_ORIGIN=http://localhost:5173
+{{ if .OAuth.FrontendOrigin }}FRONTEND_ORIGIN='{{ .OAuth.FrontendOrigin }}'{{ else }}FRONTEND_ORIGIN='http{{ if .SSL.Enabled }}s{{ end }}://{{ .App.DomainName }}'{{ end }}
 NGINX_PORT=80
 NGINX_SSL_PORT=443
 
@@ -431,6 +435,8 @@ services:
       SUPER_USER: $SUPER_USER
       SUPER_PASSWORD: $SUPER_PASSWORD
       SUPER_USER_EMAIL: $SUPER_USER_EMAIL
+      USE_HTTPS: $USE_HTTPS
+      FRONTEND_ORIGIN: $FRONTEND_ORIGIN
     volumes:
       {{ if .App.JWTKeyFromFile -}}
       - {{ .App.JWTKeyFilePath }}:/app/keys/jwt-private.pem

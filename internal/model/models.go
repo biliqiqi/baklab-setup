@@ -90,6 +90,7 @@ type OAuthConfig struct {
 	GithubEnabled  bool   `json:"github_enabled"`                                                 // 是否启用GitHub OAuth
 	GithubClientID string `json:"github_client_id" validate:"required_if=GithubEnabled true"`     // GitHub客户端ID
 	GithubSecret   string `json:"github_client_secret" validate:"required_if=GithubEnabled true"` // GitHub客户端密钥
+	FrontendOrigin string `json:"frontend_origin"`                                                // 前端源地址，用于OAuth重定向
 }
 
 // AppConfig 应用配置

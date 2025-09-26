@@ -306,6 +306,12 @@
       "github_docs_description": "Official documentation:",
       "github_docs_link": "GitHub OAuth App Creation Guide",
 
+      "frontend_origin_title": "Frontend Origin Configuration",
+      "frontend_origin_label": "Frontend Origin URL",
+      "frontend_origin_placeholder": "https://yourdomain.com",
+      "frontend_origin_help": "Only change this if your frontend is hosted separately from the backend server. For most deployments, use the server's address. This URL is used for OAuth redirects and CORS configuration.",
+      "frontend_origin_error": "Please enter a valid URL if specified",
+
       "general_note": "OAuth configuration is optional. You can enable only the providers you need, or skip this step entirely if you prefer email/password authentication only."
     },
 

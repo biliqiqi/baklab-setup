@@ -306,6 +306,12 @@
       "github_docs_description": "官方文档：",
       "github_docs_link": "GitHub OAuth 应用创建指南",
 
+      "frontend_origin_title": "前端源地址配置",
+      "frontend_origin_label": "前端源地址 URL",
+      "frontend_origin_placeholder": "https://yourdomain.com",
+      "frontend_origin_help": "仅当您的前端页面与后端服务器分开托管时才需要修改此项。对于大多数部署，请使用服务器地址。此 URL 用于 OAuth 重定向和 CORS 配置。",
+      "frontend_origin_error": "如果指定，请输入有效的 URL",
+
       "general_note": "OAuth 配置是可选的。您可以仅启用需要的提供商，或者如果只想使用邮箱/密码认证，也可以完全跳过此步骤。"
     },
 
