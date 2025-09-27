@@ -409,7 +409,6 @@ class SetupApp {
                                 type="password"
                                 id="db-super-password"
                                 name="super_password"
-                                value="${this.config.database.super_password || ''}"
                                 data-i18n-placeholder="setup.database.super_password_placeholder"
                                 required
                                 minlength="12"
@@ -447,7 +446,6 @@ class SetupApp {
                                 type="password"
                                 id="db-app-password"
                                 name="app_password"
-                                value="${this.config.database.app_password || ''}"
                                 data-i18n-placeholder="setup.database.app_password_placeholder"
                                 required
                                 data-i18n-title="setup.database.app_password_error"
@@ -569,6 +567,16 @@ class SetupApp {
         };
 
         // 为相关字段添加实时验证监听器
+        // 安全地设置密码字段值，避免HTML转义问题
+        const dbSuperPasswordField = document.getElementById('db-super-password');
+        if (dbSuperPasswordField && this.config.database.super_password) {
+            dbSuperPasswordField.value = this.config.database.super_password;
+        }
+        const dbAppPasswordField = document.getElementById('db-app-password');
+        if (dbAppPasswordField && this.config.database.app_password) {
+            dbAppPasswordField.value = this.config.database.app_password;
+        }
+
         ['db-super-user', 'db-app-user', 'db-super-password', 'db-app-password'].forEach(id => {
             const field = document.getElementById(id);
             if (field) {
@@ -767,7 +775,6 @@ class SetupApp {
                             type="password"
                             id="redis-admin-password"
                             name="admin_password"
-                            value="${this.config.redis.admin_password || ''}"
                             data-i18n-placeholder="setup.redis.admin_password_placeholder"
                             required
                             minlength="12"
@@ -786,7 +793,6 @@ class SetupApp {
                         type="password"
                         id="redis-password"
                         name="password"
-                        value="${this.config.redis.password}"
                         data-i18n-placeholder="setup.redis.password_placeholder"
                         required
                         data-i18n-title="setup.redis.password_error"
@@ -821,6 +827,16 @@ class SetupApp {
         // 初始化主机字段状态和样式
         this.updateRedisHostField(this.config.redis.service_type);
         this.updateRadioStyles('redis-service-type');
+
+        // 安全地设置密码字段值，避免HTML转义问题
+        const redisPasswordField = document.getElementById('redis-password');
+        if (redisPasswordField && this.config.redis.password) {
+            redisPasswordField.value = this.config.redis.password;
+        }
+        const redisAdminPasswordField = document.getElementById('redis-admin-password');
+        if (redisAdminPasswordField && this.config.redis.admin_password) {
+            redisAdminPasswordField.value = this.config.redis.admin_password;
+        }
 
         // 确保DOM渲染完成后再次设置验证规则
         setTimeout(() => {
@@ -954,7 +970,6 @@ class SetupApp {
                         type="password"
                         id="smtp-password"
                         name="password"
-                        value="${this.config.smtp.password}"
                         data-i18n-placeholder="setup.smtp.password_placeholder"
                         required
                         data-i18n-title="setup.smtp.password_error"
@@ -992,6 +1007,12 @@ class SetupApp {
                 </div>
             </form>
         `;
+
+        // 安全地设置密码字段值，避免HTML转义问题
+        const smtpPasswordField = document.getElementById('smtp-password');
+        if (smtpPasswordField && this.config.smtp.password) {
+            smtpPasswordField.value = this.config.smtp.password;
+        }
 
         // 添加字段变化监听以启用测试按钮
         this.addSMTPFieldListeners();
@@ -1325,7 +1346,6 @@ class SetupApp {
                                     type="password"
                                     id="google-client-secret"
                                     name="google_client_secret"
-                                    value="${this.config.oauth.google_client_secret}"
                                     data-i18n-placeholder="setup.oauth.google_client_secret_placeholder"
                                     ${this.config.oauth.google_enabled ? 'required' : ''}
                                 >
@@ -1371,7 +1391,6 @@ class SetupApp {
                                     type="password"
                                     id="github-client-secret"
                                     name="github_client_secret"
-                                    value="${this.config.oauth.github_client_secret}"
                                     data-i18n-placeholder="setup.oauth.github_client_secret_placeholder"
                                     ${this.config.oauth.github_enabled ? 'required' : ''}
                                 >
@@ -1450,6 +1469,16 @@ class SetupApp {
             // 更新前端源配置显示
             this.updateFrontendOriginVisibility();
         });
+
+        // 安全地设置密码字段值，避免HTML转义问题
+        const googleClientSecretField = document.getElementById('google-client-secret');
+        if (googleClientSecretField && this.config.oauth.google_client_secret) {
+            googleClientSecretField.value = this.config.oauth.google_client_secret;
+        }
+        const githubClientSecretField = document.getElementById('github-client-secret');
+        if (githubClientSecretField && this.config.oauth.github_client_secret) {
+            githubClientSecretField.value = this.config.oauth.github_client_secret;
+        }
 
         // 表单提交处理
         document.getElementById('oauth-form').addEventListener('submit', async (e) => {
@@ -2554,11 +2583,10 @@ class SetupApp {
                 
                 <div class="form-group">
                     <label for="admin-password"><span data-i18n="setup.admin.password_label"></span> <span data-i18n="common.required"></span></label>
-                    <input 
-                        type="password" 
-                        id="admin-password" 
+                    <input
+                        type="password"
+                        id="admin-password"
                         name="password"
-                        value="${this.config.admin_user.password}" 
                         data-i18n-placeholder="setup.admin.password_placeholder"
                         required
                         minlength="12"
@@ -2572,11 +2600,10 @@ class SetupApp {
                 
                 <div class="form-group">
                     <label for="admin-password-confirm"><span data-i18n="setup.admin.password_confirm_label"></span> <span data-i18n="common.required"></span></label>
-                    <input 
-                        type="password" 
-                        id="admin-password-confirm" 
+                    <input
+                        type="password"
+                        id="admin-password-confirm"
                         name="passwordConfirm"
-                        value="${this.config.admin_user.password}" 
                         data-i18n-placeholder="setup.admin.password_confirm_placeholder"
                         required
                         data-i18n-title="setup.admin.password_confirm_error"
@@ -2620,7 +2647,17 @@ class SetupApp {
                 app.showFormErrors(e.target);
             }
         });
-        
+
+        // 安全地设置密码字段值，避免HTML转义问题
+        const passwordField = document.getElementById('admin-password');
+        const passwordConfirmField = document.getElementById('admin-password-confirm');
+        if (passwordField && this.config.admin_user.password) {
+            passwordField.value = this.config.admin_user.password;
+        }
+        if (passwordConfirmField && this.config.admin_user.password) {
+            passwordConfirmField.value = this.config.admin_user.password;
+        }
+
         // 实时密码确认匹配检查
         document.getElementById('admin-password-confirm').addEventListener('input', (e) => {
             const password = document.getElementById('admin-password').value;
