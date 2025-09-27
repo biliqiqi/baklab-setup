@@ -562,6 +562,33 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 	}, http.StatusOK)
 }
 
+// CheckGeoFileStatusHandler 检查 GeoIP 文件状态
+func (h *SetupHandlers) CheckGeoFileStatusHandler(w http.ResponseWriter, r *http.Request) {
+	// 检查临时目录中的GeoIP文件是否存在
+	tempFilePath := filepath.Join("./data", "temp", "GeoLite2-City.mmdb")
+
+	fileExists := false
+	var fileSize int64 = 0
+	var fileName string = ""
+
+	if fileInfo, err := os.Stat(tempFilePath); err == nil {
+		fileExists = true
+		fileSize = fileInfo.Size()
+		fileName = "GeoLite2-City.mmdb"
+	}
+
+	h.writeJSONResponse(w, model.SetupResponse{
+		Success: true,
+		Message: "GeoIP file status checked",
+		Data: map[string]interface{}{
+			"exists":    fileExists,
+			"file_name": fileName,
+			"file_size": fileSize,
+			"temp_path": tempFilePath,
+		},
+	}, http.StatusOK)
+}
+
 // UploadJWTKeyFileHandler 处理 JWT key 文件上传 (已注释：改为自动生成JWT密钥)
 /*
 func (h *SetupHandlers) UploadJWTKeyFileHandler(w http.ResponseWriter, r *http.Request) {

@@ -1880,6 +1880,9 @@ class SetupApp {
                 self.showFormErrors(e.target);
             }
         });
+
+        // 检查实际的GeoIP文件状态，确保缓存与实际文件同步
+        this.checkGeoFileStatus();
     }
 
     renderFrontendStep(container) {
@@ -3361,8 +3364,50 @@ class SetupApp {
             fileInfoDiv.style.display = 'none';
         }
     }
-    
-    
+
+    // 检查GeoIP文件的实际状态
+    async checkGeoFileStatus() {
+        try {
+            const response = await this.api('GET', '/api/geo-file/status');
+            if (response.success && response.data) {
+                const { exists, file_name, file_size, temp_path } = response.data;
+
+                // 如果缓存显示有文件但实际不存在，重置缓存状态
+                if (this.config.goaccess.has_geo_file && !exists) {
+                    console.log('GeoIP file cache inconsistent with actual file status, resetting...');
+                    this.config.goaccess.has_geo_file = false;
+                    this.config.goaccess.geo_file_temp_path = '';
+                    this.config.goaccess.original_file_name = '';
+                    this.config.goaccess.file_size = 0;
+
+                    // 保存更新后的配置到本地缓存
+                    this.saveToLocalCache();
+
+                    // 更新UI显示
+                    this.updateGeoFileDisplay();
+                }
+                // 如果实际有文件但缓存没有记录，更新缓存状态
+                else if (!this.config.goaccess.has_geo_file && exists) {
+                    console.log('Found GeoIP file but cache shows no file, updating cache...');
+                    this.config.goaccess.has_geo_file = true;
+                    this.config.goaccess.geo_file_temp_path = temp_path;
+                    this.config.goaccess.original_file_name = file_name;
+                    this.config.goaccess.file_size = file_size;
+
+                    // 保存更新后的配置到本地缓存
+                    this.saveToLocalCache();
+
+                    // 更新UI显示
+                    this.updateGeoFileDisplay();
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to check GeoIP file status:', error);
+            // 如果检查失败，不做任何操作，保持当前状态
+        }
+    }
+
+
     // 通用的配置保存和验证方法
     async saveConfigWithValidation() {
         try {

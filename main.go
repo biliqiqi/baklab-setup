@@ -129,6 +129,7 @@ func main() {
 		r.Get("/current-cert-paths", handlers.GetCurrentCertPathsHandler)
 
 		r.Post("/upload/geo-file", handlers.UploadGeoFileHandler)
+		r.Get("/geo-file/status", handlers.CheckGeoFileStatusHandler)
 		// r.Post("/upload/jwt-key-file", handlers.UploadJWTKeyFileHandler) // 已注释：改为自动生成JWT密钥
 
 		// Frontend build endpoints (temporarily disabled - using docker image instead)
