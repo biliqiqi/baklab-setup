@@ -85,11 +85,37 @@ server {
         return 301 https://${ROOT_DOMAIN_NAME}$request_uri;
     }
 
+    # Special handling for SSE events endpoint
+    location /api/events {
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # SSE specific configurations
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_set_header Connection '';
+        proxy_http_version 1.1;
+        chunked_transfer_encoding off;
+
+        # Headers for SSE
+        proxy_set_header Cache-Control 'no-cache';
+        proxy_set_header Accept 'text/event-stream';
+
+        # Timeouts for long-lived connections
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+
     location / {
         limit_req zone=one burst=20 nodelay;
         proxy_pass http://backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
     location /static {
