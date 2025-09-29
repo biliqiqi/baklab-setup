@@ -27,6 +27,18 @@ type GeneratorService struct {
 	outputDir string
 }
 
+// buildOAuthProviders 根据OAuth配置生成provider列表
+func (g *GeneratorService) buildOAuthProviders(oauth model.OAuthConfig) string {
+	var providers []string
+	if oauth.GoogleEnabled && oauth.GoogleClientID != "" && oauth.GoogleSecret != "" {
+		providers = append(providers, "google")
+	}
+	if oauth.GithubEnabled && oauth.GithubClientID != "" && oauth.GithubSecret != "" {
+		providers = append(providers, "github")
+	}
+	return strings.Join(providers, ",")
+}
+
 // NewGeneratorService 创建生成器服务实例
 func NewGeneratorService() *GeneratorService {
 	return &GeneratorService{
@@ -317,6 +329,7 @@ GID={{ .GroupID }}
 		"join": func(slice []string, sep string) string {
 			return strings.Join(slice, sep)
 		},
+		"oauthProviders": g.buildOAuthProviders,
 	}
 
 	// 解析模板
@@ -592,6 +605,7 @@ services:
       {{- end }}
       - BASE_URL=/static/frontend/
       - API_PATH_PREFIX=/api/
+      - OAUTH_PROVIDERS={{ oauthProviders .OAuth }}
     volumes:
       - ./frontend_dist:/output
     restart: "no"
@@ -659,7 +673,12 @@ volumes:{{ if eq .Database.ServiceType "docker" }}
 `
 
 	// 解析模板
-	tmpl, err := template.New("docker").Parse(dockerComposeTemplate)
+	// Docker Compose模板函数
+	dockerFuncMap := template.FuncMap{
+		"oauthProviders": g.buildOAuthProviders,
+	}
+
+	tmpl, err := template.New("docker").Funcs(dockerFuncMap).Parse(dockerComposeTemplate)
 	if err != nil {
 		return fmt.Errorf("failed to parse docker template: %w", err)
 	}
