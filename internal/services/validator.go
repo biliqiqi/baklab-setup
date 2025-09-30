@@ -300,7 +300,7 @@ func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.Connec
 func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "ssl", "admin", "oauth", "goaccess", "frontend", "review", "config_complete"}
+	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "ssl", "admin", "oauth", "goaccess", "review", "config_complete"}
 	currentStepIndex := -1
 
 	// 找到当前步骤的索引
@@ -343,11 +343,8 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 		errors = append(errors, v.validateOAuthConfig(cfg.OAuth)...)
 	}
 
-
-	if currentStepIndex >= 9 { // frontend
-		if cfg.App.SSREnabled {
-			errors = append(errors, v.validateFrontendConfig(cfg.App)...)
-		}
+	if cfg.App.SSREnabled {
+		errors = append(errors, v.validateFrontendConfig(cfg.App)...)
 	}
 
 	return errors

@@ -184,20 +184,5 @@
     "validation.app.frontend_container_id_required": "Frontend container ID is required when SSR is enabled",
     "validation.admin.username_required": "Admin username is required",
     "validation.admin.email_required": "Admin email is required",
-    "validation.admin.password_required": "Admin password is required",
-    "setup.frontend.title": "Web Frontend",
-    "setup.frontend.description": "Build and configure the web frontend application",
-    "setup.frontend.env_vars_title": "Environment Variables",
-    "setup.frontend.no_env_vars": "No environment variables configured",
-    "setup.frontend.build_status_title": "Build Status",
-    "setup.frontend.status_built": "Built",
-    "setup.frontend.status_not_built": "Not Built",
-    "setup.frontend.last_build": "Last Build",
-    "setup.frontend.build_button": "Build Frontend",
-    "setup.frontend.refresh_button": "Refresh Status",
-    "setup.frontend.building": "Building...",
-    "setup.frontend.build_success": "Frontend built successfully!",
-    "setup.frontend.build_failed": "Failed to build frontend",
-    "setup.frontend.build_logs": "Build Logs",
-    "setup.frontend.clear_logs": "Clear Logs"
+    "validation.admin.password_required": "Admin password is required"
 }

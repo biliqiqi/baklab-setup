@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -173,26 +172,6 @@ func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to handle JWT key file: %w", err)
 	}
 
-	frontendDistPath := "./frontend/dist"
-	_, err := os.Stat(frontendDistPath)
-	frontendFilesExist := err == nil
-
-	if cfg.Frontend.Built && frontendFilesExist {
-		if err := s.updateSetupProgress("frontend_copy", 95, "Copying frontend files..."); err != nil {
-			return err
-		}
-
-		if err := s.generator.CopyFrontendToOutput(); err != nil {
-			return fmt.Errorf("failed to copy frontend files to output: %w", err)
-		}
-		log.Printf("Frontend files copied to output directory")
-	} else {
-		log.Printf("Frontend build skipped - files not built or missing")
-		if err := s.updateSetupProgress("frontend_skip", 95, "Frontend build skipped (optional)"); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -306,27 +285,6 @@ func (s *SetupService) ResetSetup() error {
 	return nil
 }
 
-func (s *SetupService) BuildFrontendWithStream(cfg *model.SetupConfig, outputChan chan<- string) error {
-	if err := s.generator.BuildFrontendWithStream(cfg, outputChan); err != nil {
-		return err
-	}
-
-	cfg.Frontend.Built = true
-	cfg.Frontend.BuildTime = time.Now()
-
-	if len(cfg.App.FrontendScripts) > 0 || len(cfg.App.FrontendStyles) > 0 {
-		log.Printf("Saving extracted frontend assets: %d scripts, %d styles",
-			len(cfg.App.FrontendScripts), len(cfg.App.FrontendStyles))
-	}
-
-	if err := s.SaveConfiguration(cfg); err != nil {
-		log.Printf("Warning: failed to save frontend assets and build status: %v", err)
-		return err
-	}
-
-	outputChan <- "Frontend assets saved to configuration"
-	return nil
-}
 
 func (s *SetupService) ImportConfiguration(configData []byte) (*model.SetupConfig, error) {
 	var cfg model.SetupConfig

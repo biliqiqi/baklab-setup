@@ -35,7 +35,6 @@
       "ssl": "SSL/HTTPS",
       "goaccess": "Analytics",
       "admin_user": "Admin User",
-      "frontend": "Frontend",
       "review": "Review",
       "config_complete": "Configuration Complete"
     },
@@ -396,8 +395,7 @@
         "ssl": "SSL/HTTPS",
         "goaccess": "Analytics Service",
         "application": "Application",
-        "administrator": "Administrator",
-        "frontend_build": "Frontend Build"
+        "administrator": "Administrator"
       },
       
       "fields": {
@@ -455,28 +453,6 @@
       "ready_notice": "Configuration files generated in <code>{{outputPath}}</code>",
       "ready_description": "Manual deployment: <code>cd {{outputPath}} && docker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
       "complete_button": "Complete Setup"
-    },
-
-    "frontend": {
-      "title": "Web Frontend",
-      "description": "Build and configure the web frontend application. BakLab's frontend code is open source at <a href='https://github.com/biliqiqi/baklab-web' target='_blank'>github.com/biliqiqi/baklab-web</a>. You can skip this step if you prefer to build and host the frontend yourself.",
-      "preparation_title": "Preparation",
-      "preparation_description": "Before building the frontend, please ensure that Node.js >= 20.16.0 is installed on the server.",
-      "env_vars_title": "Environment Variables",
-      "no_env_vars": "No environment variables configured",
-      "build_status_title": "Build Status",
-      "status_built": "Built",
-      "status_not_built": "Not Built",
-      "last_build": "Last Build",
-      "output_directory": "Output Directory",
-      "build_button": "Build Frontend",
-      "building": "Building...",
-      "build_logs": "Build Logs",
-      "build_success": "Frontend built successfully!",
-      "build_failed": "Frontend build failed. Check the logs for details.",
-      "ssr_auto_detected_notice": "Frontend assets will be automatically detected and populated after building.",
-      "ssr_auto_extracted_help": "These assets are automatically extracted from the frontend build. You can edit them if needed.",
-      "ssr_auto_filled_notice": "Frontend assets have been automatically detected and filled from the built frontend."
     },
 
     "completed": {

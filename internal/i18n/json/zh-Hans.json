@@ -184,20 +184,5 @@
     "validation.app.frontend_container_id_required": "启用 SSR 时，前端容器 ID 为必填项",
     "validation.admin.username_required": "管理员用户名为必填项",
     "validation.admin.email_required": "管理员邮箱为必填项",
-    "validation.admin.password_required": "管理员密码为必填项",
-    "setup.frontend.title": "Web前端",
-    "setup.frontend.description": "构建和配置Web前端应用",
-    "setup.frontend.env_vars_title": "环境变量",
-    "setup.frontend.no_env_vars": "未配置环境变量",
-    "setup.frontend.build_status_title": "构建状态",
-    "setup.frontend.status_built": "已构建",
-    "setup.frontend.status_not_built": "未构建",
-    "setup.frontend.last_build": "最后构建",
-    "setup.frontend.build_button": "构建前端",
-    "setup.frontend.refresh_button": "刷新状态",
-    "setup.frontend.building": "构建中...",
-    "setup.frontend.build_success": "前端构建成功！",
-    "setup.frontend.build_failed": "前端构建失败",
-    "setup.frontend.build_logs": "构建日志",
-    "setup.frontend.clear_logs": "清空日志"
+    "validation.admin.password_required": "管理员密码为必填项"
 }

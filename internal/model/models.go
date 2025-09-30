@@ -58,12 +58,6 @@ type GoAccessConfig struct {
 	FileSize         int64  `json:"file_size"`
 }
 
-type FrontendConfig struct {
-	Built     bool      `json:"built"`
-	BuildTime time.Time `json:"build_time,omitempty"`
-	BuildLogs []string  `json:"build_logs,omitempty"`
-}
-
 type SSLConfig struct {
 	Enabled      bool   `json:"enabled"`                                       // 是否启用HTTPS
 	CertPath     string `json:"cert_path" validate:"required_if=Enabled true"`
@@ -123,7 +117,6 @@ type SetupConfig struct {
 	AdminUser    AdminUserConfig `json:"admin_user"`
 	GoAccess     GoAccessConfig  `json:"goaccess"`
 	SSL          SSLConfig       `json:"ssl"`
-	Frontend     FrontendConfig  `json:"frontend"`
 	CurrentStep  string          `json:"current_step,omitempty"`
 	RevisionMode RevisionMode    `json:"revision_mode,omitempty"`
 }

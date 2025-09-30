@@ -35,7 +35,6 @@
       "ssl": "SSL/HTTPS",
       "goaccess": "分析服务",
       "admin_user": "管理员用户",
-      "frontend": "前端构建",
       "review": "检查配置",
       "config_complete": "配置完成"
     },
@@ -396,8 +395,7 @@
         "ssl": "SSL/HTTPS",
         "goaccess": "分析服务",
         "application": "应用程序",
-        "administrator": "管理员",
-        "frontend_build": "前端构建"
+        "administrator": "管理员"
       },
       
       "fields": {
@@ -455,28 +453,6 @@
       "ready_notice": "配置文件已生成在 <code>{{outputPath}}</code>",
       "ready_description": "手动部署命令: <code>cd {{outputPath}} && docker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
       "complete_button": "完成设置"
-    },
-
-    "frontend": {
-      "title": "Web前端",
-      "description": "构建和配置Web前端应用。BakLab 前端代码开源于 <a href='https://github.com/biliqiqi/baklab-web' target='_blank'>github.com/biliqiqi/baklab-web</a>。如果您希望自行构建和托管前端，可以跳过此步骤。",
-      "preparation_title": "准备工作",
-      "preparation_description": "在构建前端之前，请确保服务端已安装 Node.js >= 20.16.0。",
-      "env_vars_title": "环境变量",
-      "no_env_vars": "未配置环境变量",
-      "build_status_title": "构建状态",
-      "status_built": "已构建",
-      "status_not_built": "未构建",
-      "last_build": "最后构建",
-      "output_directory": "输出目录",
-      "build_button": "构建前端",
-      "building": "构建中...",
-      "build_logs": "构建日志",
-      "build_success": "前端构建成功！",
-      "build_failed": "前端构建失败，请检查日志详情。",
-      "ssr_auto_detected_notice": "前端资源将在构建完成后自动检测并填充。",
-      "ssr_auto_extracted_help": "这些资源是从前端构建中自动提取的。如果需要，您可以手动编辑它们。",
-      "ssr_auto_filled_notice": "前端资源已从已构建的前端中自动检测并填充。"
     },
 
     "completed": {
