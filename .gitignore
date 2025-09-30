@@ -54,5 +54,11 @@ Thumbs.db
 tmp/
 temp/
 
+# Node.js (static frontend)
+static/node_modules/
+
+# Backup files
+*.backup
+
 baklab-setup
 CLAUDE.md

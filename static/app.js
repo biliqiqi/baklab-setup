@@ -1,4 +1,7 @@
 // BakLab Setup - Frontend Application - v1.2 (Double Escaped Patterns)
+import * as Validator from './validator.js';
+import { validateAndSetFieldError } from './validator.js';
+
 class SetupApp {
     constructor() {
         this.currentStep = 0;
@@ -532,37 +535,53 @@ class SetupApp {
                 }
             }
 
-            // 验证密码强度 - 两种模式都需要
+            // 验证超级用户密码强度 - 仅Docker模式
+            const superPasswordField = document.getElementById('db-super-password');
+            const superPassword = document.getElementById('db-super-password').value;
+            if (serviceType === 'docker' && superPassword) {
+                const isValid = this.validateDatabasePasswordStrength(superPassword);
+                const errorMsg = window.i18n ? window.i18n.t('setup.database.super_password_error') :
+                    'Super password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+
+                if (!isValid) {
+                    superPasswordField.setCustomValidity(errorMsg);
+                    this.showCustomError(superPasswordField, errorMsg);
+                } else {
+                    superPasswordField.setCustomValidity('');
+                    this.hideCustomError(superPasswordField);
+                }
+            } else if (superPassword === '' || serviceType !== 'docker') {
+                superPasswordField.setCustomValidity('');
+                this.hideCustomError(superPasswordField);
+            }
+
+            // 验证应用用户密码强度 - 两种模式都需要
             const appPassword = document.getElementById('db-app-password').value;
             if (appPassword) {
-                // 根据服务类型验证密码强度
                 let isValid = true;
                 let errorMsg = '';
 
                 if (serviceType === 'docker') {
-                    // Docker模式使用严格验证
                     isValid = this.validateDatabasePasswordStrength(appPassword);
-                    errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                    errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') :
+                        'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
                 } else {
-                    // 外部服务使用宽松验证
                     isValid = this.validateExternalServicePassword(appPassword);
-                    errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_external_error') : 'App password must be 1-128 characters and cannot contain control characters';
+                    errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_external_error') :
+                        'App password must be 1-128 characters and cannot contain control characters';
                 }
 
                 if (!isValid) {
                     appPasswordField.setCustomValidity(errorMsg);
                     this.showCustomError(appPasswordField, errorMsg);
                 } else {
-                    // 只有当密码确实有效时才清除错误，但保持更友好的清除策略
                     appPasswordField.setCustomValidity('');
                     this.hideCustomError(appPasswordField);
                 }
             } else if (appPassword === '') {
-                // 只有当密码为完全空白时才清除错误（用户删除了所有内容）
                 appPasswordField.setCustomValidity('');
                 this.hideCustomError(appPasswordField);
             }
-            // 如果密码有内容但不为空字符串，保持当前验证状态不变
         };
 
         // 为相关字段添加实时验证监听器
@@ -837,12 +856,83 @@ class SetupApp {
             redisAdminPasswordField.value = this.config.redis.admin_password;
         }
 
-        // 确保DOM渲染完成后再次设置验证规则
         setTimeout(() => {
             this.updateRedisHostField(this.config.redis.service_type);
         }, 100);
-        
-        // 添加表单提交事件监听
+
+        const validateRedisPasswords = () => {
+            const serviceType = document.querySelector('input[name="redis-service-type"]:checked').value;
+            const passwordField = document.getElementById('redis-password');
+            const adminPasswordField = document.getElementById('redis-admin-password');
+            const password = passwordField.value;
+
+            if (password) {
+                let isValid = true;
+                let errorMessage = '';
+
+                if (serviceType === 'docker') {
+                    isValid = this.validateDatabasePasswordStrength(password);
+                    errorMessage = window.i18n ? window.i18n.t('setup.redis.password_error') :
+                        'Password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                } else {
+                    isValid = this.validateExternalServicePassword(password);
+                    errorMessage = window.i18n ? window.i18n.t('setup.redis.password_external_error') :
+                        'Password must be 1-128 characters and cannot contain control characters';
+                }
+
+                if (!isValid) {
+                    passwordField.setCustomValidity(errorMessage);
+                    this.showCustomError(passwordField, errorMessage);
+                } else {
+                    passwordField.setCustomValidity('');
+                    this.hideCustomError(passwordField);
+                }
+            } else {
+                passwordField.setCustomValidity('');
+                this.hideCustomError(passwordField);
+            }
+
+            if (serviceType === 'docker' && adminPasswordField) {
+                const adminPassword = adminPasswordField.value;
+
+                if (adminPassword) {
+                    const isValid = this.validateDatabasePasswordStrength(adminPassword);
+                    const errorMessage = window.i18n ? window.i18n.t('setup.redis.admin_password_error') :
+                        'CLI password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+
+                    if (!isValid) {
+                        adminPasswordField.setCustomValidity(errorMessage);
+                        this.showCustomError(adminPasswordField, errorMessage);
+                    } else {
+                        adminPasswordField.setCustomValidity('');
+                        this.hideCustomError(adminPasswordField);
+                    }
+                } else {
+                    adminPasswordField.setCustomValidity('');
+                    this.hideCustomError(adminPasswordField);
+                }
+            } else if (adminPasswordField) {
+                adminPasswordField.setCustomValidity('');
+                this.hideCustomError(adminPasswordField);
+            }
+        };
+
+        const passwordField = document.getElementById('redis-password');
+        const adminPasswordField = document.getElementById('redis-admin-password');
+        if (passwordField) {
+            passwordField.addEventListener('input', validateRedisPasswords.bind(this));
+        }
+        if (adminPasswordField) {
+            adminPasswordField.addEventListener('input', validateRedisPasswords.bind(this));
+        }
+
+        serviceTypeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                setTimeout(() => validateRedisPasswords.bind(this)(), 10);
+            });
+        });
+
+        // Form submit handler
         document.getElementById('redis-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -857,13 +947,13 @@ class SetupApp {
                 let errorMessage = '';
 
                 if (serviceType === 'docker') {
-                    // Docker模式使用严格验证
                     isValid = this.validateDatabasePasswordStrength(password);
-                    errorMessage = 'Password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                    errorMessage = window.i18n ? window.i18n.t('setup.redis.password_error') :
+                        'Password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
                 } else {
-                    // 外部服务使用宽松验证
                     isValid = this.validateExternalServicePassword(password);
-                    errorMessage = 'Password must be 1-128 characters and cannot contain control characters';
+                    errorMessage = window.i18n ? window.i18n.t('setup.redis.password_external_error') :
+                        'Password must be 1-128 characters and cannot contain control characters';
                 }
 
                 if (!isValid) {
@@ -883,7 +973,8 @@ class SetupApp {
                 if (adminPassword) {
                     const isValid = this.validateDatabasePasswordStrength(adminPassword);
                     if (!isValid) {
-                        const errorMessage = 'CLI password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                        const errorMessage = window.i18n ? window.i18n.t('setup.redis.admin_password_error') :
+                            'CLI password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
                         adminPasswordField.setCustomValidity(errorMessage);
                     } else {
                         adminPasswordField.setCustomValidity('');
@@ -2047,31 +2138,13 @@ class SetupApp {
     }
 
     validateGoAccessForm(form) {
-        let valid = true;
-        this.clearFormErrors(form);
-        
-        const goAccessEnabled = form.querySelector('#goaccess-enabled').checked;
-        
-        if (goAccessEnabled) {
-            // 检查是否需要上传GeoIP文件或文件已丢失
-            if (!this.config.goaccess.has_geo_file || 
-                (this.config.goaccess.has_geo_file && !this.config.goaccess.geo_file_temp_path)) {
-                valid = false;
-                const uploadArea = form.querySelector('#geo-upload-area');
-                let errorMessage;
-                
-                if (!this.config.goaccess.has_geo_file) {
-                    errorMessage = window.i18n ? window.i18n.t('setup.goaccess.geo_file_required') : 
-                                   'GeoIP database file is required when GoAccess is enabled';
-                } else {
-                    errorMessage = 'GeoIP database file is no longer available. Please re-upload your GeoIP database file.';
-                }
-                
-                this.showFieldError(uploadArea, errorMessage);
-            }
-        }
-
-        return valid;
+        return Validator.validateGoAccessForm(
+            form,
+            this.config,
+            (f) => this.clearFormErrors(f),
+            (el, msg) => this.showFieldError(el, msg),
+            window.i18n
+        );
     }
 
     saveGoAccessConfig() {
@@ -2166,15 +2239,17 @@ class SetupApp {
             const confirmField = document.getElementById('admin-password-confirm');
             const passwordField = document.getElementById('admin-password');
             
-            // 密码格式和强度验证（与主项目规则一致）
             if (password && !this.validatePasswordStrength(password)) {
-                passwordField.setCustomValidity('Password must contain lowercase, uppercase, numbers, and special characters (!@#$%^&*)');
+                const errorMsg = window.i18n ? window.i18n.t('setup.admin.password_error') :
+                    'Password must contain lowercase, uppercase, numbers, and special characters (!@#$%^&*)';
+                passwordField.setCustomValidity(errorMsg);
             } else {
                 passwordField.setCustomValidity('');
             }
-            
+
             if (password !== passwordConfirm) {
-                confirmField.setCustomValidity('Passwords must match');
+                const errorMsg = window.i18n ? window.i18n.t('setup.admin.password_confirm_error') : 'Passwords must match';
+                confirmField.setCustomValidity(errorMsg);
             } else {
                 confirmField.setCustomValidity('');
             }
@@ -2186,25 +2261,49 @@ class SetupApp {
             }
         });
 
-        // 安全地设置密码字段值，避免HTML转义问题
         const passwordField = document.getElementById('admin-password');
-        const passwordConfirmField = document.getElementById('admin-password-confirm');
+        const confirmField = document.getElementById('admin-password-confirm');
+
         if (passwordField && this.config.admin_user.password) {
             passwordField.value = this.config.admin_user.password;
         }
-        if (passwordConfirmField && this.config.admin_user.password) {
-            passwordConfirmField.value = this.config.admin_user.password;
+        if (confirmField && this.config.admin_user.password) {
+            confirmField.value = this.config.admin_user.password;
         }
 
-        // 实时密码确认匹配检查
-        document.getElementById('admin-password-confirm').addEventListener('input', (e) => {
-            const password = document.getElementById('admin-password').value;
-            const passwordConfirm = e.target.value;
-            
-            if (passwordConfirm && password !== passwordConfirm) {
-                e.target.setCustomValidity('Passwords must match');
+        passwordField.addEventListener('input', () => {
+            validateAndSetFieldError(
+                passwordField,
+                passwordField.value,
+                'admin',
+                {
+                    i18n: window.i18n,
+                    showCustomErrorFn: (f, m) => this.showCustomError(f, m),
+                    hideCustomErrorFn: (f) => this.hideCustomError(f)
+                }
+            );
+
+            if (confirmField.value && passwordField.value !== confirmField.value) {
+                const errorMsg = window.i18n ? window.i18n.t('setup.admin.password_confirm_error') : 'Passwords must match';
+                confirmField.setCustomValidity(errorMsg);
+                this.showCustomError(confirmField, errorMsg);
             } else {
-                e.target.setCustomValidity('');
+                confirmField.setCustomValidity('');
+                this.hideCustomError(confirmField);
+            }
+        });
+
+        confirmField.addEventListener('input', () => {
+            const password = passwordField.value;
+            const passwordConfirm = confirmField.value;
+
+            if (passwordConfirm && password !== passwordConfirm) {
+                const errorMsg = window.i18n ? window.i18n.t('setup.admin.password_confirm_error') : 'Passwords must match';
+                confirmField.setCustomValidity(errorMsg);
+                this.showCustomError(confirmField, errorMsg);
+            } else {
+                confirmField.setCustomValidity('');
+                this.hideCustomError(confirmField);
             }
         });
 
@@ -3248,254 +3347,43 @@ class SetupApp {
     }
     
     showFormErrors(form) {
-        // 找到所有无效字段并显示错误消息
-        const invalidFields = form.querySelectorAll(':invalid');
-        
-        invalidFields.forEach(field => {
-            const formGroup = field.closest('.form-group');
-            if (formGroup) {
-                formGroup.classList.add('error');
-                const errorMessage = formGroup.querySelector('.invalid-feedback');
-                if (errorMessage) {
-                    errorMessage.style.display = 'block';
-                }
-            }
-        });
-        
-        // 清除有效字段的错误状态
-        const validFields = form.querySelectorAll(':valid');
-        validFields.forEach(field => {
-            const formGroup = field.closest('.form-group');
-            if (formGroup) {
-                formGroup.classList.remove('error');
-                const errorMessage = formGroup.querySelector('.invalid-feedback');
-                if (errorMessage) {
-                    errorMessage.style.display = 'none';
-                }
-            }
-        });
-
-        if (invalidFields.length > 0) {
-            invalidFields[0].focus();
-            invalidFields[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        Validator.showFormErrors(form);
     }
     
     clearFormErrors(form) {
-        const errorGroups = form.querySelectorAll('.form-group.error');
-        errorGroups.forEach(group => {
-            group.classList.remove('error');
-            const errorMessage = group.querySelector('.invalid-feedback');
-            if (errorMessage) {
-                errorMessage.style.display = 'none';
-                errorMessage.textContent = '';
-            }
-        });
+        Validator.clearFormErrors(form);
     }
 
     addFieldTouchListeners(container) {
-        const formFields = container.querySelectorAll('input, select, textarea');
-        formFields.forEach(field => {
-            const markTouched = () => {
-                const formGroup = field.closest('.form-group');
-                if (formGroup) {
-                    formGroup.classList.add('touched');
-                }
-            };
-
-            field.addEventListener('input', markTouched);
-            field.addEventListener('change', markTouched);
-            field.addEventListener('blur', markTouched);
-        });
+        Validator.addFieldTouchListeners(container);
     }
     
     showFieldError(element, message) {
-        const formGroup = element.closest('.form-group');
-        if (formGroup) {
-            formGroup.classList.add('error');
-            const errorMessage = formGroup.querySelector('.invalid-feedback');
-            if (errorMessage) {
-                setTimeout(() => {
-                    errorMessage.textContent = message;
-                    errorMessage.style.display = 'block';
-                }, 0);
-            }
-        }
+        Validator.showFieldError(element, message);
     }
     
     handleBackendValidationErrors(error) {
-        // 处理后端返回的验证错误
-        if (error.errors && Array.isArray(error.errors)) {
-            // 清除所有现有错误状态
-            document.querySelectorAll('.form-group.error').forEach(group => {
-                group.classList.remove('error');
-                const errorMsg = group.querySelector('.invalid-feedback');
-                if (errorMsg) {
-                    errorMsg.style.display = 'none';
-                }
-            });
-            
-            // 字段映射：后端字段名到前端元素ID
-            const fieldMap = {
-                'database.host': 'db-host',
-                'database.port': 'db-port', 
-                'database.name': 'db-name',
-                'database.super_user': 'db-super-user',
-                'database.super_password': 'db-super-password',
-                'database.app_user': 'db-app-user',
-                'database.app_password': 'db-app-password',
-                'redis.host': 'redis-host',
-                'redis.port': 'redis-port',
-                'redis.user': 'redis-user',
-                'redis.admin_password': 'redis-admin-password',
-                'redis.password': 'redis-password',
-                'app.domain_name': 'app-domain',
-                'app.brand_name': 'app-brand',
-                'app.version': 'app-version',
-                'app.default_lang': 'app-lang',
-                'admin_user.username': 'admin-username',
-                'admin_user.email': 'admin-email',
-                'admin_user.password': 'admin-password'
-            };
-            
-            let firstErrorField = null;
-            
-            // 显示每个字段的具体错误
-            error.errors.forEach(err => {
-                const elementId = fieldMap[err.field];
-                if (elementId) {
-                    const element = document.getElementById(elementId);
-                    if (element) {
-                        const formGroup = element.closest('.form-group');
-                        if (formGroup) {
-                            formGroup.classList.add('error');
-                            const errorMsg = formGroup.querySelector('.invalid-feedback');
-                            if (errorMsg) {
-                                errorMsg.textContent = err.message;
-                                errorMsg.style.display = 'block';
-                            }
-                            
-                            if (!firstErrorField) {
-                                firstErrorField = element;
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // 滚动到第一个错误字段
-            if (firstErrorField) {
-                firstErrorField.focus();
-                firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            
-            // 显示总体错误提示
-            this.showAlert('error', 'Please fix the validation errors below and try again.');
-        } else {
-            // 显示通用错误消息
-            this.showAlert('error', 'Failed to save configuration: ' + (error.message || 'Unknown error'));
-        }
+        Validator.handleBackendValidationErrors(error, (type, message) => this.showAlert(type, message));
     }
     
     validatePasswordStrength(password) {
-        // 密码验证规则（与主项目model/user.go保持一致）
-        // 12-64位，只允许字母、数字和特定特殊字符
-        const formatRegex = /^[A-Za-z\d!@#$%^&*]{12,64}$/;
-        const lowerRegex = /[a-z]/;
-        const upperRegex = /[A-Z]/;
-        const digitRegex = /\d/;
-        const specialRegex = /[!@#$%^&*]/;
-        
-        return formatRegex.test(password) &&
-               lowerRegex.test(password) &&
-               upperRegex.test(password) &&
-               digitRegex.test(password) &&
-               specialRegex.test(password);
+        return Validator.validatePasswordStrength(password);
     }
 
     validateDatabasePasswordStrength(password) {
-        // 数据库/Redis密码验证规则（比用户密码稍微宽松）
-        // 12-64位，只允许字母、数字和特定特殊字符
-        const formatRegex = /^[A-Za-z\d!@#$%^&*]{12,64}$/;
-        const lowerRegex = /[a-z]/;
-        const upperRegex = /[A-Z]/;
-        const digitRegex = /\d/;
-        const specialRegex = /[!@#$%^&*]/;
-        
-        if (!formatRegex.test(password)) {
-            return false;
-        }
-        
-        // 至少包含3种字符类型
-        let typeCount = 0;
-        if (lowerRegex.test(password)) typeCount++;
-        if (upperRegex.test(password)) typeCount++;
-        if (digitRegex.test(password)) typeCount++;
-        if (specialRegex.test(password)) typeCount++;
-        
-        return typeCount >= 3;
+        return Validator.validateDatabasePasswordStrength(password);
     }
 
     validateExternalServicePassword(password) {
-        // 外部服务密码验证：更宽松的规则
-        // 1. 不能为空
-        // 2. 长度在1-128字符之间
-        // 3. 不包含控制字符
-        if (!password || password.length === 0) {
-            return false;
-        }
-
-        if (password.length > 128) {
-            return false;
-        }
-
-        // 不能包含控制字符和不可打印字符
-        for (let i = 0; i < password.length; i++) {
-            const charCode = password.charCodeAt(i);
-            if (charCode < 32 || charCode === 127) {
-                return false;
-            }
-        }
-
-        return true;
+        return Validator.validateExternalServicePassword(password);
     }
 
-    // 显示自定义错误信息
     showCustomError(field, message) {
-        const formGroup = field.closest('.form-group');
-        if (formGroup) {
-            // 添加错误样式
-            formGroup.classList.add('error');
-
-            // 查找错误消息容器
-            let errorDiv = formGroup.querySelector('.invalid-feedback');
-            if (errorDiv) {
-                // 更新错误消息并显示
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-            }
-
-            // 添加字段边框颜色
-            field.style.borderColor = '#dc2626';
-        }
+        Validator.showCustomError(field, message);
     }
 
-    // 隐藏自定义错误信息
     hideCustomError(field) {
-        const formGroup = field.closest('.form-group');
-        if (formGroup) {
-            // 移除错误样式
-            formGroup.classList.remove('error');
-
-            // 隐藏错误消息
-            const errorDiv = formGroup.querySelector('.invalid-feedback');
-            if (errorDiv) {
-                errorDiv.style.display = 'none';
-            }
-
-            // 恢复字段边框颜色
-            field.style.borderColor = '';
-        }
+        Validator.hideCustomError(field);
     }
 
     async completeSetup() {
@@ -3556,44 +3444,7 @@ class SetupApp {
     
     // Utility functions
     showValidationErrors(errors) {
-        // 清除现有的错误提示
-        const existingAlerts = document.querySelectorAll('.alert');
-        existingAlerts.forEach(alert => alert.remove());
-
-        // 创建错误容器
-        const errorContainer = document.createElement('div');
-        errorContainer.className = 'alert alert-error validation-errors';
-
-        // 创建错误标题
-        const errorTitle = document.createElement('div');
-        errorTitle.className = 'validation-error-title';
-        errorTitle.textContent = window.i18n ? window.i18n.t('messages.fix_errors') : 'Please fix the validation errors below and try again.';
-        errorContainer.appendChild(errorTitle);
-
-        // 创建错误列表
-        const errorList = document.createElement('ul');
-        errorList.className = 'validation-error-list';
-
-        errors.forEach(error => {
-            const errorItem = document.createElement('li');
-            errorItem.className = 'validation-error-item';
-
-            // 只显示错误信息，不显示技术字段名
-            const message = error.message || 'Validation error';
-            errorItem.textContent = message;
-
-            errorList.appendChild(errorItem);
-        });
-
-        errorContainer.appendChild(errorList);
-        document.querySelector('.setup-card').insertBefore(errorContainer, document.getElementById('step-content'));
-
-        // 自动移除警告
-        setTimeout(() => {
-            if (errorContainer.parentNode) {
-                errorContainer.parentNode.removeChild(errorContainer);
-            }
-        }, 10000); // 验证错误显示时间更长
+        Validator.showValidationErrors(errors, window.i18n);
     }
 
     showAlert(type, message) {
