@@ -20,77 +20,58 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// ValidatorService 配置验证服务
 type ValidatorService struct{}
 
-// NewValidatorService 创建验证服务实例
 func NewValidatorService() *ValidatorService {
 	return &ValidatorService{}
 }
 
-// 验证正则表达式
 var (
-	// 主机名或IP地址
 	hostRegex = regexp.MustCompile(`^[a-zA-Z0-9.-]+$`)
 
-	// 数据库名称和用户名（以字母开头，只包含字母、数字、下划线）
 	dbNameRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*$`)
 
-	// 域名格式 - 支持多级域名和子域名
 	domainRegex = regexp.MustCompile(`^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$|^localhost$`)
 
-	// 品牌名称校验已移除字符类型限制，只保留长度验证
 
-	// 用户名格式（与主项目保持一致：开头和结尾必须是字母数字，中间可以有字母、数字、点、下划线、连字符）
 	usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]+[a-zA-Z0-9]$`)
 
-	// 电子邮箱格式
 	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
-	// URL格式（用于CORS）
 	urlRegex = regexp.MustCompile(`^https?://[a-zA-Z0-9.-]+(?::[0-9]+)?(?:/.*)?$`)
 )
 
-// 密码验证规则（与主项目保持一致）
 var (
-	// 密码格式：12-64位，只允许字母、数字和特定特殊字符
 	passwordFormatRegex = regexp.MustCompile(`^[A-Za-z\d!@#$%^&*]{12,64}$`)
 	// 必须包含小写字母
 	passwordLowerRegex = regexp.MustCompile(`[a-z]`)
 	// 必须包含大写字母
 	passwordUpperRegex = regexp.MustCompile(`[A-Z]`)
-	// 必须包含数字
 	passwordDigitRegex = regexp.MustCompile(`\d`)
 	// 必须包含特殊字符
 	passwordSpecialRegex = regexp.MustCompile(`[!@#$%^&*]`)
 )
 
-// validatePassword 验证密码（与主项目model/user.go的ValidPassword保持一致）
 func validatePassword(pwd string) bool {
 	pwdBytes := []byte(pwd)
 
-	// 检查格式、长度和字符集
 	if !passwordFormatRegex.Match(pwdBytes) {
 		return false
 	}
 
-	// 检查必须包含的字符类型
 	return passwordLowerRegex.Match(pwdBytes) &&
 		passwordUpperRegex.Match(pwdBytes) &&
 		passwordDigitRegex.Match(pwdBytes) &&
 		passwordSpecialRegex.Match(pwdBytes)
 }
 
-// validateDatabasePassword 验证数据库/Redis密码（比用户密码稍微宽松）
 func validateDatabasePassword(pwd string) bool {
 	pwdBytes := []byte(pwd)
 
-	// 检查格式、长度和字符集
 	if !passwordFormatRegex.Match(pwdBytes) {
 		return false
 	}
 
-	// 至少包含3种字符类型
 	typeCount := 0
 	if passwordLowerRegex.Match(pwdBytes) {
 		typeCount++
@@ -108,17 +89,12 @@ func validateDatabasePassword(pwd string) bool {
 	return typeCount >= 3
 }
 
-// validateExternalServicePassword 验证外部服务密码（更宽松的规则，遵循PostgreSQL/Redis规范）
 func validateExternalServicePassword(pwd string) bool {
-	// 外部服务密码验证：只检查基本要求
 	// 1. 不能为空
-	// 2. 长度在1-128字符之间（PostgreSQL和Redis都支持这个范围）
-	// 3. 不包含不安全字符
 	if pwd == "" {
 		return false
 	}
 
-	// PostgreSQL和Redis密码长度限制
 	if len(pwd) < 1 || len(pwd) > 128 {
 		return false
 	}
@@ -133,14 +109,12 @@ func validateExternalServicePassword(pwd string) bool {
 	return true
 }
 
-// TestDatabaseConnection 验证数据库配置格式
 func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) model.ConnectionTestResult {
 	result := model.ConnectionTestResult{
 		Service:  "database",
 		TestedAt: time.Now(),
 	}
 
-	// 验证必填字段
 	if cfg.Host == "" {
 		result.Success = false
 		result.Message = "key:validation.database.host_required"
@@ -159,7 +133,6 @@ func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) mode
 		return result
 	}
 
-	// 外部服务模式下不需要超级用户验证
 	if cfg.ServiceType == "docker" {
 		if cfg.SuperUser == "" {
 			result.Success = false
@@ -186,21 +159,17 @@ func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) mode
 		return result
 	}
 
-	// Docker模式下跳过连接测试，因为服务还未启动
 	if cfg.ServiceType == "docker" {
 		result.Success = true
 		result.Message = "key:messages.database_config_validated"
 		return result
 	}
 
-	// 外部服务模式下进行实际连接测试
-	// 构建连接字符串并尝试实际连接（对用户名和密码进行URL编码）
 	encodedUser := url.QueryEscape(cfg.AppUser)
 	encodedPassword := url.QueryEscape(cfg.AppPassword)
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		encodedUser, encodedPassword, cfg.Host, cfg.Port, cfg.Name)
 
-	// 打开数据库连接
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		result.Success = false
@@ -209,7 +178,6 @@ func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) mode
 	}
 	defer db.Close()
 
-	// 尝试实际连接（Ping）
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -224,14 +192,12 @@ func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) mode
 	return result
 }
 
-// TestRedisConnection 验证Redis配置格式
 func (v *ValidatorService) TestRedisConnection(cfg model.RedisConfig) model.ConnectionTestResult {
 	result := model.ConnectionTestResult{
 		Service:  "redis",
 		TestedAt: time.Now(),
 	}
 
-	// 验证必填字段
 	if cfg.Host == "" {
 		result.Success = false
 		result.Message = "key:validation.redis.host_required"
@@ -244,35 +210,28 @@ func (v *ValidatorService) TestRedisConnection(cfg model.RedisConfig) model.Conn
 		return result
 	}
 
-	// Docker模式下跳过连接测试，因为服务还未启动
 	if cfg.ServiceType == "docker" {
 		result.Success = true
 		result.Message = "key:messages.redis_config_validated"
 		return result
 	}
 
-	// 外部服务模式下进行实际连接测试
-	// 构建Redis连接选项
 	opts := &redis.Options{
 		Addr:     net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port)),
 		Password: cfg.Password,
-		DB:       0, // 默认使用数据库0
+		DB:       0,
 	}
 
-	// 如果有用户名，设置用户名
 	if cfg.User != "" {
 		opts.Username = cfg.User
 	}
 
-	// 创建Redis客户端
 	client := redis.NewClient(opts)
 	defer client.Close()
 
-	// 尝试连接（设置10秒超时）
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Ping Redis服务器
 	if err := client.Ping(ctx).Err(); err != nil {
 		result.Success = false
 		result.Message = "key:validation.redis.connection_failed"
@@ -284,17 +243,14 @@ func (v *ValidatorService) TestRedisConnection(cfg model.RedisConfig) model.Conn
 	return result
 }
 
-// TestSMTPConnection 测试SMTP连接
 func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.ConnectionTestResult {
 	result := model.ConnectionTestResult{
 		Service:  "smtp",
 		TestedAt: time.Now(),
 	}
 
-	// 构建SMTP地址
 	address := net.JoinHostPort(cfg.Server, strconv.Itoa(cfg.Port))
 
-	// 建立连接
 	client, err := smtp.Dial(address)
 	if err != nil {
 		result.Success = false
@@ -302,12 +258,10 @@ func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.Connec
 		return result
 	}
 
-	// 使用更安全的连接关闭方式
 	var connectionClosed bool
 	defer func() {
 		if !connectionClosed {
 			if err := client.Close(); err != nil {
-				// 忽略 "use of closed network connection" 错误，这是正常的
 				if !strings.Contains(err.Error(), "use of closed network connection") {
 					log.Printf("Warning: failed to close SMTP connection: %v", err)
 				}
@@ -315,7 +269,6 @@ func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.Connec
 		}
 	}()
 
-	// 检查并启动 STARTTLS
 	if ok, _ := client.Extension("STARTTLS"); ok {
 		tlsConfig := &tls.Config{
 			ServerName: cfg.Server,
@@ -328,13 +281,10 @@ func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.Connec
 		}
 	}
 
-	// 测试认证
 	if cfg.User != "" && cfg.Password != "" {
-		// 首先尝试 PLAIN 认证
 		auth := smtp.PlainAuth("", cfg.User, cfg.Password, cfg.Server)
 		if err := client.Auth(auth); err != nil {
 			log.Printf("PLAIN auth failed: %v, trying to close connection gracefully", err)
-			// PLAIN 认证失败时，连接可能已经被服务器关闭
 			connectionClosed = true
 			result.Success = false
 			result.Message = "key:validation.smtp.auth_failed"
@@ -347,11 +297,9 @@ func (v *ValidatorService) TestSMTPConnection(cfg model.SMTPConfig) model.Connec
 	return result
 }
 
-// ValidateConfig 递增验证配置（根据当前步骤只验证已提交的部分）
 func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	// 定义步骤顺序（与前端步骤顺序保持一致）
 	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "ssl", "admin", "oauth", "goaccess", "frontend", "review", "config_complete"}
 	currentStepIndex := -1
 
@@ -363,12 +311,10 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 		}
 	}
 
-	// 如果没找到当前步骤，默认验证所有（向后兼容）
 	if currentStepIndex == -1 {
 		currentStepIndex = len(stepOrder) - 1
 	}
 
-	// 根据步骤递增验证
 	if currentStepIndex >= 1 { // database
 		errors = append(errors, v.validateDatabaseConfig(cfg.Database)...)
 	}
@@ -397,11 +343,8 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 		errors = append(errors, v.validateOAuthConfig(cfg.OAuth)...)
 	}
 
-	// goaccess 不需要强制验证，跳过
 
-	// frontend 步骤现在是可选的，不再强制验证
 	if currentStepIndex >= 9 { // frontend
-		// 只有在用户明确启用 SSR 时才进行验证
 		if cfg.App.SSREnabled {
 			errors = append(errors, v.validateFrontendConfig(cfg.App)...)
 		}
@@ -410,11 +353,9 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 	return errors
 }
 
-// validateDatabaseConfig 验证数据库配置
 func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	// ServiceType验证
 	if cfg.ServiceType != "docker" && cfg.ServiceType != "external" {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.service_type",
@@ -422,7 +363,6 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		})
 	}
 
-	// Host验证 - docker模式下强制localhost
 	if cfg.ServiceType == "docker" {
 		if cfg.Host != "localhost" {
 			errors = append(errors, model.ValidationError{
@@ -431,7 +371,6 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 			})
 		}
 	} else {
-		// external模式下需要验证host
 		if cfg.Host == "" {
 			errors = append(errors, model.ValidationError{
 				Field:   "database.host",
@@ -445,7 +384,6 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		}
 	}
 
-	// Port验证
 	if cfg.Port <= 0 || cfg.Port > 65535 {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.port",
@@ -453,7 +391,6 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		})
 	}
 
-	// Database name验证
 	if cfg.Name == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.name",
@@ -471,7 +408,6 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		})
 	}
 
-	// 超级用户验证 - 仅Docker模式需要（用于初始化数据库容器）
 	if cfg.ServiceType == "docker" {
 		if cfg.SuperUser == "" {
 			errors = append(errors, model.ValidationError{
@@ -491,14 +427,12 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		}
 	}
 
-	// 应用用户验证
 	if cfg.AppUser == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.app_user",
 			Message: "key:validation.database.app_user_required",
 		})
 	} else if cfg.ServiceType == "docker" {
-		// Docker模式使用严格的用户名验证
 		if len(cfg.AppUser) > 63 {
 			errors = append(errors, model.ValidationError{
 				Field:   "database.app_user",
@@ -511,7 +445,6 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 			})
 		}
 	} else {
-		// 外部服务模式使用宽松的用户名验证
 		if len(cfg.AppUser) > 128 {
 			errors = append(errors, model.ValidationError{
 				Field:   "database.app_user",
@@ -520,7 +453,6 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		}
 	}
 
-	// 超级用户密码验证 - 仅Docker模式需要（用于初始化数据库容器）
 	if cfg.ServiceType == "docker" {
 		if cfg.SuperPassword == "" {
 			errors = append(errors, model.ValidationError{
@@ -535,23 +467,19 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		}
 	}
 
-	// 应用用户密码验证
 	if cfg.AppPassword == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.app_password",
 			Message: "key:validation.database.app_password_required",
 		})
 	} else {
-		// 根据服务类型使用不同的密码验证规则
 		var passwordValid bool
 		var errorMessage string
 
 		if cfg.ServiceType == "docker" {
-			// Docker模式使用严格的密码规则
 			passwordValid = validateDatabasePassword(cfg.AppPassword)
 			errorMessage = "key:validation.database.app_password_error"
 		} else {
-			// 外部服务使用宽松的密码规则
 			passwordValid = validateExternalServicePassword(cfg.AppPassword)
 			errorMessage = "key:validation.database.app_password_external_error"
 		}
@@ -564,7 +492,6 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		}
 	}
 
-	// 验证用户名不能重复 - 仅Docker模式需要检查
 	if cfg.ServiceType == "docker" && cfg.SuperUser != "" && cfg.AppUser != "" && cfg.SuperUser == cfg.AppUser {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.app_user",
@@ -572,7 +499,6 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 		})
 	}
 
-	// 验证密码不能重复 - 仅Docker模式需要检查
 	if cfg.ServiceType == "docker" && cfg.SuperPassword != "" && cfg.AppPassword != "" && cfg.SuperPassword == cfg.AppPassword {
 		errors = append(errors, model.ValidationError{
 			Field:   "database.app_password",
@@ -583,11 +509,9 @@ func (v *ValidatorService) validateDatabaseConfig(cfg model.DatabaseConfig) []mo
 	return errors
 }
 
-// validateRedisConfig 验证Redis配置
 func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	// ServiceType验证
 	if cfg.ServiceType != "docker" && cfg.ServiceType != "external" {
 		errors = append(errors, model.ValidationError{
 			Field:   "redis.service_type",
@@ -595,7 +519,6 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		})
 	}
 
-	// Host验证 - docker模式下强制localhost
 	if cfg.ServiceType == "docker" {
 		if cfg.Host != "localhost" {
 			errors = append(errors, model.ValidationError{
@@ -604,7 +527,6 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 			})
 		}
 	} else {
-		// external模式下需要验证host
 		if cfg.Host == "" {
 			errors = append(errors, model.ValidationError{
 				Field:   "redis.host",
@@ -618,7 +540,6 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		}
 	}
 
-	// Port验证
 	if cfg.Port <= 0 || cfg.Port > 65535 {
 		errors = append(errors, model.ValidationError{
 			Field:   "redis.port",
@@ -626,23 +547,19 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		})
 	}
 
-	// Password验证
 	if cfg.Password == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "redis.password",
 			Message: "key:validation.redis.password_required",
 		})
 	} else {
-		// 根据服务类型使用不同的密码验证规则
 		var passwordValid bool
 		var errorMessage string
 
 		if cfg.ServiceType == "docker" {
-			// Docker模式使用严格的密码规则
 			passwordValid = validateDatabasePassword(cfg.Password)
 			errorMessage = "key:validation.redis.password_error"
 		} else {
-			// 外部服务使用宽松的密码规则
 			passwordValid = validateExternalServicePassword(cfg.Password)
 			errorMessage = "key:validation.redis.password_external_error"
 		}
@@ -655,9 +572,7 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		}
 	}
 
-	// User验证 - Docker模式下必需且禁止使用'default'用户名
 	if cfg.ServiceType == "docker" {
-		// Docker模式下必须提供用户名
 		if cfg.User == "" {
 			errors = append(errors, model.ValidationError{
 				Field:   "redis.user",
@@ -669,7 +584,6 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 				Message: "key:validation.redis.user_default_forbidden",
 			})
 		} else {
-			// 验证用户名格式（字母、数字、下划线、连字符）
 			userRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 			if !userRegex.MatchString(cfg.User) {
 				errors = append(errors, model.ValidationError{
@@ -684,9 +598,7 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 			}
 		}
 	} else {
-		// 外部模式下用户名可选，允许使用"default"，但如果提供了就需要验证格式
 		if cfg.User != "" {
-			// 外部模式下允许"default"用户名，兼容旧版Redis
 			userRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 			if !userRegex.MatchString(cfg.User) {
 				errors = append(errors, model.ValidationError{
@@ -702,7 +614,6 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 		}
 	}
 
-	// AdminPassword验证（仅Docker模式需要）
 	if cfg.ServiceType == "docker" {
 		if cfg.AdminPassword == "" {
 			errors = append(errors, model.ValidationError{
@@ -710,7 +621,6 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 				Message: "key:validation.redis.admin_password_required",
 			})
 		} else {
-			// Docker模式的管理密码使用严格验证
 			if !validateDatabasePassword(cfg.AdminPassword) {
 				errors = append(errors, model.ValidationError{
 					Field:   "redis.admin_password",
@@ -723,11 +633,9 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 	return errors
 }
 
-// validateSMTPConfig 验证SMTP配置
 func (v *ValidatorService) validateSMTPConfig(cfg model.SMTPConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	// SMTP服务器验证
 	if cfg.Server == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "smtp.server",
@@ -740,7 +648,6 @@ func (v *ValidatorService) validateSMTPConfig(cfg model.SMTPConfig) []model.Vali
 		})
 	}
 
-	// 端口验证
 	if cfg.Port <= 0 || cfg.Port > 65535 {
 		errors = append(errors, model.ValidationError{
 			Field:   "smtp.port",
@@ -748,7 +655,6 @@ func (v *ValidatorService) validateSMTPConfig(cfg model.SMTPConfig) []model.Vali
 		})
 	}
 
-	// 用户名验证
 	if cfg.User == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "smtp.user",
@@ -756,7 +662,6 @@ func (v *ValidatorService) validateSMTPConfig(cfg model.SMTPConfig) []model.Vali
 		})
 	}
 
-	// 密码验证
 	if cfg.Password == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "smtp.password",
@@ -764,7 +669,6 @@ func (v *ValidatorService) validateSMTPConfig(cfg model.SMTPConfig) []model.Vali
 		})
 	}
 
-	// 发件人邮箱验证
 	if cfg.Sender == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "smtp.sender",
@@ -780,11 +684,9 @@ func (v *ValidatorService) validateSMTPConfig(cfg model.SMTPConfig) []model.Vali
 	return errors
 }
 
-// validateAppConfig 验证应用配置
 func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	// Domain name验证
 	if cfg.DomainName == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.domain_name",
@@ -797,14 +699,12 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		})
 	}
 
-	// Static host name验证
 	if cfg.StaticHostName == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.static_host_name",
 			Message: "key:validation.app.static_host_required",
 		})
 	} else {
-		// 验证静态主机名格式（域名或域名:端口）
 		staticHostRegex := regexp.MustCompile(`^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(:[0-9]{1,5})?$|^localhost(:[0-9]{1,5})?$`)
 		if !staticHostRegex.MatchString(cfg.StaticHostName) {
 			errors = append(errors, model.ValidationError{
@@ -814,7 +714,6 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		}
 	}
 
-	// Brand name验证 - 只验证长度，支持所有Unicode字符
 	if cfg.BrandName == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.brand_name",
@@ -827,7 +726,6 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		})
 	}
 
-	// CORS origins验证
 	for i, origin := range cfg.CORSAllowOrigins {
 		origin = strings.TrimSpace(origin)
 		if origin != "" && !urlRegex.MatchString(origin) {
@@ -838,7 +736,6 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		}
 	}
 
-	// Default language验证
 	validLangs := map[string]bool{"en": true, "zh-Hans": true, "zh-Hant": true, "ja": true}
 	if cfg.DefaultLang == "" {
 		errors = append(errors, model.ValidationError{
@@ -856,11 +753,9 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 	return errors
 }
 
-// validateOAuthConfig 验证OAuth配置
 func (v *ValidatorService) validateOAuthConfig(cfg model.OAuthConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	// Google OAuth验证
 	if cfg.GoogleEnabled {
 		if cfg.GoogleClientID == "" {
 			errors = append(errors, model.ValidationError{
@@ -876,7 +771,6 @@ func (v *ValidatorService) validateOAuthConfig(cfg model.OAuthConfig) []model.Va
 		}
 	}
 
-	// GitHub OAuth验证
 	if cfg.GithubEnabled {
 		if cfg.GithubClientID == "" {
 			errors = append(errors, model.ValidationError{
@@ -895,11 +789,9 @@ func (v *ValidatorService) validateOAuthConfig(cfg model.OAuthConfig) []model.Va
 	return errors
 }
 
-// validateAdminUserConfig 验证管理员用户配置
 func (v *ValidatorService) validateAdminUserConfig(cfg model.AdminUserConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	// Username验证（与主项目规则完全一致）
 	if cfg.Username == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.username",
@@ -917,7 +809,6 @@ func (v *ValidatorService) validateAdminUserConfig(cfg model.AdminUserConfig) []
 		})
 	}
 
-	// Email验证
 	if cfg.Email == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.email",
@@ -930,7 +821,6 @@ func (v *ValidatorService) validateAdminUserConfig(cfg model.AdminUserConfig) []
 		})
 	}
 
-	// Password验证（与主项目规则完全一致）
 	if cfg.Password == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "admin_user.password",
@@ -946,17 +836,13 @@ func (v *ValidatorService) validateAdminUserConfig(cfg model.AdminUserConfig) []
 	return errors
 }
 
-// TestAllConnections 测试所有连接
 func (v *ValidatorService) TestAllConnections(cfg *model.SetupConfig) []model.ConnectionTestResult {
 	var results []model.ConnectionTestResult
 
-	// 测试数据库连接
 	results = append(results, v.TestDatabaseConnection(cfg.Database))
 
-	// 测试Redis连接
 	results = append(results, v.TestRedisConnection(cfg.Redis))
 
-	// 测试SMTP连接（如果配置了）
 	if cfg.SMTP.Server != "" {
 		results = append(results, v.TestSMTPConnection(cfg.SMTP))
 	}
@@ -964,11 +850,9 @@ func (v *ValidatorService) TestAllConnections(cfg *model.SetupConfig) []model.Co
 	return results
 }
 
-// validateSSLConfig 验证SSL配置
 func (v *ValidatorService) validateSSLConfig(cfg model.SSLConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	// 如果启用SSL，验证证书和私钥路径
 	if cfg.Enabled {
 		if cfg.CertPath == "" {
 			errors = append(errors, model.ValidationError{
@@ -988,15 +872,11 @@ func (v *ValidatorService) validateSSLConfig(cfg model.SSLConfig) []model.Valida
 	return errors
 }
 
-// validateFrontendConfig 验证前端和SSR配置（前端构建现在是可选的）
 func (v *ValidatorService) validateFrontendConfig(cfg model.AppConfig) []model.ValidationError {
 	var errors []model.ValidationError
 
-	// 服务端渲染配置验证
 	if cfg.SSREnabled {
-		// 只有当提供了前端脚本时才验证格式，不强制要求必须有
 		if len(cfg.FrontendScripts) > 0 {
-			// 支持相对路径（以/开头）和绝对URL（以https?://开头）
 			urlRegex := regexp.MustCompile(`^(https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?|/[^/].*\.(js|mjs)(\?.*)?$)`)
 			for i, script := range cfg.FrontendScripts {
 				if !urlRegex.MatchString(script) {
@@ -1008,9 +888,7 @@ func (v *ValidatorService) validateFrontendConfig(cfg model.AppConfig) []model.V
 			}
 		}
 
-		// 只有当提供了前端样式时才验证格式，不强制要求必须有
 		if len(cfg.FrontendStyles) > 0 {
-			// 支持相对路径（以/开头）和绝对URL（以https?://开头）
 			urlRegex := regexp.MustCompile(`^(https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?|/[^/].*\.(css)(\?.*)?$)`)
 			for i, style := range cfg.FrontendStyles {
 				if !urlRegex.MatchString(style) {
@@ -1022,7 +900,6 @@ func (v *ValidatorService) validateFrontendConfig(cfg model.AppConfig) []model.V
 			}
 		}
 
-		// Container ID 仍然是必须的，如果启用了 SSR
 		if cfg.FrontendContainerId == "" {
 			errors = append(errors, model.ValidationError{
 				Field:   "app.frontend_container_id",

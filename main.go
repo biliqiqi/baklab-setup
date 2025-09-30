@@ -84,7 +84,6 @@ func main() {
 
 	setupService := services.NewSetupService(jsonStorage)
 
-	// Handle config file import if specified
 	if *configFile != "" {
 		if err := importConfigFile(setupService, *configFile); err != nil {
 			log.Fatalf("Failed to import config file: %v", err)
@@ -130,13 +129,7 @@ func main() {
 
 		r.Post("/upload/geo-file", handlers.UploadGeoFileHandler)
 		r.Get("/geo-file/status", handlers.CheckGeoFileStatusHandler)
-		// r.Post("/upload/jwt-key-file", handlers.UploadJWTKeyFileHandler) // 已注释：改为自动生成JWT密钥
 
-		// Frontend build endpoints (temporarily disabled - using docker image instead)
-		// r.Get("/frontend/status", handlers.GetFrontendStatusHandler)
-		// r.Post("/frontend/build", handlers.BuildFrontendHandler)
-		// r.Get("/frontend/build/stream", handlers.StreamFrontendBuildHandler)
-		// r.Post("/frontend/extract-assets", handlers.ExtractFrontendAssetsHandler)
 
 		r.Post("/complete", handlers.CompleteSetupHandler)
 	})
@@ -209,7 +202,6 @@ func main() {
 	log.Println("Setup server stopped")
 }
 
-// FileServer 静态文件服务器
 func FileServer(r chi.Router, path string, root http.FileSystem) {
 	if path != "/" && path[len(path)-1] != '/' {
 		r.Get(path, http.RedirectHandler(path+"/", http.StatusMovedPermanently).ServeHTTP)
@@ -225,7 +217,6 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 	})
 }
 
-// setupStrictCORS 配置严格的基于域名的 CORS
 func setupStrictCORS(domain, port string) func(http.Handler) http.Handler {
 	allowedOrigins := []string{
 		fmt.Sprintf("https://%s:%s", domain, port),
@@ -256,7 +247,6 @@ func setupStrictCORS(domain, port string) func(http.Handler) http.Handler {
 	})
 }
 
-// setupSecurityHeaders 配置 HTTPS 安全头和 CSP
 func setupSecurityHeaders(domain string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -289,7 +279,6 @@ func setupSecurityHeaders(domain string) func(http.Handler) http.Handler {
 	}
 }
 
-// cleanupSensitiveData 清理敏感数据
 func cleanupSensitiveData(dataDir string) {
 	log.Println("Starting security cleanup...")
 
@@ -312,20 +301,16 @@ func cleanupSensitiveData(dataDir string) {
 	log.Println("Security cleanup completed")
 }
 
-// importConfigFile imports configuration from a JSON file
 func importConfigFile(setupService *services.SetupService, configPath string) error {
-	// Check if file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return fmt.Errorf("config file not found: %s", configPath)
 	}
 
-	// Read config file
 	configData, err := os.ReadFile(configPath)
 	if err != nil {
 		return fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	// Import configuration
 	_, err = setupService.ImportConfiguration(configData)
 	if err != nil {
 		return fmt.Errorf("failed to import configuration: %w", err)

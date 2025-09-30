@@ -12,15 +12,12 @@ import (
 	"github.com/biliqiqi/baklab-setup/internal/model"
 )
 
-// JSONStorage JSON文件存储实现
 type JSONStorage struct {
 	dataDir string
 	mu      sync.RWMutex
 }
 
-// NewJSONStorage 创建JSON存储实例
 func NewJSONStorage(dataDir string) *JSONStorage {
-	// 确保数据目录存在
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		log.Printf("Warning: failed to create data directory %s: %v", dataDir, err)
 	}
@@ -30,14 +27,12 @@ func NewJSONStorage(dataDir string) *JSONStorage {
 	}
 }
 
-// GetSetupState 获取setup状态
 func (s *JSONStorage) GetSetupState() (*model.SetupState, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	filePath := filepath.Join(s.dataDir, "setup-state.json")
 
-	// 如果文件不存在，返回默认状态
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return &model.SetupState{
 			Status:    model.StatusPending,
@@ -60,7 +55,6 @@ func (s *JSONStorage) GetSetupState() (*model.SetupState, error) {
 	return &state, nil
 }
 
-// SaveSetupState 保存setup状态
 func (s *JSONStorage) SaveSetupState(state *model.SetupState) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -80,7 +74,6 @@ func (s *JSONStorage) SaveSetupState(state *model.SetupState) error {
 	return nil
 }
 
-// GetSetupConfig 获取setup配置
 func (s *JSONStorage) GetSetupConfig() (*model.SetupConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -104,7 +97,6 @@ func (s *JSONStorage) GetSetupConfig() (*model.SetupConfig, error) {
 	return &cfg, nil
 }
 
-// SaveSetupConfig 保存setup配置
 func (s *JSONStorage) SaveSetupConfig(cfg *model.SetupConfig) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -122,7 +114,6 @@ func (s *JSONStorage) SaveSetupConfig(cfg *model.SetupConfig) error {
 	return nil
 }
 
-// GetSetupToken 获取setup令牌
 func (s *JSONStorage) GetSetupToken() (*model.SetupToken, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -146,7 +137,6 @@ func (s *JSONStorage) GetSetupToken() (*model.SetupToken, error) {
 	return &token, nil
 }
 
-// SaveSetupToken 保存setup令牌
 func (s *JSONStorage) SaveSetupToken(token *model.SetupToken) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -164,7 +154,6 @@ func (s *JSONStorage) SaveSetupToken(token *model.SetupToken) error {
 	return nil
 }
 
-// IsSetupCompleted 检查setup是否已完成
 func (s *JSONStorage) IsSetupCompleted() (bool, error) {
 	state, err := s.GetSetupState()
 	if err != nil {
@@ -174,7 +163,6 @@ func (s *JSONStorage) IsSetupCompleted() (bool, error) {
 	return state.Status == model.StatusCompleted, nil
 }
 
-// MarkSetupCompleted 标记setup为已完成
 func (s *JSONStorage) MarkSetupCompleted() error {
 	state, err := s.GetSetupState()
 	if err != nil {
@@ -190,7 +178,6 @@ func (s *JSONStorage) MarkSetupCompleted() error {
 	return s.SaveSetupState(state)
 }
 
-// CleanupTempFiles 清理临时文件
 func (s *JSONStorage) CleanupTempFiles() error {
 	tempFiles := []string{"config-draft.json", "tokens.json"}
 
@@ -204,12 +191,10 @@ func (s *JSONStorage) CleanupTempFiles() error {
 	return nil
 }
 
-// ResetSetupState 重置setup状态，清理所有相关文件
 func (s *JSONStorage) ResetSetupState() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// 清理所有setup相关文件
 	filesToRemove := []string{
 		"setup-state.json",
 		"config-draft.json",

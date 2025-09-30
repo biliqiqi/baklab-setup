@@ -371,7 +371,6 @@ func TestValidatorService_ValidateConfig_PasswordValidation(t *testing.T) {
 				return
 			}
 
-			// 检查具体的错误类型
 			hasDBError := false
 			hasRedisError := false
 			for _, err := range errors {
