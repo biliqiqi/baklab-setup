@@ -60,5 +60,8 @@ static/node_modules/
 # Backup files
 *.backup
 
+# Refactoring notes
+refactor-todo.txt
+
 baklab-setup
 CLAUDE.md

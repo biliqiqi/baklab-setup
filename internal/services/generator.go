@@ -345,9 +345,9 @@ func (g *GeneratorService) GenerateDockerConfig(cfg *model.SetupConfig) error {
 # Production Docker Compose Configuration
 
 services:
-  webapp:
+  app:
     image: ghcr.io/biliqiqi/baklab:$APP_VERSION
-    container_name: "baklab-webapp"
+    container_name: "baklab-app"
     restart: always
     environment:
       {{- if eq .Database.ServiceType "docker" }}
@@ -570,7 +570,7 @@ services:
     container_name: "baklab-nginx"
     restart: always
     environment:
-      - APP_LOCAL_HOST=webapp
+      - APP_LOCAL_HOST=app
       - APP_PORT=$APP_PORT
       - ROOT_DOMAIN_NAME=$ROOT_DOMAIN_NAME
     volumes:
@@ -578,7 +578,7 @@ services:
       - ./manage_static:/data/manage_static
       - ./frontend_dist:/data/static/frontend:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/templates/webapp.conf.template:/etc/nginx/templates/webapp.conf.template:ro
+      - ./nginx/templates/baklab.conf.template:/etc/nginx/templates/baklab.conf.template:ro
       - ./nginx/logs:/etc/nginx/logs{{if .SSL.Enabled}}
       - {{.SSL.CertPath}}:/etc/ssl/certs/server.crt:ro
       - {{.SSL.KeyPath}}:/etc/ssl/private/server.key:ro{{end}}
@@ -586,7 +586,7 @@ services:
       - $NGINX_SSL_PORT:443{{end}}
       - $NGINX_PORT:80
     depends_on:
-      webapp:
+      app:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/health"]
@@ -787,30 +787,30 @@ func (g *GeneratorService) GenerateNginxConfig(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to write nginx.conf: %w", err)
 	}
 
-	webappTemplateFile := "./templates/nginx/webapp.conf.template"
-	webappTemplateContent, err := os.ReadFile(webappTemplateFile)
+	baklabTemplateFile := "./templates/nginx/baklab.conf.template"
+	baklabTemplateContent, err := os.ReadFile(baklabTemplateFile)
 	if err != nil {
-		return fmt.Errorf("failed to read webapp.conf.template: %w", err)
+		return fmt.Errorf("failed to read baklab.conf.template: %w", err)
 	}
 
-	tmpl, err := template.New("webapp").Parse(string(webappTemplateContent))
+	tmpl, err := template.New("baklab").Parse(string(baklabTemplateContent))
 	if err != nil {
-		return fmt.Errorf("failed to parse webapp.conf template: %w", err)
+		return fmt.Errorf("failed to parse baklab.conf template: %w", err)
 	}
 
-	webappTemplatePath := filepath.Join(templatesDir, "webapp.conf.template")
-	file, err := os.Create(webappTemplatePath)
+	baklabTemplatePath := filepath.Join(templatesDir, "baklab.conf.template")
+	file, err := os.Create(baklabTemplatePath)
 	if err != nil {
-		return fmt.Errorf("failed to create webapp.conf.template file: %w", err)
+		return fmt.Errorf("failed to create baklab.conf.template file: %w", err)
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			log.Printf("Warning: failed to close webapp.conf.template file: %v", err)
+			log.Printf("Warning: failed to close baklab.conf.template file: %v", err)
 		}
 	}()
 
 	if err := tmpl.Execute(file, cfg); err != nil {
-		return fmt.Errorf("failed to execute webapp.conf template: %w", err)
+		return fmt.Errorf("failed to execute baklab.conf template: %w", err)
 	}
 
 	return nil
