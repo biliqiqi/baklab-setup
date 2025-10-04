@@ -1,24 +1,14 @@
 // BakLab Setup - Frontend Application - v1.2 (Double Escaped Patterns)
 import * as Validator from './validator.js';
 import { validateAndSetFieldError } from './validator.js';
+import { ApiClient, formatFileSize } from './api.js';
 
 class SetupApp {
     constructor() {
         this.currentStep = 0;
         this.token = null;
         this.shouldAutoScroll = true;
-
-        // 统一的请求锁机制
-        this.requestLocks = {
-            initialize: false,
-            complete: false,
-            generateConfig: false,
-            testDatabase: false,
-            testRedis: false,
-            testSMTP: false,
-            saveConfig: false,
-            geoFileUpload: false
-        };
+        this.apiClient = new ApiClient();
         this.config = {
             database: {
                 service_type: 'docker',
@@ -118,6 +108,7 @@ class SetupApp {
             const urlToken = urlParams.get('token');
             if (urlToken) {
                 this.token = urlToken;
+                this.apiClient.setToken(urlToken);
                 this.currentStep = 0; // 从欢迎页开始
 
                 // 检查是否有导入的配置
@@ -130,79 +121,7 @@ class SetupApp {
             this.render();
         }
     }
-    
-    async api(method, url, data = null) {
-        const options = {
-            method,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
-        
-        if (this.token) {
-            options.headers['Setup-Token'] = this.token;
-        }
-        
-        // Add language header for request-level localization
-        if (window.i18n && window.i18n.getCurrentLanguage) {
-            options.headers['X-Language'] = window.i18n.getCurrentLanguage();
-        }
-        
-        if (data) {
-            options.body = JSON.stringify(data);
-        }
-        
-        const response = await fetch(url, options);
-        const result = await response.json();
-        
-        if (!response.ok) {
-            // 如果有验证错误，创建包含详细错误信息的错误对象
-            if (result.errors && result.errors.length > 0) {
-                const error = new Error(result.message || 'Validation failed');
-                error.validationErrors = result.errors;
-                throw error;
-            }
-            throw new Error(result.message || 'Request failed');
-        }
-        
-        return result;
-    }
 
-    // 通用的请求锁管理
-    acquireLock(lockName) {
-        if (this.requestLocks[lockName]) {
-            return false;
-        }
-        this.requestLocks[lockName] = true;
-        return true;
-    }
-
-    releaseLock(lockName) {
-        this.requestLocks[lockName] = false;
-    }
-
-    // 带锁保护的API调用包装器
-    async protectedApiCall(lockName, apiCall, ...args) {
-        if (!this.acquireLock(lockName)) {
-            return null; // 请求被阻止
-        }
-
-        try {
-            const result = await apiCall.apply(this, args);
-            return result;
-        } catch (error) {
-            // 如果是验证错误，显示详细的错误信息
-            if (error.validationErrors && error.validationErrors.length > 0) {
-                this.showValidationErrors(error.validationErrors);
-            } else {
-                this.showAlert('error', error.message);
-            }
-            throw error; // 继续抛出错误供调用者处理
-        } finally {
-            this.releaseLock(lockName);
-        }
-    }
-    
     render() {
         // Set favicon dynamically
         this.setFavicon();
@@ -1918,7 +1837,7 @@ class SetupApp {
             e.preventDefault();
             uploadArea.classList.remove('drag-over');
             // 检查是否有上传正在进行中
-            if (this.requestLocks.geoFileUpload) {
+            if (this.apiClient.requestLocks.geoFileUpload) {
                 const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
                 alert(warningMsg);
                 return;
@@ -1934,7 +1853,7 @@ class SetupApp {
         if (selectBtn) {
             selectBtn.addEventListener('click', () => {
                 // 检查是否有上传正在进行中
-                if (this.requestLocks.geoFileUpload) {
+                if (this.apiClient.requestLocks.geoFileUpload) {
                     const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
                     alert(warningMsg);
                     return;
@@ -1946,7 +1865,7 @@ class SetupApp {
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 // 检查是否有上传正在进行中
-                if (this.requestLocks.geoFileUpload) {
+                if (this.apiClient.requestLocks.geoFileUpload) {
                     const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
                     alert(warningMsg);
                     e.target.value = ''; // 清空文件选择
@@ -1979,7 +1898,7 @@ class SetupApp {
         const uploadArea = document.getElementById('geo-upload-area');
 
         try {
-            const result = await this.protectedApiCall('geoFileUpload', async () => {
+            const result = await this.apiClient.protectedApiCall('geoFileUpload', async () => {
                 if (!fileInfoDiv) {
                     console.error('fileInfoDiv is null in handleGeoFileSelect');
                     return;
@@ -1992,7 +1911,7 @@ class SetupApp {
                     return;
                 }
 
-                const maxSize = 100 * 1024 * 1024; // 100MB
+                const maxSize = 100 * 1024 * 1024;
                 if (file.size > maxSize) {
                     const errorMsg = window.i18n ? window.i18n.t('setup.goaccess.file_too_large') :
                                    'File size too large. Maximum allowed size is 100MB';
@@ -2000,7 +1919,6 @@ class SetupApp {
                     return;
                 }
 
-                // 清除文件上传错误状态
                 if (uploadArea) {
                     const formGroup = uploadArea.closest('.form-group');
                     if (formGroup) {
@@ -2013,13 +1931,11 @@ class SetupApp {
                     }
                 }
 
-                // 隐藏上传区域，显示文件信息
                 const fileUploadContent = document.querySelector('#geo-upload-area .file-upload-content');
                 if (fileUploadContent) {
                     fileUploadContent.style.display = 'none';
                 }
 
-                // 在上传过程中禁用拖拽区域
                 if (uploadArea) {
                     uploadArea.style.pointerEvents = 'none';
                     uploadArea.style.opacity = '0.6';
@@ -2027,37 +1943,33 @@ class SetupApp {
 
                 fileInfoDiv.style.display = 'block';
                 fileInfoDiv.querySelector('#geo-file-name').textContent = file.name;
-                fileInfoDiv.querySelector('#geo-file-size').textContent = this.formatFileSize(file.size);
+                fileInfoDiv.querySelector('#geo-file-size').textContent = formatFileSize(file.size);
 
-                // 移除之前的进度信息（如果存在）
                 const existingProgress = fileInfoDiv.querySelector('#geo-upload-progress');
                 if (existingProgress) {
                     existingProgress.remove();
                 }
 
-                // 添加上传进度信息
                 const uploadingText = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'Uploading...';
                 const progressElement = document.createElement('p');
                 progressElement.id = 'geo-upload-progress';
                 progressElement.textContent = uploadingText;
                 fileInfoDiv.appendChild(progressElement);
 
-                // 上传文件到服务器
-                const formData = new FormData();
-                formData.append('geo_file', file);
-
-                const response = await fetch('/api/upload/geo-file', {
-                    method: 'POST',
-                    headers: {
-                        'Setup-Token': this.token
+                const result = await this.apiClient.uploadGeoFile(
+                    file,
+                    (percentComplete, loaded, total) => {
+                        const progressEl = fileInfoDiv.querySelector('#geo-upload-progress');
+                        if (progressEl) {
+                            progressEl.textContent = `${uploadingText} ${Math.round(percentComplete)}%`;
+                        }
                     },
-                    body: formData
-                });
-
-                const result = await response.json();
+                    (error) => {
+                        console.error('Upload error:', error);
+                    }
+                );
 
                 if (result.success) {
-                    // 更新UI显示上传成功
                     const progressEl = fileInfoDiv.querySelector('#geo-upload-progress');
                     if (progressEl) {
                         const successText = window.i18n ? window.i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
@@ -2065,13 +1977,11 @@ class SetupApp {
                         progressEl.style.color = 'var(--success-color)';
                     }
 
-                    // 保存文件信息到配置中
                     this.config.goaccess.has_geo_file = true;
                     this.config.goaccess.geo_file_temp_path = result.data.temp_path;
                     this.config.goaccess.original_file_name = file.name;
                     this.config.goaccess.file_size = file.size;
 
-                    // 恢复上传区域交互性
                     if (uploadArea) {
                         uploadArea.style.pointerEvents = '';
                         uploadArea.style.opacity = '';
@@ -2081,9 +1991,15 @@ class SetupApp {
                 } else {
                     throw new Error(result.message || 'Upload failed');
                 }
+            }, (error) => {
+                if (error.validationErrors && error.validationErrors.length > 0) {
+                    this.showValidationErrors(error.validationErrors);
+                } else {
+                    this.showAlert('error', error.message);
+                }
             });
 
-            if (!result) return; // 被锁保护，忽略重复调用
+            if (!result) return;
         } catch (error) {
             console.error('File upload error:', error);
             if (fileInfoDiv) {
@@ -2110,17 +2026,7 @@ class SetupApp {
             }, 2000); // 2秒后重置界面，让用户看到错误信息
         }
     }
-    
 
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-    
-    
     showGeoUploadArea() {
         const fileInfoDiv = document.getElementById('geo-file-info');
         const fileUploadContent = document.querySelector('#geo-upload-area .file-upload-content');
@@ -2382,16 +2288,22 @@ class SetupApp {
     // Step handlers
     async initializeSetup() {
         try {
-            const result = await this.protectedApiCall('initialize', async () => {
-                const apiResult = await this.api('POST', '/api/initialize');
+            const result = await this.apiClient.protectedApiCall('initialize', async () => {
+                const apiResult = await this.apiClient.initialize();
                 this.token = apiResult.data.token;
+                this.apiClient.setToken(this.token);
                 this.nextStep();
                 return apiResult;
+            }, (error) => {
+                if (error.validationErrors && error.validationErrors.length > 0) {
+                    this.showValidationErrors(error.validationErrors);
+                } else {
+                    this.showAlert('error', error.message);
+                }
             });
 
-            if (!result) return; // 被锁保护，忽略重复调用
+            if (!result) return;
         } catch (error) {
-            // 错误已在 protectedApiCall 中显示
         }
     }
     
@@ -2873,21 +2785,16 @@ class SetupApp {
         }
     }
 
-    // 检查并加载导入的配置
     async checkAndLoadImportedConfig() {
         try {
-            // 获取状态信息，检查是否处于修订模式
-            const statusResponse = await this.api('GET', '/api/status');
+            const statusResponse = await this.apiClient.getStatus();
             if (statusResponse.success && statusResponse.data && statusResponse.data.revision_mode && statusResponse.data.revision_mode.enabled) {
                 console.log('Revision mode detected, loading imported configuration...');
 
-                // 获取导入的配置
-                const configResponse = await this.api('GET', '/api/config');
+                const configResponse = await this.apiClient.getConfig();
                 if (configResponse.success && configResponse.data) {
-                    // 将导入的配置合并到当前配置中
                     this.config = { ...this.config, ...configResponse.data };
 
-                    // 使用现有的缓存机制保存配置
                     this.saveToLocalCache();
 
                     console.log('Imported configuration loaded and cached:', statusResponse.data.revision_mode);
@@ -2950,8 +2857,8 @@ class SetupApp {
             
             if (fileNameEl) fileNameEl.textContent = fileName;
             if (fileSizeEl) {
-                fileSizeEl.textContent = (typeof fileSize === 'number' && fileSize > 0) ? 
-                    this.formatFileSize(fileSize) : 'Unknown';
+                fileSizeEl.textContent = (typeof fileSize === 'number' && fileSize > 0) ?
+                    formatFileSize(fileSize) : 'Unknown';
             }
             
             // 移除之前的进度信息
@@ -2976,10 +2883,9 @@ class SetupApp {
         }
     }
 
-    // 检查GeoIP文件的实际状态
     async checkGeoFileStatus() {
         try {
-            const response = await this.api('GET', '/api/geo-file/status');
+            const response = await this.apiClient.getGeoFileStatus();
             if (response.success && response.data) {
                 const { exists, file_name, file_size, temp_path } = response.data;
 
@@ -3019,44 +2925,50 @@ class SetupApp {
     }
 
 
-    // 通用的配置保存和验证方法
     async saveConfigWithValidation() {
         try {
-            const result = await this.protectedApiCall('saveConfig', async () => {
-                // 传递当前步骤信息以支持递增验证
+            const result = await this.apiClient.protectedApiCall('saveConfig', async () => {
                 const configWithStep = {
                     ...this.config,
                     current_step: this.steps[this.currentStep].key
                 };
 
-                const response = await this.api('POST', '/api/config', configWithStep);
+                const response = await this.apiClient.saveConfig(configWithStep);
 
                 if (response.success) {
-                    // 保存成功，继续下一步
                     this.nextStep();
                 }
 
                 return response;
+            }, (error) => {
+                if (error.validationErrors && error.validationErrors.length > 0) {
+                    this.showValidationErrors(error.validationErrors);
+                } else {
+                    this.showAlert('error', error.message);
+                }
             });
         } catch (error) {
-            // 错误已在 protectedApiCall 中处理
             console.error('Configuration validation failed:', error);
         }
     }
 
-    // 提交最终配置到后端（保留用于review步骤的向后兼容）
     async saveConfig() {
         try {
-            const result = await this.protectedApiCall('saveConfig', async () => {
-                // 传递当前步骤信息以支持递增验证
+            const result = await this.apiClient.protectedApiCall('saveConfig', async () => {
                 const configWithStep = {
                     ...this.config,
                     current_step: this.steps[this.currentStep].key
                 };
-                return await this.api('POST', '/api/config', configWithStep);
+                return await this.apiClient.saveConfig(configWithStep);
+            }, (error) => {
+                if (error.validationErrors && error.validationErrors.length > 0) {
+                    this.showValidationErrors(error.validationErrors);
+                } else {
+                    this.showAlert('error', error.message);
+                }
             });
 
-            if (!result) return; // 被锁保护，忽略重复调用
+            if (!result) return;
         } catch (error) {
             this.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_generate', {error: error.message}) : 'Failed to save configuration: ' + error.message);
             throw error;
@@ -3150,15 +3062,33 @@ class SetupApp {
     }
     
     async testDatabaseConnection() {
-        await this.protectedApiCall('testDatabase', () => this.testConnection('database'));
+        await this.apiClient.protectedApiCall('testDatabase', () => this.testConnection('database'), (error) => {
+            if (error.validationErrors && error.validationErrors.length > 0) {
+                this.showValidationErrors(error.validationErrors);
+            } else {
+                this.showAlert('error', error.message);
+            }
+        });
     }
 
     async testRedisConnection() {
-        await this.protectedApiCall('testRedis', () => this.testConnection('redis'));
+        await this.apiClient.protectedApiCall('testRedis', () => this.testConnection('redis'), (error) => {
+            if (error.validationErrors && error.validationErrors.length > 0) {
+                this.showValidationErrors(error.validationErrors);
+            } else {
+                this.showAlert('error', error.message);
+            }
+        });
     }
 
     async testSMTPConnection() {
-        await this.protectedApiCall('testSMTP', () => this.testConnection('smtp'));
+        await this.apiClient.protectedApiCall('testSMTP', () => this.testConnection('smtp'), (error) => {
+            if (error.validationErrors && error.validationErrors.length > 0) {
+                this.showValidationErrors(error.validationErrors);
+            } else {
+                this.showAlert('error', error.message);
+            }
+        });
     }
     
     async testConnection(type) {
@@ -3208,20 +3138,19 @@ class SetupApp {
         }
         
         try {
-            const result = await this.api('POST', '/api/test-connections', testConfig);
+            const result = await this.apiClient.testConnections(type, testConfig);
             this.displayConnectionResults(result.data, type);
         } catch (error) {
             this.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
         } finally {
-            // Reset button state
             testBtn.disabled = false;
             testBtn.textContent = originalText;
         }
     }
-    
+
     async testAllConnections() {
         try {
-            const result = await this.api('POST', '/api/test-connections', this.config);
+            const result = await this.apiClient.testConnections('all', this.config);
             this.displayConnectionResults(result.data);
         } catch (error) {
             this.showAlert('error', 'Connection tests failed: ' + error.message);
@@ -3284,26 +3213,27 @@ class SetupApp {
             const generatingText = window.i18n ? window.i18n.t('setup.review.generating') : 'Generating...';
             generateBtn.innerHTML = generatingText;
 
-            await this.protectedApiCall('generateConfig', async () => {
-                // 首先提交完整配置到后端进行验证
+            await this.apiClient.protectedApiCall('generateConfig', async () => {
                 await this.saveConfig();
 
-                // 配置验证通过后，生成配置文件
-                const response = await this.api('POST', '/api/generate');
+                const response = await this.apiClient.generateConfig(this.config);
 
-                // 保存输出路径信息
                 if (response.data && response.data.output_path) {
                     this.outputPath = response.data.output_path;
                 }
 
-                // 清除本地缓存（配置已成功保存到后端）
                 this.clearLocalCache();
 
-                // 重置上传文件状态（因为临时文件在配置生成后被删除）
                 this.resetUploadStates();
 
                 this.nextStep();
                 return response;
+            }, (error) => {
+                if (error.validationErrors && error.validationErrors.length > 0) {
+                    this.showValidationErrors(error.validationErrors);
+                } else {
+                    this.showAlert('error', error.message);
+                }
             });
         } catch (error) {
             // 恢复按钮状态
@@ -3388,21 +3318,24 @@ class SetupApp {
 
     async completeSetup() {
         try {
-            await this.protectedApiCall('complete', async () => {
-                await this.api('POST', '/api/complete');
+            await this.apiClient.protectedApiCall('complete', async () => {
+                await this.apiClient.completeSetup();
 
-                // 清除本地缓存（设置已完成）
                 this.clearLocalCache();
 
                 this.showAlert('success', window.i18n ? window.i18n.t('messages.setup_completed') : 'Setup completed successfully! Your BakLab application is ready to use.');
 
-                // 延迟跳转到完成页面
                 setTimeout(() => {
                     this.renderCompleted();
                 }, 3000);
+            }, (error) => {
+                if (error.validationErrors && error.validationErrors.length > 0) {
+                    this.showValidationErrors(error.validationErrors);
+                } else {
+                    this.showAlert('error', error.message);
+                }
             });
         } catch (error) {
-            // 错误已在 protectedApiCall 中处理
         }
     }
     
