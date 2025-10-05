@@ -2,6 +2,7 @@
 import * as Validator from './validator.js';
 import { validateAndSetFieldError } from './validator.js';
 import { ApiClient, formatFileSize } from './api.js';
+import * as ConfigManager from './config-manager.js';
 
 class SetupApp {
     constructor() {
@@ -2764,25 +2765,12 @@ class SetupApp {
         await this.saveConfigWithValidation();
     }
 
-    // 保存配置到本地缓存
     saveToLocalCache() {
-        try {
-            localStorage.setItem('baklab_setup_config', JSON.stringify(this.config));
-        } catch (error) {
-            console.warn('Failed to save to localStorage:', error);
-        }
+        ConfigManager.saveToLocalCache(this.config);
     }
-    
-    // 从本地缓存加载配置
+
     loadFromLocalCache() {
-        try {
-            const cached = localStorage.getItem('baklab_setup_config');
-            if (cached) {
-                this.config = { ...this.config, ...JSON.parse(cached) };
-            }
-        } catch (error) {
-            console.warn('Failed to load from localStorage:', error);
-        }
+        this.config = ConfigManager.loadFromLocalCache(this.config);
     }
 
     async checkAndLoadImportedConfig() {
@@ -2805,13 +2793,8 @@ class SetupApp {
         }
     }
     
-    // 清除本地缓存
     clearLocalCache() {
-        try {
-            localStorage.removeItem('baklab_setup_config');
-        } catch (error) {
-            console.warn('Failed to clear localStorage:', error);
-        }
+        ConfigManager.clearLocalCache();
     }
     
     // 重置上传文件状态
@@ -2927,26 +2910,16 @@ class SetupApp {
 
     async saveConfigWithValidation() {
         try {
-            const result = await this.apiClient.protectedApiCall('saveConfig', async () => {
-                const configWithStep = {
-                    ...this.config,
-                    current_step: this.steps[this.currentStep].key
-                };
-
-                const response = await this.apiClient.saveConfig(configWithStep);
-
-                if (response.success) {
-                    this.nextStep();
+            await ConfigManager.saveConfigWithValidation(
+                this.config,
+                this.steps[this.currentStep].key,
+                this.apiClient,
+                {
+                    onSuccess: () => this.nextStep(),
+                    onValidationError: (errors) => this.showValidationErrors(errors),
+                    onError: (error) => this.showAlert('error', error.message)
                 }
-
-                return response;
-            }, (error) => {
-                if (error.validationErrors && error.validationErrors.length > 0) {
-                    this.showValidationErrors(error.validationErrors);
-                } else {
-                    this.showAlert('error', error.message);
-                }
-            });
+            );
         } catch (error) {
             console.error('Configuration validation failed:', error);
         }
@@ -2954,19 +2927,15 @@ class SetupApp {
 
     async saveConfig() {
         try {
-            const result = await this.apiClient.protectedApiCall('saveConfig', async () => {
-                const configWithStep = {
-                    ...this.config,
-                    current_step: this.steps[this.currentStep].key
-                };
-                return await this.apiClient.saveConfig(configWithStep);
-            }, (error) => {
-                if (error.validationErrors && error.validationErrors.length > 0) {
-                    this.showValidationErrors(error.validationErrors);
-                } else {
-                    this.showAlert('error', error.message);
+            const result = await ConfigManager.saveConfig(
+                this.config,
+                this.steps[this.currentStep].key,
+                this.apiClient,
+                {
+                    onValidationError: (errors) => this.showValidationErrors(errors),
+                    onError: (error) => this.showAlert('error', error.message)
                 }
-            });
+            );
 
             if (!result) return;
         } catch (error) {
