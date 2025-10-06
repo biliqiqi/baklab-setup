@@ -253,7 +253,6 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
         updateJWTMethodDisplay();
         ui.updateRadioStyles('jwt_method');
 
-        // JWT key 路径输入框变化时清除验证错误
         document.getElementById('jwt-key-path').addEventListener('input', (e) => {
             e.target.setCustomValidity('');
         });

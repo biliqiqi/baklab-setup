@@ -193,7 +193,6 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
             smtpPasswordField.value = smtp.password;
         }
 
-        // 添加字段变化监听以启用测试按钮
         addSMTPFieldListeners();
 
         document.getElementById('smtp-form').addEventListener('submit', async (e) => {

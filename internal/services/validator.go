@@ -42,13 +42,10 @@ var (
 )
 
 var (
-	passwordFormatRegex = regexp.MustCompile(`^[A-Za-z\d!@#$%^&*]{12,64}$`)
-	// 必须包含小写字母
-	passwordLowerRegex = regexp.MustCompile(`[a-z]`)
-	// 必须包含大写字母
-	passwordUpperRegex = regexp.MustCompile(`[A-Z]`)
-	passwordDigitRegex = regexp.MustCompile(`\d`)
-	// 必须包含特殊字符
+	passwordFormatRegex  = regexp.MustCompile(`^[A-Za-z\d!@#$%^&*]{12,64}$`)
+	passwordLowerRegex   = regexp.MustCompile(`[a-z]`)
+	passwordUpperRegex   = regexp.MustCompile(`[A-Z]`)
+	passwordDigitRegex   = regexp.MustCompile(`\d`)
 	passwordSpecialRegex = regexp.MustCompile(`[!@#$%^&*]`)
 )
 
@@ -90,7 +87,6 @@ func validateDatabasePassword(pwd string) bool {
 }
 
 func validateExternalServicePassword(pwd string) bool {
-	// 1. 不能为空
 	if pwd == "" {
 		return false
 	}
@@ -99,7 +95,6 @@ func validateExternalServicePassword(pwd string) bool {
 		return false
 	}
 
-	// 不能包含控制字符和不可打印字符
 	for _, char := range pwd {
 		if char < 32 || char == 127 {
 			return false
@@ -303,7 +298,6 @@ func (v *ValidatorService) ValidateConfig(cfg *model.SetupConfig) []model.Valida
 	stepOrder := []string{"welcome", "database", "redis", "smtp", "app", "ssl", "admin", "oauth", "goaccess", "review", "config_complete"}
 	currentStepIndex := -1
 
-	// 找到当前步骤的索引
 	for i, step := range stepOrder {
 		if step == cfg.CurrentStep {
 			currentStepIndex = i

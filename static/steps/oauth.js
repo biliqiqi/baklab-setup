@@ -134,7 +134,6 @@ export function render(container, { config, navigation }) {
             </form>
         `;
 
-        // Google OAuth 启用状态切换
         document.getElementById('google-enabled').addEventListener('change', (e) => {
             const configDiv = document.getElementById('google-config');
             const clientId = document.getElementById('google-client-id');
@@ -148,14 +147,11 @@ export function render(container, { config, navigation }) {
                 configDiv.style.display = 'none';
                 clientId.required = false;
                 clientSecret.required = false;
-                // 清除验证错误
                 clearFormErrors(document.getElementById('oauth-form'));
             }
-            // 更新前端源配置显示
             updateFrontendOriginVisibility();
         });
 
-        // GitHub OAuth 启用状态切换
         document.getElementById('github-enabled').addEventListener('change', (e) => {
             const configDiv = document.getElementById('github-config');
             const clientId = document.getElementById('github-client-id');
@@ -169,10 +165,8 @@ export function render(container, { config, navigation }) {
                 configDiv.style.display = 'none';
                 clientId.required = false;
                 clientSecret.required = false;
-                // 清除验证错误
                 clearFormErrors(document.getElementById('oauth-form'));
             }
-            // 更新前端源配置显示
             updateFrontendOriginVisibility();
         });
 

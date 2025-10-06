@@ -59,18 +59,18 @@ type GoAccessConfig struct {
 }
 
 type SSLConfig struct {
-	Enabled      bool   `json:"enabled"`                                       // 是否启用HTTPS
+	Enabled      bool   `json:"enabled"`
 	CertPath     string `json:"cert_path" validate:"required_if=Enabled true"`
 	KeyPath      string `json:"key_path" validate:"required_if=Enabled true"`
 	UseSetupCert bool   `json:"use_setup_cert"`
 }
 
 type OAuthConfig struct {
-	GoogleEnabled  bool   `json:"google_enabled"`                                                 // 是否启用Google OAuth
-	GoogleClientID string `json:"google_client_id" validate:"required_if=GoogleEnabled true"`     // Google客户端ID
+	GoogleEnabled  bool   `json:"google_enabled"`
+	GoogleClientID string `json:"google_client_id" validate:"required_if=GoogleEnabled true"`
 	GoogleSecret   string `json:"google_client_secret" validate:"required_if=GoogleEnabled true"`
-	GithubEnabled  bool   `json:"github_enabled"`                                                 // 是否启用GitHub OAuth
-	GithubClientID string `json:"github_client_id" validate:"required_if=GithubEnabled true"`     // GitHub客户端ID
+	GithubEnabled  bool   `json:"github_enabled"`
+	GithubClientID string `json:"github_client_id" validate:"required_if=GithubEnabled true"`
 	GithubSecret   string `json:"github_client_secret" validate:"required_if=GithubEnabled true"`
 	FrontendOrigin string `json:"frontend_origin"`
 }

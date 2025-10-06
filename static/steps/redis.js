@@ -401,13 +401,11 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
             });
         });
 
-        // Form submit handler
         document.getElementById('redis-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const serviceType = document.querySelector('input[name="redis-service-type"]:checked').value;
 
-            // 验证Redis应用密码强度
             const password = document.getElementById('redis-password').value;
             const passwordField = document.getElementById('redis-password');
 
@@ -434,7 +432,6 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
                 passwordField.setCustomValidity('');
             }
 
-            // 验证Redis管理密码强度（仅Docker模式）
             const adminPasswordField = document.getElementById('redis-admin-password');
             if (serviceType === 'docker') {
                 const adminPassword = adminPasswordField ? adminPasswordField.value : '';
@@ -452,7 +449,6 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
                     adminPasswordField.setCustomValidity('');
                 }
             } else {
-                // 外部服务模式：清除管理密码的验证错误
                 if (adminPasswordField) {
                     adminPasswordField.setCustomValidity('');
                 }

@@ -284,9 +284,6 @@ GID={{ .GroupID }}
 				return domain
 			}
 
-			// 例如：www.example.com -> example.com
-			//      local.example.com -> example.com
-			//      1.sub.example.com -> example.com
 			return strings.Join(parts[len(parts)-2:], ".")
 		},
 		"join": func(slice []string, sep string) string {
