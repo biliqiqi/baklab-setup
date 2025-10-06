@@ -1,18 +1,20 @@
 import { validateAndSetFieldError, validatePasswordStrength, showFormErrors, showCustomError, hideCustomError, addFieldTouchListeners } from '../validator.js';
 
-export function render(app, container) {
+export function render(container, { config, navigation, ui }) {
+        const adminUser = config.get('admin_user');
+
         container.innerHTML = `
             <form id="admin-form" class="form-section" novalidate>
                 <h3 data-i18n="setup.admin.title"></h3>
                 <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.admin.description"></p>
-                
+
                 <div class="form-group">
                     <label for="admin-username"><span data-i18n="setup.admin.username_label"></span> <span data-i18n="common.required"></span></label>
-                    <input 
-                        type="text" 
-                        id="admin-username" 
+                    <input
+                        type="text"
+                        id="admin-username"
                         name="username"
-                        value="${app.config.admin_user.username}" 
+                        value="${adminUser.username}"
                         data-i18n-placeholder="setup.admin.username_placeholder"
                         required
                         minlength="4"
@@ -23,14 +25,14 @@ export function render(app, container) {
                     <div class="form-help" data-i18n="setup.admin.username_help"></div>
                     <div class="invalid-feedback" data-i18n="setup.admin.username_error"></div>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="admin-email"><span data-i18n="setup.admin.email_label"></span> <span data-i18n="common.required"></span></label>
-                    <input 
-                        type="email" 
-                        id="admin-email" 
+                    <input
+                        type="email"
+                        id="admin-email"
                         name="email"
-                        value="${app.config.admin_user.email}" 
+                        value="${adminUser.email}"
                         placeholder="admin@example.com"
                         required
                         data-i18n-title="setup.admin.email_error"
@@ -70,22 +72,24 @@ export function render(app, container) {
                 </div>
                 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="button" class="btn btn-secondary" id="admin-prev-btn" data-i18n="common.previous"></button>
                     <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
                 </div>
             </form>
         `;
-        
-        // 添加表单提交事件监听
+
+        document.getElementById('admin-prev-btn').addEventListener('click', () => {
+            navigation.previousStep();
+        });
+
         document.getElementById('admin-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // 检查密码匹配
+
             const password = document.getElementById('admin-password').value;
             const passwordConfirm = document.getElementById('admin-password-confirm').value;
             const confirmField = document.getElementById('admin-password-confirm');
             const passwordField = document.getElementById('admin-password');
-            
+
             if (password && !validatePasswordStrength(password)) {
                 const errorMsg = window.i18n ? window.i18n.t('setup.admin.password_error') :
                     'Password must contain lowercase, uppercase, numbers, and special characters (!@#$%^&*)';
@@ -100,16 +104,16 @@ export function render(app, container) {
             } else {
                 confirmField.setCustomValidity('');
             }
-            
+
             if (e.target.checkValidity()) {
-                app.config.admin_user = {
+                config.set('admin_user', {
                     username: document.getElementById('admin-username').value,
                     email: document.getElementById('admin-email').value,
                     password: document.getElementById('admin-password').value
-                };
+                });
 
-                app.saveToLocalCache();
-                await app.saveConfigWithValidation();
+                config.saveToLocalCache();
+                await config.saveWithValidation();
             } else {
                 showFormErrors(e.target);
             }
@@ -118,11 +122,11 @@ export function render(app, container) {
         const passwordField = document.getElementById('admin-password');
         const confirmField = document.getElementById('admin-password-confirm');
 
-        if (passwordField && app.config.admin_user.password) {
-            passwordField.value = app.config.admin_user.password;
+        if (passwordField && adminUser.password) {
+            passwordField.value = adminUser.password;
         }
-        if (confirmField && app.config.admin_user.password) {
-            confirmField.value = app.config.admin_user.password;
+        if (confirmField && adminUser.password) {
+            confirmField.value = adminUser.password;
         }
 
         passwordField.addEventListener('input', () => {

@@ -1,8 +1,8 @@
 import { validateDatabasePasswordStrength, validateExternalServicePassword, showValidationErrors, showCustomError, hideCustomError, showFormErrors, addFieldTouchListeners } from '../validator.js';
 
-async function testRedisConnection(app) {
-    await app.apiClient.protectedApiCall('testRedis', async () => {
-        const testConfig = { ...app.config };
+async function testRedisConnection(apiClient, config, ui) {
+    await apiClient.protectedApiCall('testRedis', async () => {
+        const testConfig = { ...config.getAll() };
 
         testConfig.redis = {
             service_type: document.querySelector('input[name="redis-service-type"]:checked').value,
@@ -18,10 +18,10 @@ async function testRedisConnection(app) {
         testBtn.textContent = window.i18n ? window.i18n.t('common.testing') : 'Testing...';
 
         try {
-            const result = await app.apiClient.testConnections('redis', testConfig);
+            const result = await apiClient.testConnections('redis', testConfig);
             displayConnectionResults(result.data, 'redis');
         } catch (error) {
-            app.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
+            ui.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
         } finally {
             testBtn.disabled = false;
             testBtn.textContent = originalText;
@@ -30,7 +30,7 @@ async function testRedisConnection(app) {
         if (error.validationErrors && error.validationErrors.length > 0) {
             showValidationErrors(error.validationErrors, window.i18n);
         } else {
-            app.showAlert('error', error.message);
+            ui.showAlert('error', error.message);
         }
     });
 }
@@ -70,7 +70,7 @@ function toggleHelpText(fieldId, show) {
     }
 }
 
-function updateRedisHostField(app, serviceType) {
+function updateRedisHostField(serviceType) {
     const hostField = document.getElementById('redis-host');
     const testConnectionContainer = document.getElementById('redis-test-connection-container');
     const passwordField = document.getElementById('redis-password');
@@ -177,38 +177,40 @@ function updateRedisHostField(app, serviceType) {
     }
 }
 
-export function render(app, container) {
+export function render(container, { config, navigation, ui, apiClient }) {
+        const redis = config.get('redis');
+
         container.innerHTML = `
             <form id="redis-form" class="form-section" novalidate>
                 <h3 data-i18n="setup.redis.title"></h3>
                 <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.redis.description"></p>
-                
+
                 <div class="form-group">
                     <label class="form-label"><span data-i18n="setup.redis.service_type_label"></span> <span data-i18n="common.required"></span></label>
                     <div class="radio-group">
                         <label class="radio-option">
-                            <input type="radio" name="redis-service-type" value="docker" ${app.config.redis.service_type === 'docker' ? 'checked' : ''}>
+                            <input type="radio" name="redis-service-type" value="docker" ${redis.service_type === 'docker' ? 'checked' : ''}>
                             <div>
                                 <span data-i18n="setup.redis.service_type_docker"></span>
                             </div>
                         </label>
                         <label class="radio-option">
-                            <input type="radio" name="redis-service-type" value="external" ${app.config.redis.service_type === 'external' ? 'checked' : ''}>
+                            <input type="radio" name="redis-service-type" value="external" ${redis.service_type === 'external' ? 'checked' : ''}>
                             <div>
                                 <span data-i18n="setup.redis.service_type_external"></span>
                             </div>
                         </label>
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="redis-host"><span data-i18n="setup.redis.host_label"></span> <span data-i18n="common.required"></span></label>
-                        <input 
-                            type="text" 
-                            id="redis-host" 
+                        <input
+                            type="text"
+                            id="redis-host"
                             name="host"
-                            value="${app.config.redis.host}" 
+                            value="${redis.host}"
                             data-i18n-placeholder="setup.redis.host_placeholder"
                             required
                             pattern="^[a-zA-Z0-9.\\-]+$"
@@ -219,11 +221,11 @@ export function render(app, container) {
                     </div>
                     <div class="form-group">
                         <label for="redis-port"><span data-i18n="setup.redis.port_label"></span> <span data-i18n="common.required"></span></label>
-                        <input 
-                            type="number" 
-                            id="redis-port" 
+                        <input
+                            type="number"
+                            id="redis-port"
                             name="port"
-                            value="${app.config.redis.port}" 
+                            value="${redis.port}"
                             data-i18n-placeholder="setup.redis.port_placeholder"
                             required
                             min="1"
@@ -241,7 +243,7 @@ export function render(app, container) {
                         type="text"
                         id="redis-user"
                         name="user"
-                        value="${app.config.redis.user || ''}"
+                        value="${redis.user || ''}"
                         data-i18n-placeholder="setup.redis.user_placeholder"
                         maxlength="128"
                         data-i18n-title="setup.redis.user_error"
@@ -284,46 +286,47 @@ export function render(app, container) {
                     <div class="form-help" data-i18n="setup.redis.password_help"></div>
                     <div class="invalid-feedback" data-i18n="setup.redis.password_error"></div>
                 </div>
-                
+
                 <div id="redis-test-connection-container" style="display: none;">
                     <div class="form-group">
                         <button type="button" id="redis-test-btn" class="btn btn-outline-primary" data-i18n="setup.redis.test_connection"></button>
                     </div>
                     <div id="redis-connection-results" class="connection-results-container"></div>
                 </div>
-                
+
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="button" class="btn btn-secondary" id="redis-prev-btn" data-i18n="common.previous"></button>
                     <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
                 </div>
             </form>
         `;
         
-        // 添加服务类型切换事件监听
+        document.getElementById('redis-prev-btn').addEventListener('click', () => {
+            navigation.previousStep();
+        });
+
         const serviceTypeRadios = document.querySelectorAll('input[name="redis-service-type"]');
         serviceTypeRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
-                updateRedisHostField(app,e.target.value);
-                app.updateRadioStyles('redis-service-type');
+                updateRedisHostField(e.target.value);
+                ui.updateRadioStyles('redis-service-type');
             });
         });
-        
-        // 初始化主机字段状态和样式
-        updateRedisHostField(app,app.config.redis.service_type);
-        app.updateRadioStyles('redis-service-type');
 
-        // 安全地设置密码字段值，避免HTML转义问题
+        updateRedisHostField(redis.service_type);
+        ui.updateRadioStyles('redis-service-type');
+
         const redisPasswordField = document.getElementById('redis-password');
-        if (redisPasswordField && app.config.redis.password) {
-            redisPasswordField.value = app.config.redis.password;
+        if (redisPasswordField && redis.password) {
+            redisPasswordField.value = redis.password;
         }
         const redisAdminPasswordField = document.getElementById('redis-admin-password');
-        if (redisAdminPasswordField && app.config.redis.admin_password) {
-            redisAdminPasswordField.value = app.config.redis.admin_password;
+        if (redisAdminPasswordField && redis.admin_password) {
+            redisAdminPasswordField.value = redis.admin_password;
         }
 
         setTimeout(() => {
-            updateRedisHostField(app,app.config.redis.service_type);
+            updateRedisHostField(redis.service_type);
         }, 100);
 
         const validateRedisPasswords = () => {
@@ -457,7 +460,7 @@ export function render(app, container) {
             
             if (e.target.checkValidity()) {
                 const serviceType = document.querySelector('input[name="redis-service-type"]:checked').value;
-                app.config.redis = {
+                const redisConfig = {
                     service_type: serviceType,
                     host: serviceType === 'docker' ? 'localhost' : document.getElementById('redis-host').value,
                     port: parseInt(document.getElementById('redis-port').value),
@@ -466,22 +469,22 @@ export function render(app, container) {
                 };
 
                 if (serviceType === 'docker') {
-                    app.config.redis.admin_password = document.getElementById('redis-admin-password').value;
+                    redisConfig.admin_password = document.getElementById('redis-admin-password').value;
                 } else {
-                    app.config.redis.admin_password = '';
+                    redisConfig.admin_password = '';
                 }
 
-                app.saveToLocalCache();
-                await app.saveConfigWithValidation();
+                config.set('redis', redisConfig);
+                config.saveToLocalCache();
+                await config.saveWithValidation();
             } else {
                 showFormErrors(e.target);
             }
         });
 
-        // 添加测试连接按钮事件监听器
         const testBtn = document.getElementById('redis-test-btn');
         if (testBtn) {
-            testBtn.addEventListener('click', () => testRedisConnection(app));
+            testBtn.addEventListener('click', () => testRedisConnection(apiClient, config, ui));
         }
 
         addFieldTouchListeners(container);

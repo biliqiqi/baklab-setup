@@ -1,8 +1,8 @@
 import { showValidationErrors, showFormErrors, addFieldTouchListeners } from '../validator.js';
 
-async function testSMTPConnection(app) {
-    await app.apiClient.protectedApiCall('testSMTP', async () => {
-        const testConfig = { ...app.config };
+async function testSMTPConnection(apiClient, config, ui) {
+    await apiClient.protectedApiCall('testSMTP', async () => {
+        const testConfig = { ...config.getAll() };
 
         testConfig.smtp = {
             server: document.getElementById('smtp-server').value,
@@ -18,10 +18,10 @@ async function testSMTPConnection(app) {
         testBtn.textContent = window.i18n ? window.i18n.t('common.testing') : 'Testing...';
 
         try {
-            const result = await app.apiClient.testConnections('smtp', testConfig);
+            const result = await apiClient.testConnections('smtp', testConfig);
             displayConnectionResults(result.data, 'smtp');
         } catch (error) {
-            app.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
+            ui.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
         } finally {
             testBtn.disabled = false;
             testBtn.textContent = originalText;
@@ -30,7 +30,7 @@ async function testSMTPConnection(app) {
         if (error.validationErrors && error.validationErrors.length > 0) {
             showValidationErrors(error.validationErrors, window.i18n);
         } else {
-            app.showAlert('error', error.message);
+            ui.showAlert('error', error.message);
         }
     });
 }
@@ -83,7 +83,9 @@ function addSMTPFieldListeners() {
     checkFieldsComplete();
 }
 
-export function render(app, container) {
+export function render(container, { config, navigation, ui, apiClient }) {
+        const smtp = config.get('smtp');
+
         container.innerHTML = `
             <form id="smtp-form" class="form-section" novalidate>
                 <h3 data-i18n="setup.smtp.title"></h3>
@@ -96,7 +98,7 @@ export function render(app, container) {
                             type="text"
                             id="smtp-server"
                             name="server"
-                            value="${app.config.smtp.server}"
+                            value="${smtp.server}"
                             data-i18n-placeholder="setup.smtp.server_placeholder"
                             required
                             pattern="^[a-zA-Z0-9.\\-]+$"
@@ -111,7 +113,7 @@ export function render(app, container) {
                             type="number"
                             id="smtp-port"
                             name="port"
-                            value="${app.config.smtp.port}"
+                            value="${smtp.port}"
                             data-i18n-placeholder="setup.smtp.port_placeholder"
                             required
                             min="1"
@@ -129,7 +131,7 @@ export function render(app, container) {
                         type="text"
                         id="smtp-user"
                         name="user"
-                        value="${app.config.smtp.user}"
+                        value="${smtp.user}"
                         data-i18n-placeholder="setup.smtp.user_placeholder"
                         required
                         data-i18n-title="setup.smtp.user_error"
@@ -158,7 +160,7 @@ export function render(app, container) {
                         type="email"
                         id="smtp-sender"
                         name="sender"
-                        value="${app.config.smtp.sender}"
+                        value="${smtp.sender}"
                         data-i18n-placeholder="setup.smtp.sender_placeholder"
                         required
                         data-i18n-title="setup.smtp.sender_error"
@@ -176,45 +178,46 @@ export function render(app, container) {
                 </div>
 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="button" class="btn btn-secondary" id="smtp-prev-btn" data-i18n="common.previous"></button>
                     <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
                 </div>
             </form>
         `;
 
-        // 安全地设置密码字段值，避免HTML转义问题
+        document.getElementById('smtp-prev-btn').addEventListener('click', () => {
+            navigation.previousStep();
+        });
+
         const smtpPasswordField = document.getElementById('smtp-password');
-        if (smtpPasswordField && app.config.smtp.password) {
-            smtpPasswordField.value = app.config.smtp.password;
+        if (smtpPasswordField && smtp.password) {
+            smtpPasswordField.value = smtp.password;
         }
 
         // 添加字段变化监听以启用测试按钮
         addSMTPFieldListeners();
 
-        // 添加表单提交事件监听
         document.getElementById('smtp-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             if (e.target.checkValidity()) {
-                app.config.smtp = {
+                config.set('smtp', {
                     server: document.getElementById('smtp-server').value,
                     port: parseInt(document.getElementById('smtp-port').value),
                     user: document.getElementById('smtp-user').value,
                     password: document.getElementById('smtp-password').value,
                     sender: document.getElementById('smtp-sender').value
-                };
+                });
 
-                app.saveToLocalCache();
-                await app.saveConfigWithValidation();
+                config.saveToLocalCache();
+                await config.saveWithValidation();
             } else {
                 showFormErrors(e.target);
             }
         });
 
-        // 添加测试连接按钮事件监听器
         const smtpTestBtn = document.getElementById('smtp-test-btn');
         if (smtpTestBtn) {
-            smtpTestBtn.addEventListener('click', () => testSMTPConnection(app));
+            smtpTestBtn.addEventListener('click', () => testSMTPConnection(apiClient, config, ui));
         }
 
         addFieldTouchListeners(container);

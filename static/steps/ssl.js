@@ -1,6 +1,6 @@
 import { clearFormErrors, showFieldError, addFieldTouchListeners } from '../validator.js';
 
-export function handleDomainSSLIntegration(app) {
+export function handleDomainSSLIntegration(config) {
     const sslUseSetupCertCheckbox = document.getElementById('ssl-use-setup-cert');
     const sslEnabled = document.getElementById('ssl-enabled');
 
@@ -8,7 +8,10 @@ export function handleDomainSSLIntegration(app) {
         return;
     }
 
-    if (app.config.app.use_setup_domain && app.config.ssl.enabled) {
+    const appConfig = config.get('app');
+    const sslConfig = config.get('ssl');
+
+    if (appConfig.use_setup_domain && sslConfig.enabled) {
         sslUseSetupCertCheckbox.checked = true;
         sslUseSetupCertCheckbox.readOnly = true;
         sslUseSetupCertCheckbox.disabled = true;
@@ -16,7 +19,8 @@ export function handleDomainSSLIntegration(app) {
         const event = new Event('change');
         sslUseSetupCertCheckbox.dispatchEvent(event);
 
-        app.config.ssl.use_setup_cert = true;
+        sslConfig.use_setup_cert = true;
+        config.set('ssl', sslConfig);
 
         const parentLabel = sslUseSetupCertCheckbox.closest('.checkbox-label');
         if (parentLabel) {
@@ -42,12 +46,12 @@ export function handleDomainSSLIntegration(app) {
                 'Automatically selected because you are using the setup program domain';
             autoNote.textContent = ` (${noteText})`;
         }
-    } else if (!app.config.app.use_setup_domain) {
-        clearSSLAutoSelection(app);
+    } else if (!appConfig.use_setup_domain) {
+        clearSSLAutoSelection(config);
     }
 }
 
-export function clearSSLAutoSelection(app) {
+export function clearSSLAutoSelection(config) {
     const sslUseSetupCertCheckbox = document.getElementById('ssl-use-setup-cert');
     if (sslUseSetupCertCheckbox) {
         sslUseSetupCertCheckbox.checked = false;
@@ -78,31 +82,36 @@ export function clearSSLAutoSelection(app) {
             }
         }
 
-        app.config.ssl.use_setup_cert = false;
+        const sslConfig = config.get('ssl');
+        sslConfig.use_setup_cert = false;
+        config.set('ssl', sslConfig);
     }
 }
 
-export function render(app, container) {
+export function render(container, { config, navigation, apiClient }) {
+        const ssl = config.get('ssl');
+        const appConfig = config.get('app');
+
         container.innerHTML = `
             <form id="ssl-form" class="form-section" novalidate>
                 <h3 data-i18n="setup.ssl.title"></h3>
                 <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.ssl.description"></p>
 
                 <div class="alert alert-warning" style="margin-bottom: 1.5rem; color: inherit;">
-                    <p style="margin: 0;" data-i18n="setup.ssl.domain_match_warning_text" data-i18n-params='{"domain":"${app.config.app.domain_name || 'example.com'}"}'></p>
+                    <p style="margin: 0;" data-i18n="setup.ssl.domain_match_warning_text" data-i18n-params='{"domain":"${appConfig.domain_name || 'example.com'}"}'></p>
                 </div>
 
                 <div class="form-group">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="ssl-enabled" name="enabled" ${app.config.ssl.enabled ? 'checked' : ''}>
+                        <input type="checkbox" id="ssl-enabled" name="enabled" ${ssl.enabled ? 'checked' : ''}>
                         <span data-i18n="setup.ssl.enable_label"></span>
                     </label>
                 </div>
 
-                <div id="ssl-config" style="display: ${app.config.ssl.enabled ? 'block' : 'none'};">
+                <div id="ssl-config" style="display: ${ssl.enabled ? 'block' : 'none'};">
                     <div class="form-group">
                         <label class="checkbox-label">
-                            <input type="checkbox" id="ssl-use-setup-cert" name="use_setup_cert" ${app.config.ssl.use_setup_cert ? 'checked' : ''}>
+                            <input type="checkbox" id="ssl-use-setup-cert" name="use_setup_cert" ${ssl.use_setup_cert ? 'checked' : ''}>
                             <span data-i18n="setup.ssl.use_setup_cert_label"></span>
                         </label>
                         <div class="form-help" data-i18n="setup.ssl.use_setup_cert_help"></div>
@@ -110,7 +119,7 @@ export function render(app, container) {
 
                     <div class="form-group">
                         <label for="ssl-cert-path" data-i18n="setup.ssl.cert_path_label"></label>
-                        <input type="text" id="ssl-cert-path" name="cert_path" value="${app.config.ssl.cert_path}" 
+                        <input type="text" id="ssl-cert-path" name="cert_path" value="${ssl.cert_path}"
                                placeholder="/path/to/certificate.crt" required>
                         <div class="invalid-feedback" style="display: none;"></div>
                         <div class="form-help" data-i18n="setup.ssl.cert_path_help"></div>
@@ -118,7 +127,7 @@ export function render(app, container) {
 
                     <div class="form-group">
                         <label for="ssl-key-path" data-i18n="setup.ssl.key_path_label"></label>
-                        <input type="text" id="ssl-key-path" name="key_path" value="${app.config.ssl.key_path}" 
+                        <input type="text" id="ssl-key-path" name="key_path" value="${ssl.key_path}"
                                placeholder="/path/to/private.key" required>
                         <div class="invalid-feedback" style="display: none;"></div>
                         <div class="form-help" data-i18n="setup.ssl.key_path_help"></div>
@@ -126,13 +135,16 @@ export function render(app, container) {
                 </div>
 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="button" class="btn btn-secondary" id="ssl-prev-btn" data-i18n="common.previous"></button>
                     <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
                 </div>
             </form>
         `;
 
-        // SSL 启用状态切换
+        document.getElementById('ssl-prev-btn').addEventListener('click', () => {
+            navigation.previousStep();
+        });
+
         document.getElementById('ssl-enabled').addEventListener('change', (e) => {
             const configDiv = document.getElementById('ssl-config');
             const certPath = document.getElementById('ssl-cert-path');
@@ -143,46 +155,39 @@ export function render(app, container) {
                 certPath.required = true;
                 keyPath.required = true;
 
-                // 更新配置并触发域名SSL整合
-                app.config.ssl.enabled = true;
-                setTimeout(() => handleDomainSSLIntegration(app), 0);
+                const sslConfig = config.get('ssl');
+                sslConfig.enabled = true;
+                config.set('ssl', sslConfig);
+                setTimeout(() => handleDomainSSLIntegration(config), 0);
             } else {
                 configDiv.style.display = 'none';
                 certPath.required = false;
                 keyPath.required = false;
-                // 清除验证错误
                 clearFormErrors(document.getElementById('ssl-form'));
 
-                // 更新配置并重置SSL证书选择的自由度
-                app.config.ssl.enabled = false;
-                clearSSLAutoSelection(app);
+                const sslConfig = config.get('ssl');
+                sslConfig.enabled = false;
+                config.set('ssl', sslConfig);
+                clearSSLAutoSelection(config);
             }
         });
 
-        // 使用设置程序证书切换
         document.getElementById('ssl-use-setup-cert').addEventListener('change', async (e) => {
             const certPath = document.getElementById('ssl-cert-path');
             const keyPath = document.getElementById('ssl-key-path');
-            
+
             if (e.target.checked) {
-                // 获取当前设置程序使用的证书路径
                 try {
-                    const response = await fetch('/api/current-cert-paths', {
-                        method: 'GET',
-                        headers: {
-                            'Setup-Token': app.token
-                        }
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        certPath.value = result.data.cert_path;
-                        keyPath.value = result.data.key_path;
+                    const response = await apiClient.getCurrentCertPaths();
+                    if (response.data) {
+                        certPath.value = response.data.cert_path;
+                        keyPath.value = response.data.key_path;
                         certPath.readOnly = true;
                         keyPath.readOnly = true;
                     }
                 } catch (error) {
                     console.error('Failed to get current cert paths:', error);
-                    e.target.checked = false; // 取消勾选
+                    e.target.checked = false;
                 }
             } else {
                 certPath.readOnly = false;
@@ -190,13 +195,11 @@ export function render(app, container) {
             }
         });
 
-        // 处理域名复选框对SSL证书的影响
-        handleDomainSSLIntegration(app);
+        handleDomainSSLIntegration(config);
 
-        // 表单提交处理
         document.getElementById('ssl-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const formData = new FormData(e.target);
             const sslConfig = {
                 enabled: formData.get('enabled') === 'on',
@@ -205,7 +208,6 @@ export function render(app, container) {
                 use_setup_cert: formData.get('use_setup_cert') === 'on'
             };
 
-            // 验证逻辑
             let isValid = true;
             clearFormErrors(document.getElementById('ssl-form'));
 
@@ -223,9 +225,9 @@ export function render(app, container) {
             }
 
             if (isValid) {
-                app.config.ssl = sslConfig;
-                await app.saveConfig();
-                app.nextStep();
+                config.set('ssl', sslConfig);
+                await config.save();
+                navigation.nextStep();
             }
         });
 

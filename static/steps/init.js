@@ -1,4 +1,4 @@
-export function render(app, container) {
+export function render(container, { setupService }) {
     container.innerHTML = `
         <div class="form-section">
             <h3 data-i18n="setup.init.welcome_title"></h3>
@@ -27,10 +27,14 @@ export function render(app, container) {
             </div>
 
             <div class="btn-group init-actions">
-                <button class="btn btn-primary" onclick="app.initializeSetup()">
+                <button class="btn btn-primary" id="init-btn">
                     <span data-i18n="setup.init.initialize_button"></span>
                 </button>
             </div>
         </div>
     `;
+
+    document.getElementById('init-btn').addEventListener('click', async () => {
+        await setupService.initialize();
+    });
 }

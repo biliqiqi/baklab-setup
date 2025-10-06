@@ -10,7 +10,11 @@ function updateFrontendOriginVisibility() {
     }
 }
 
-export function render(app, container) {
+export function render(container, { config, navigation }) {
+        const oauth = config.get('oauth');
+        const appConfig = config.get('app');
+        const ssl = config.get('ssl');
+
         container.innerHTML = `
             <form id="oauth-form" class="form-section" novalidate>
                 <h3 data-i18n="setup.oauth.title"></h3>
@@ -24,11 +28,11 @@ export function render(app, container) {
                     </h4>
                     <div class="form-group">
                         <label class="checkbox-label">
-                            <input type="checkbox" id="google-enabled" name="google_enabled" ${app.config.oauth.google_enabled ? 'checked' : ''}>
+                            <input type="checkbox" id="google-enabled" name="google_enabled" ${oauth.google_enabled ? 'checked' : ''}>
                             <span data-i18n="setup.oauth.google_enable_label"></span>
                         </label>
                     </div>
-                    <div id="google-config" style="display: ${app.config.oauth.google_enabled ? 'block' : 'none'};">
+                    <div id="google-config" style="display: ${oauth.google_enabled ? 'block' : 'none'};">
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="google-client-id"><span data-i18n="setup.oauth.google_client_id_label"></span> <span data-i18n="common.required"></span></label>
@@ -36,9 +40,9 @@ export function render(app, container) {
                                     type="text"
                                     id="google-client-id"
                                     name="google_client_id"
-                                    value="${app.config.oauth.google_client_id}"
+                                    value="${oauth.google_client_id}"
                                     data-i18n-placeholder="setup.oauth.google_client_id_placeholder"
-                                    ${app.config.oauth.google_enabled ? 'required' : ''}
+                                    ${oauth.google_enabled ? 'required' : ''}
                                 >
                                 <div class="invalid-feedback" data-i18n="setup.oauth.google_client_id_error"></div>
                             </div>
@@ -49,7 +53,7 @@ export function render(app, container) {
                                     id="google-client-secret"
                                     name="google_client_secret"
                                     data-i18n-placeholder="setup.oauth.google_client_secret_placeholder"
-                                    ${app.config.oauth.google_enabled ? 'required' : ''}
+                                    ${oauth.google_enabled ? 'required' : ''}
                                 >
                                 <div class="invalid-feedback" data-i18n="setup.oauth.google_client_secret_error"></div>
                             </div>
@@ -69,11 +73,11 @@ export function render(app, container) {
                     </h4>
                     <div class="form-group">
                         <label class="checkbox-label">
-                            <input type="checkbox" id="github-enabled" name="github_enabled" ${app.config.oauth.github_enabled ? 'checked' : ''}>
+                            <input type="checkbox" id="github-enabled" name="github_enabled" ${oauth.github_enabled ? 'checked' : ''}>
                             <span data-i18n="setup.oauth.github_enable_label"></span>
                         </label>
                     </div>
-                    <div id="github-config" style="display: ${app.config.oauth.github_enabled ? 'block' : 'none'};">
+                    <div id="github-config" style="display: ${oauth.github_enabled ? 'block' : 'none'};">
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="github-client-id"><span data-i18n="setup.oauth.github_client_id_label"></span> <span data-i18n="common.required"></span></label>
@@ -81,9 +85,9 @@ export function render(app, container) {
                                     type="text"
                                     id="github-client-id"
                                     name="github_client_id"
-                                    value="${app.config.oauth.github_client_id}"
+                                    value="${oauth.github_client_id}"
                                     data-i18n-placeholder="setup.oauth.github_client_id_placeholder"
-                                    ${app.config.oauth.github_enabled ? 'required' : ''}
+                                    ${oauth.github_enabled ? 'required' : ''}
                                 >
                                 <div class="invalid-feedback" data-i18n="setup.oauth.github_client_id_error"></div>
                             </div>
@@ -94,7 +98,7 @@ export function render(app, container) {
                                     id="github-client-secret"
                                     name="github_client_secret"
                                     data-i18n-placeholder="setup.oauth.github_client_secret_placeholder"
-                                    ${app.config.oauth.github_enabled ? 'required' : ''}
+                                    ${oauth.github_enabled ? 'required' : ''}
                                 >
                                 <div class="invalid-feedback" data-i18n="setup.oauth.github_client_secret_error"></div>
                             </div>
@@ -107,7 +111,7 @@ export function render(app, container) {
                 </div>
 
                 <!-- Frontend Origin Configuration (only when OAuth is enabled) -->
-                <div id="frontend-origin-section" style="display: ${app.config.oauth.google_enabled || app.config.oauth.github_enabled ? 'block' : 'none'}; margin-top: 2rem;">
+                <div id="frontend-origin-section" style="display: ${oauth.google_enabled || oauth.github_enabled ? 'block' : 'none'}; margin-top: 2rem;">
                     <h4 style="margin: 1.5rem 0 1rem 0; color: var(--gray-700);" data-i18n="setup.oauth.frontend_origin_title"></h4>
                     <div class="form-group">
                         <label for="frontend-origin"><span data-i18n="setup.oauth.frontend_origin_label"></span></label>
@@ -115,7 +119,7 @@ export function render(app, container) {
                             type="url"
                             id="frontend-origin"
                             name="frontend_origin"
-                            value="${app.config.oauth.frontend_origin || (app.config.ssl?.enabled ? 'https://' : 'http://') + app.config.app.domain_name}"
+                            value="${oauth.frontend_origin || (ssl?.enabled ? 'https://' : 'http://') + appConfig.domain_name}"
                             data-i18n-placeholder="setup.oauth.frontend_origin_placeholder"
                         >
                         <div class="form-help" data-i18n="setup.oauth.frontend_origin_help"></div>
@@ -124,7 +128,7 @@ export function render(app, container) {
                 </div>
 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                    <button type="button" class="btn btn-secondary" id="oauth-prev-btn" data-i18n="common.previous"></button>
                     <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
                 </div>
             </form>
@@ -172,21 +176,23 @@ export function render(app, container) {
             updateFrontendOriginVisibility();
         });
 
-        // 安全地设置密码字段值，避免HTML转义问题
+        document.getElementById('oauth-prev-btn').addEventListener('click', () => {
+            navigation.previousStep();
+        });
+
         const googleClientSecretField = document.getElementById('google-client-secret');
-        if (googleClientSecretField && app.config.oauth.google_client_secret) {
-            googleClientSecretField.value = app.config.oauth.google_client_secret;
+        if (googleClientSecretField && oauth.google_client_secret) {
+            googleClientSecretField.value = oauth.google_client_secret;
         }
         const githubClientSecretField = document.getElementById('github-client-secret');
-        if (githubClientSecretField && app.config.oauth.github_client_secret) {
-            githubClientSecretField.value = app.config.oauth.github_client_secret;
+        if (githubClientSecretField && oauth.github_client_secret) {
+            githubClientSecretField.value = oauth.github_client_secret;
         }
 
-        // 表单提交处理
         document.getElementById('oauth-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (e.target.checkValidity()) {
-                app.config.oauth = {
+                config.set('oauth', {
                     google_enabled: document.getElementById('google-enabled').checked,
                     google_client_id: document.getElementById('google-client-id').value.trim(),
                     google_client_secret: document.getElementById('google-client-secret').value.trim(),
@@ -194,10 +200,10 @@ export function render(app, container) {
                     github_client_id: document.getElementById('github-client-id').value.trim(),
                     github_client_secret: document.getElementById('github-client-secret').value.trim(),
                     frontend_origin: document.getElementById('frontend-origin').value.trim()
-                };
+                });
 
-                app.saveToLocalCache();
-                await app.saveConfigWithValidation();
+                config.saveToLocalCache();
+                await config.saveWithValidation();
             } else {
                 showFormErrors(e.target);
             }

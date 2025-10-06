@@ -1,8 +1,8 @@
 import { validateDatabasePasswordStrength, validateExternalServicePassword, showValidationErrors, hideCustomError, showCustomError, showFormErrors, addFieldTouchListeners } from '../validator.js';
 
-async function testDatabaseConnection(app) {
-    await app.apiClient.protectedApiCall('testDatabase', async () => {
-        const testConfig = { ...app.config };
+async function testDatabaseConnection(apiClient, config, ui) {
+    await apiClient.protectedApiCall('testDatabase', async () => {
+        const testConfig = { ...config.getAll() };
         const serviceType = document.querySelector('input[name="db-service-type"]:checked').value;
 
         testConfig.database = {
@@ -28,10 +28,10 @@ async function testDatabaseConnection(app) {
         testBtn.textContent = window.i18n ? window.i18n.t('common.testing') : 'Testing...';
 
         try {
-            const result = await app.apiClient.testConnections('database', testConfig);
+            const result = await apiClient.testConnections('database', testConfig);
             displayConnectionResults(result.data, 'database');
         } catch (error) {
-            app.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
+            ui.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
         } finally {
             testBtn.disabled = false;
             testBtn.textContent = originalText;
@@ -40,7 +40,7 @@ async function testDatabaseConnection(app) {
         if (error.validationErrors && error.validationErrors.length > 0) {
             showValidationErrors(error.validationErrors, window.i18n);
         } else {
-            app.showAlert('error', error.message);
+            ui.showAlert('error', error.message);
         }
     });
 }
@@ -80,7 +80,7 @@ function toggleHelpText(fieldId, show) {
     }
 }
 
-function updateDatabaseHostField(app, serviceType) {
+function updateDatabaseHostField(serviceType) {
     const hostField = document.getElementById('db-host');
     const testConnectionContainer = document.getElementById('db-test-connection-container');
     const superUserConfig = document.getElementById('db-super-user-config');
@@ -202,7 +202,9 @@ function updateDatabaseHostField(app, serviceType) {
     }
 }
 
-export function render(app, container) {
+export function render(container, { config, navigation, ui, apiClient }) {
+    const database = config.get('database');
+
     container.innerHTML = `
         <form id="database-form" class="form-section" novalidate>
             <h3 data-i18n="setup.database.title"></h3>
@@ -212,13 +214,13 @@ export function render(app, container) {
                 <label class="form-label"><span data-i18n="setup.database.service_type_label"></span> <span data-i18n="common.required"></span></label>
                 <div class="radio-group">
                     <label class="radio-option">
-                        <input type="radio" name="db-service-type" value="docker" ${app.config.database.service_type === 'docker' ? 'checked' : ''}>
+                        <input type="radio" name="db-service-type" value="docker" ${database.service_type === 'docker' ? 'checked' : ''}>
                         <div>
                             <span data-i18n="setup.database.service_type_docker"></span>
                         </div>
                     </label>
                     <label class="radio-option">
-                        <input type="radio" name="db-service-type" value="external" ${app.config.database.service_type === 'external' ? 'checked' : ''}>
+                        <input type="radio" name="db-service-type" value="external" ${database.service_type === 'external' ? 'checked' : ''}>
                         <div>
                             <span data-i18n="setup.database.service_type_external"></span>
                         </div>
@@ -233,7 +235,7 @@ export function render(app, container) {
                         type="text"
                         id="db-host"
                         name="host"
-                        value="${app.config.database.host}"
+                        value="${database.host}"
                         data-i18n-placeholder="setup.database.host_placeholder"
                         required
                         pattern="^[a-zA-Z0-9.\\-]+$"
@@ -248,7 +250,7 @@ export function render(app, container) {
                         type="number"
                         id="db-port"
                         name="port"
-                        value="${app.config.database.port}"
+                        value="${database.port}"
                         data-i18n-placeholder="setup.database.port_placeholder"
                         required
                         min="1"
@@ -266,7 +268,7 @@ export function render(app, container) {
                     type="text"
                     id="db-name"
                     name="database"
-                    value="${app.config.database.name}"
+                    value="${database.name}"
                     data-i18n-placeholder="setup.database.name_placeholder"
                     required
                     pattern="^[a-zA-Z][a-zA-Z0-9_]*$"
@@ -287,7 +289,7 @@ export function render(app, container) {
                             type="text"
                             id="db-super-user"
                             name="super_username"
-                            value="${app.config.database.super_user || 'baklab_super'}"
+                            value="${database.super_user || 'baklab_super'}"
                             data-i18n-placeholder="setup.database.super_username_placeholder"
                             required
                             pattern="^[a-zA-Z][a-zA-Z0-9_]*$"
@@ -326,7 +328,7 @@ export function render(app, container) {
                             type="text"
                             id="db-app-user"
                             name="app_username"
-                            value="${app.config.database.app_user || 'baklab'}"
+                            value="${database.app_user || 'baklab'}"
                             data-i18n-placeholder="setup.database.app_username_placeholder"
                             required
                             data-i18n-title="setup.database.app_username_error"
@@ -358,26 +360,30 @@ export function render(app, container) {
             </div>
 
             <div class="btn-group">
-                <button type="button" class="btn btn-secondary" onclick="app.previousStep()" data-i18n="common.previous"></button>
+                <button type="button" class="btn btn-secondary" id="db-prev-btn" data-i18n="common.previous"></button>
                 <button type="submit" class="btn btn-primary" data-i18n="common.next"></button>
             </div>
         </form>
     `;
 
+    document.getElementById('db-prev-btn').addEventListener('click', () => {
+        navigation.previousStep();
+    });
+
     const serviceTypeRadios = document.querySelectorAll('input[name="db-service-type"]');
     serviceTypeRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
-            updateDatabaseHostField(app, e.target.value);
-            app.updateRadioStyles('db-service-type');
+            updateDatabaseHostField(e.target.value);
+            ui.updateRadioStyles('db-service-type');
             setTimeout(() => validateDuplicates(), 10);
         });
     });
 
-    updateDatabaseHostField(app, app.config.database.service_type);
-    app.updateRadioStyles('db-service-type');
+    updateDatabaseHostField(database.service_type);
+    ui.updateRadioStyles('db-service-type');
 
     setTimeout(() => {
-        updateDatabaseHostField(app, app.config.database.service_type);
+        updateDatabaseHostField(database.service_type);
     }, 100);
 
     const validateDuplicates = () => {
@@ -464,18 +470,18 @@ export function render(app, container) {
     };
 
     const dbSuperPasswordField = document.getElementById('db-super-password');
-    if (dbSuperPasswordField && app.config.database.super_password) {
-        dbSuperPasswordField.value = app.config.database.super_password;
+    if (dbSuperPasswordField && database.super_password) {
+        dbSuperPasswordField.value = database.super_password;
     }
     const dbAppPasswordField = document.getElementById('db-app-password');
-    if (dbAppPasswordField && app.config.database.app_password) {
-        dbAppPasswordField.value = app.config.database.app_password;
+    if (dbAppPasswordField && database.app_password) {
+        dbAppPasswordField.value = database.app_password;
     }
 
     ['db-super-user', 'db-app-user', 'db-super-password', 'db-app-password'].forEach(id => {
         const field = document.getElementById(id);
         if (field) {
-            field.addEventListener('input', validateDuplicates.bind(app));
+            field.addEventListener('input', validateDuplicates);
         }
     });
 
@@ -564,34 +570,27 @@ export function render(app, container) {
         if (e.target.checkValidity()) {
             const serviceType = document.querySelector('input[name="db-service-type"]:checked').value;
 
-            app.config.database = {
+            config.set('database', {
                 service_type: serviceType,
                 host: serviceType === 'docker' ? 'localhost' : document.getElementById('db-host').value,
                 port: parseInt(document.getElementById('db-port').value),
                 name: document.getElementById('db-name').value,
                 app_user: document.getElementById('db-app-user').value,
-                app_password: document.getElementById('db-app-password').value
-            };
+                app_password: document.getElementById('db-app-password').value,
+                super_user: serviceType === 'docker' ? document.getElementById('db-super-user').value : '',
+                super_password: serviceType === 'docker' ? document.getElementById('db-super-password').value : ''
+            });
 
-            if (serviceType === 'docker') {
-                app.config.database.super_user = document.getElementById('db-super-user').value;
-                app.config.database.super_password = document.getElementById('db-super-password').value;
-            } else {
-                app.config.database.super_user = '';
-                app.config.database.super_password = '';
-            }
-
-            app.saveToLocalCache();
-            await app.saveConfigWithValidation();
+            config.saveToLocalCache();
+            await config.saveWithValidation();
         } else {
             showFormErrors(e.target);
         }
     });
 
-    // 添加测试连接按钮事件监听器
     const testBtn = document.getElementById('db-test-btn');
     if (testBtn) {
-        testBtn.addEventListener('click', () => testDatabaseConnection(app));
+        testBtn.addEventListener('click', () => testDatabaseConnection(apiClient, config, ui));
     }
 
     addFieldTouchListeners(container);

@@ -1,4 +1,4 @@
-export function render(app, container) {
+export function render(container, { setupService }) {
         container.innerHTML = `
             <div class="form-section">
                 <h3 style="text-align: center;">
@@ -14,32 +14,27 @@ export function render(app, container) {
 
             </div>
         `;
-        
-        // 应用翻译，包含动态路径参数
+
         setTimeout(() => {
             if (window.i18n) {
-                const outputPath = app.outputPath || './output';
+                const outputPath = setupService.outputPath || './output';
                 const params = { outputPath: outputPath };
-                
-                // 手动设置包含路径的翻译内容
+
                 const readyNotice = document.getElementById('ready-notice');
                 const readyDescription = document.getElementById('ready-description');
-                
+
                 if (readyNotice) {
                     const noticeText = window.i18n.t('setup.config_complete.ready_notice', params);
                     readyNotice.innerHTML = noticeText;
-                    // 移除 data-i18n-html 属性，防止被 applyTranslations 覆盖
                     readyNotice.removeAttribute('data-i18n-html');
                 }
                 if (readyDescription) {
                     const descText = window.i18n.t('setup.config_complete.ready_description', params);
-                    // 为长代码命令添加特殊样式处理
                     const processedText = descText.replace(/<code>([^<]*cd [^<]*)<\/code>/g, '<code class="complete-step-code">$1</code>');
                     readyDescription.innerHTML = processedText;
-                    // 移除 data-i18n-html 属性，防止被 applyTranslations 覆盖
                     readyDescription.removeAttribute('data-i18n-html');
                 }
-                
+
             }
         }, 50);
     }

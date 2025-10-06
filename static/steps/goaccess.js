@@ -1,7 +1,7 @@
 import { formatFileSize } from '../api.js';
 import { clearFormErrors, showFieldError, showFormErrors } from '../validator.js';
 
-export function updateGeoFileDisplay(app) {
+export function updateGeoFileDisplay(config) {
     const fileInfoDiv = document.getElementById('geo-file-info');
     const fileUploadContent = document.querySelector('#geo-upload-area .file-upload-content');
 
@@ -9,12 +9,14 @@ export function updateGeoFileDisplay(app) {
         return;
     }
 
-    if (app.config.goaccess.has_geo_file && app.config.goaccess.geo_file_temp_path) {
+    const goaccess = config.get('goaccess');
+
+    if (goaccess.has_geo_file && goaccess.geo_file_temp_path) {
         fileUploadContent.style.display = 'none';
         fileInfoDiv.style.display = 'block';
 
-        const fileName = app.config.goaccess.original_file_name || app.config.goaccess.geo_file_temp_path.split('/').pop();
-        const fileSize = app.config.goaccess.file_size;
+        const fileName = goaccess.original_file_name || goaccess.geo_file_temp_path.split('/').pop();
+        const fileSize = goaccess.file_size;
 
         const fileNameEl = fileInfoDiv.querySelector('#geo-file-name');
         const fileSizeEl = fileInfoDiv.querySelector('#geo-file-size');
@@ -44,31 +46,34 @@ export function updateGeoFileDisplay(app) {
     }
 }
 
-async function checkGeoFileStatus(app) {
+async function checkGeoFileStatus(apiClient, config) {
     try {
-        const response = await app.apiClient.getGeoFileStatus();
+        const response = await apiClient.getGeoFileStatus();
         if (response.success && response.data) {
             const { exists, file_name, file_size, temp_path } = response.data;
+            const goaccess = config.get('goaccess');
 
-            if (app.config.goaccess.has_geo_file && !exists) {
+            if (goaccess.has_geo_file && !exists) {
                 console.log('GeoIP file cache inconsistent with actual file status, resetting...');
-                app.config.goaccess.has_geo_file = false;
-                app.config.goaccess.geo_file_temp_path = '';
-                app.config.goaccess.original_file_name = '';
-                app.config.goaccess.file_size = 0;
+                goaccess.has_geo_file = false;
+                goaccess.geo_file_temp_path = '';
+                goaccess.original_file_name = '';
+                goaccess.file_size = 0;
 
-                app.saveToLocalCache();
-                updateGeoFileDisplay(app);
+                config.set('goaccess', goaccess);
+                config.saveToLocalCache();
+                updateGeoFileDisplay(config);
             }
-            else if (!app.config.goaccess.has_geo_file && exists) {
+            else if (!goaccess.has_geo_file && exists) {
                 console.log('Found GeoIP file but cache shows no file, updating cache...');
-                app.config.goaccess.has_geo_file = true;
-                app.config.goaccess.geo_file_temp_path = temp_path;
-                app.config.goaccess.original_file_name = file_name;
-                app.config.goaccess.file_size = file_size;
+                goaccess.has_geo_file = true;
+                goaccess.geo_file_temp_path = temp_path;
+                goaccess.original_file_name = file_name;
+                goaccess.file_size = file_size;
 
-                app.saveToLocalCache();
-                updateGeoFileDisplay(app);
+                config.set('goaccess', goaccess);
+                config.saveToLocalCache();
+                updateGeoFileDisplay(config);
             }
         }
     } catch (error) {
@@ -76,12 +81,12 @@ async function checkGeoFileStatus(app) {
     }
 }
 
-async function handleGeoFileSelect(app, file, fileInfoDivParam) {
+async function handleGeoFileSelect(apiClient, config, file, fileInfoDivParam) {
     const fileInfoDiv = fileInfoDivParam || document.getElementById('geo-file-info');
     const uploadArea = document.getElementById('geo-upload-area');
 
     try {
-        const result = await app.apiClient.protectedApiCall('geoFileUpload', async () => {
+        const result = await apiClient.protectedApiCall('geoFileUpload', async () => {
             if (!fileInfoDiv) {
                 console.error('fileInfoDiv is null in handleGeoFileSelect');
                 return;
@@ -139,20 +144,9 @@ async function handleGeoFileSelect(app, file, fileInfoDivParam) {
             progressElement.textContent = uploadingText;
             fileInfoDiv.appendChild(progressElement);
 
-            const formData = new FormData();
-            formData.append('geo_file', file);
+            const uploadResult = await apiClient.uploadGeoFile(file);
 
-            const response = await fetch('/api/upload/geo-file', {
-                method: 'POST',
-                headers: {
-                    'Setup-Token': app.token
-                },
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
+            if (uploadResult.success) {
                 const progressEl = fileInfoDiv.querySelector('#geo-upload-progress');
                 if (progressEl) {
                     const successText = window.i18n ? window.i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
@@ -160,19 +154,21 @@ async function handleGeoFileSelect(app, file, fileInfoDivParam) {
                     progressEl.style.color = 'var(--success-color)';
                 }
 
-                app.config.goaccess.has_geo_file = true;
-                app.config.goaccess.geo_file_temp_path = result.data.temp_path;
-                app.config.goaccess.original_file_name = file.name;
-                app.config.goaccess.file_size = file.size;
+                const goaccess = config.get('goaccess');
+                goaccess.has_geo_file = true;
+                goaccess.geo_file_temp_path = uploadResult.data.temp_path;
+                goaccess.original_file_name = file.name;
+                goaccess.file_size = file.size;
+                config.set('goaccess', goaccess);
 
                 if (uploadArea) {
                     uploadArea.style.pointerEvents = '';
                     uploadArea.style.opacity = '';
                 }
 
-                return result;
+                return uploadResult;
             } else {
-                throw new Error(result.message || 'Upload failed');
+                throw new Error(uploadResult.message || 'Upload failed');
             }
         });
 
@@ -193,7 +189,9 @@ async function handleGeoFileSelect(app, file, fileInfoDivParam) {
             uploadArea.style.opacity = '';
         }
 
-        app.config.goaccess.has_geo_file = false;
+        const goaccess = config.get('goaccess');
+        goaccess.has_geo_file = false;
+        config.set('goaccess', goaccess);
 
         setTimeout(() => {
             showGeoUploadArea();
@@ -216,20 +214,21 @@ function showGeoUploadArea() {
     }
 }
 
-function validateGoAccessForm(app, form) {
+function validateGoAccessForm(config, form) {
     let valid = true;
     clearFormErrors(form);
 
     const goAccessEnabled = form.querySelector('#goaccess-enabled').checked;
+    const goaccess = config.get('goaccess');
 
     if (goAccessEnabled) {
-        if (!app.config.goaccess.has_geo_file ||
-            (app.config.goaccess.has_geo_file && !app.config.goaccess.geo_file_temp_path)) {
+        if (!goaccess.has_geo_file ||
+            (goaccess.has_geo_file && !goaccess.geo_file_temp_path)) {
             valid = false;
             const uploadArea = form.querySelector('#geo-upload-area');
             let errorMessage;
 
-            if (!app.config.goaccess.has_geo_file) {
+            if (!goaccess.has_geo_file) {
                 errorMessage = window.i18n ? window.i18n.t('setup.goaccess.geo_file_required') :
                                'GeoIP database file is required when GoAccess is enabled';
             } else {
@@ -243,20 +242,22 @@ function validateGoAccessForm(app, form) {
     return valid;
 }
 
-export function render(app, container) {
+export function render(container, { config, navigation, apiClient }) {
+        const goaccess = config.get('goaccess');
+
         container.innerHTML = `
             <form id="goaccess-form" class="form-section" novalidate>
                 <h3 data-i18n="setup.goaccess.title"></h3>
                 <p style="margin-bottom: 1.5rem; color: var(--gray-600);" data-i18n="setup.goaccess.description"></p>
-                
+
                 <div class="form-group">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="goaccess-enabled" name="enabled" ${app.config.goaccess.enabled ? 'checked' : ''}>
+                        <input type="checkbox" id="goaccess-enabled" name="enabled" ${goaccess.enabled ? 'checked' : ''}>
                         <span data-i18n="setup.goaccess.enable_label"></span>
                     </label>
                 </div>
-                
-                <div id="goaccess-config" style="display: ${app.config.goaccess.enabled ? 'block' : 'none'};">
+
+                <div id="goaccess-config" style="display: ${goaccess.enabled ? 'block' : 'none'};">
                     <div class="form-group">
                         <label for="goaccess-geo-file"><span data-i18n="setup.goaccess.geo_file_label"></span></label>
                         <div class="file-upload-area" id="geo-upload-area">
@@ -283,9 +284,9 @@ export function render(app, container) {
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" onclick="app.previousStep()">
+                    <button type="button" class="btn btn-secondary" id="goaccess-prev-btn">
                         <span data-i18n="common.previous"></span>
                     </button>
                     <button type="submit" class="btn btn-primary">
@@ -295,7 +296,10 @@ export function render(app, container) {
             </form>
         `;
 
-        // 绑定事件监听器
+        document.getElementById('goaccess-prev-btn').addEventListener('click', () => {
+            navigation.previousStep();
+        });
+
         const enabledCheckbox = container.querySelector('#goaccess-enabled');
         const configDiv = container.querySelector('#goaccess-config');
         const fileInput = container.querySelector('#goaccess-geo-file');
@@ -304,9 +308,10 @@ export function render(app, container) {
 
         enabledCheckbox.addEventListener('change', (e) => {
             configDiv.style.display = e.target.checked ? 'block' : 'none';
-            app.config.goaccess.enabled = e.target.checked;
-            
-            // 如果禁用 GoAccess，清除文件上传错误状态
+            const goaccessConfig = config.get('goaccess');
+            goaccessConfig.enabled = e.target.checked;
+            config.set('goaccess', goaccessConfig);
+
             if (!e.target.checked) {
                 const formGroup = uploadArea.closest('.form-group');
                 if (formGroup) {
@@ -320,7 +325,6 @@ export function render(app, container) {
             }
         });
 
-        // 文件拖拽支持
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadArea.classList.add('drag-over');
@@ -334,24 +338,21 @@ export function render(app, container) {
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadArea.classList.remove('drag-over');
-            // 检查是否有上传正在进行中
-            if (app.apiClient.requestLocks.geoFileUpload) {
+            if (apiClient.requestLocks.geoFileUpload) {
                 const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
                 alert(warningMsg);
                 return;
             }
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                handleGeoFileSelect(app, files[0], fileInfo);
+                handleGeoFileSelect(apiClient, config, files[0], fileInfo);
             }
         });
 
-        // 文件选择按钮点击事件
         const selectBtn = container.querySelector('#geo-file-select-btn');
         if (selectBtn) {
             selectBtn.addEventListener('click', () => {
-                // 检查是否有上传正在进行中
-                if (app.apiClient.requestLocks.geoFileUpload) {
+                if (apiClient.requestLocks.geoFileUpload) {
                     const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
                     alert(warningMsg);
                     return;
@@ -360,7 +361,6 @@ export function render(app, container) {
             });
         }
 
-        // 重新选择文件按钮点击事件
         const reselectBtn = container.querySelector('#geo-reselect-btn');
         if (reselectBtn) {
             reselectBtn.addEventListener('click', () => {
@@ -370,31 +370,30 @@ export function render(app, container) {
 
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                // 检查是否有上传正在进行中
-                if (app.apiClient.requestLocks.geoFileUpload) {
+                if (apiClient.requestLocks.geoFileUpload) {
                     const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
                     alert(warningMsg);
-                    e.target.value = ''; // 清空文件选择
+                    e.target.value = '';
                     return;
                 }
-                handleGeoFileSelect(app, e.target.files[0], fileInfo);
+                handleGeoFileSelect(apiClient, config, e.target.files[0], fileInfo);
             }
         });
 
-        // 表单提交
         container.querySelector('#goaccess-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            if (validateGoAccessForm(app, e.target)) {
+            if (validateGoAccessForm(config, e.target)) {
                 const form = e.target;
-                app.config.goaccess.enabled = form.querySelector('#goaccess-enabled').checked;
-                app.saveToLocalCache();
-                app.nextStep();
+                const goaccessConfig = config.get('goaccess');
+                goaccessConfig.enabled = form.querySelector('#goaccess-enabled').checked;
+                config.set('goaccess', goaccessConfig);
+                config.saveToLocalCache();
+                navigation.nextStep();
             } else {
                 showFormErrors(e.target);
             }
         });
 
-        // 检查实际的GeoIP文件状态，确保缓存与实际文件同步
-        checkGeoFileStatus(app);
+        checkGeoFileStatus(apiClient, config);
     }
 
