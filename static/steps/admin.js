@@ -1,6 +1,6 @@
 import { validateAndSetFieldError, validatePasswordStrength, showFormErrors, showCustomError, hideCustomError, addFieldTouchListeners } from '../validator.js';
 
-export function render(container, { config, navigation, ui }) {
+export function render(container, { config, navigation, ui, i18n }) {
         const adminUser = config.get('admin_user');
 
         container.innerHTML = `
@@ -91,7 +91,7 @@ export function render(container, { config, navigation, ui }) {
             const passwordField = document.getElementById('admin-password');
 
             if (password && !validatePasswordStrength(password)) {
-                const errorMsg = window.i18n ? window.i18n.t('setup.admin.password_error') :
+                const errorMsg = i18n ? i18n.t('setup.admin.password_error') :
                     'Password must contain lowercase, uppercase, numbers, and special characters (!@#$%^&*)';
                 passwordField.setCustomValidity(errorMsg);
             } else {
@@ -99,7 +99,7 @@ export function render(container, { config, navigation, ui }) {
             }
 
             if (password !== passwordConfirm) {
-                const errorMsg = window.i18n ? window.i18n.t('setup.admin.password_confirm_error') : 'Passwords must match';
+                const errorMsg = i18n ? i18n.t('setup.admin.password_confirm_error') : 'Passwords must match';
                 confirmField.setCustomValidity(errorMsg);
             } else {
                 confirmField.setCustomValidity('');
@@ -135,14 +135,14 @@ export function render(container, { config, navigation, ui }) {
                 passwordField.value,
                 'admin',
                 {
-                    i18n: window.i18n,
+                    i18n: i18n,
                     showCustomErrorFn: (f, m) => showCustomError(f, m),
                     hideCustomErrorFn: (f) => hideCustomError(f)
                 }
             );
 
             if (confirmField.value && passwordField.value !== confirmField.value) {
-                const errorMsg = window.i18n ? window.i18n.t('setup.admin.password_confirm_error') : 'Passwords must match';
+                const errorMsg = i18n ? i18n.t('setup.admin.password_confirm_error') : 'Passwords must match';
                 confirmField.setCustomValidity(errorMsg);
                 showCustomError(confirmField, errorMsg);
             } else {
@@ -156,7 +156,7 @@ export function render(container, { config, navigation, ui }) {
             const passwordConfirm = confirmField.value;
 
             if (passwordConfirm && password !== passwordConfirm) {
-                const errorMsg = window.i18n ? window.i18n.t('setup.admin.password_confirm_error') : 'Passwords must match';
+                const errorMsg = i18n ? i18n.t('setup.admin.password_confirm_error') : 'Passwords must match';
                 confirmField.setCustomValidity(errorMsg);
                 showCustomError(confirmField, errorMsg);
             } else {

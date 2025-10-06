@@ -1,6 +1,7 @@
 export class ApiClient {
-    constructor() {
+    constructor(i18n = null) {
         this.token = null;
+        this.i18n = i18n;
         this.requestLocks = {
             initialize: false,
             complete: false,
@@ -11,6 +12,10 @@ export class ApiClient {
             saveConfig: false,
             geoFileUpload: false
         };
+    }
+
+    setI18n(i18n) {
+        this.i18n = i18n;
     }
 
     setToken(token) {
@@ -29,8 +34,8 @@ export class ApiClient {
             options.headers['Setup-Token'] = this.token;
         }
 
-        if (window.i18n && window.i18n.getCurrentLanguage) {
-            options.headers['X-Language'] = window.i18n.getCurrentLanguage();
+        if (this.i18n && this.i18n.getCurrentLanguage) {
+            options.headers['X-Language'] = this.i18n.getCurrentLanguage();
         }
 
         if (data) {

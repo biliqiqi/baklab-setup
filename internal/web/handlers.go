@@ -615,7 +615,6 @@ func (h *SetupHandlers) renderSetupPage(w http.ResponseWriter, r *http.Request) 
         <h1>BakLab Setup</h1>
         <p>%s</p>
     </div>
-    <script src="/static/i18n.js?v=1.0"></script>
     <script type="module" src="/static/app.js?v=1.2"></script>
 </body>
 </html>`, pageTitle, loadingMessage)

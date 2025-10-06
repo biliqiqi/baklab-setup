@@ -1,6 +1,6 @@
 import { validateDatabasePasswordStrength, validateExternalServicePassword, showValidationErrors, showCustomError, hideCustomError, showFormErrors, addFieldTouchListeners } from '../validator.js';
 
-async function testRedisConnection(apiClient, config, ui) {
+async function testRedisConnection(apiClient, config, ui, i18n) {
     await apiClient.protectedApiCall('testRedis', async () => {
         const testConfig = { ...config.getAll() };
 
@@ -15,20 +15,20 @@ async function testRedisConnection(apiClient, config, ui) {
         const testBtn = document.getElementById('redis-test-btn');
         const originalText = testBtn.textContent;
         testBtn.disabled = true;
-        testBtn.textContent = window.i18n ? window.i18n.t('common.testing') : 'Testing...';
+        testBtn.textContent = i18n ? i18n.t('common.testing') : 'Testing...';
 
         try {
             const result = await apiClient.testConnections('redis', testConfig);
             displayConnectionResults(result.data, 'redis');
         } catch (error) {
-            ui.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
+            ui.showAlert('error', i18n ? i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
         } finally {
             testBtn.disabled = false;
             testBtn.textContent = originalText;
         }
     }, (error) => {
         if (error.validationErrors && error.validationErrors.length > 0) {
-            showValidationErrors(error.validationErrors, window.i18n);
+            showValidationErrors(error.validationErrors, i18n);
         } else {
             ui.showAlert('error', error.message);
         }
@@ -177,7 +177,7 @@ function updateRedisHostField(serviceType) {
     }
 }
 
-export function render(container, { config, navigation, ui, apiClient }) {
+export function render(container, { config, navigation, ui, apiClient, i18n }) {
         const redis = config.get('redis');
 
         container.innerHTML = `
@@ -341,11 +341,11 @@ export function render(container, { config, navigation, ui, apiClient }) {
 
                 if (serviceType === 'docker') {
                     isValid = validateDatabasePasswordStrength(password);
-                    errorMessage = window.i18n ? window.i18n.t('setup.redis.password_error') :
+                    errorMessage = i18n ? i18n.t('setup.redis.password_error') :
                         'Password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
                 } else {
                     isValid = validateExternalServicePassword(password);
-                    errorMessage = window.i18n ? window.i18n.t('setup.redis.password_external_error') :
+                    errorMessage = i18n ? i18n.t('setup.redis.password_external_error') :
                         'Password must be 1-128 characters and cannot contain control characters';
                 }
 
@@ -366,7 +366,7 @@ export function render(container, { config, navigation, ui, apiClient }) {
 
                 if (adminPassword) {
                     const isValid = validateDatabasePasswordStrength(adminPassword);
-                    const errorMessage = window.i18n ? window.i18n.t('setup.redis.admin_password_error') :
+                    const errorMessage = i18n ? i18n.t('setup.redis.admin_password_error') :
                         'CLI password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
 
                     if (!isValid) {
@@ -417,11 +417,11 @@ export function render(container, { config, navigation, ui, apiClient }) {
 
                 if (serviceType === 'docker') {
                     isValid = validateDatabasePasswordStrength(password);
-                    errorMessage = window.i18n ? window.i18n.t('setup.redis.password_error') :
+                    errorMessage = i18n ? i18n.t('setup.redis.password_error') :
                         'Password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
                 } else {
                     isValid = validateExternalServicePassword(password);
-                    errorMessage = window.i18n ? window.i18n.t('setup.redis.password_external_error') :
+                    errorMessage = i18n ? i18n.t('setup.redis.password_external_error') :
                         'Password must be 1-128 characters and cannot contain control characters';
                 }
 
@@ -442,7 +442,7 @@ export function render(container, { config, navigation, ui, apiClient }) {
                 if (adminPassword) {
                     const isValid = validateDatabasePasswordStrength(adminPassword);
                     if (!isValid) {
-                        const errorMessage = window.i18n ? window.i18n.t('setup.redis.admin_password_error') :
+                        const errorMessage = i18n ? i18n.t('setup.redis.admin_password_error') :
                             'CLI password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
                         adminPasswordField.setCustomValidity(errorMessage);
                     } else {
@@ -484,7 +484,7 @@ export function render(container, { config, navigation, ui, apiClient }) {
 
         const testBtn = document.getElementById('redis-test-btn');
         if (testBtn) {
-            testBtn.addEventListener('click', () => testRedisConnection(apiClient, config, ui));
+            testBtn.addEventListener('click', () => testRedisConnection(apiClient, config, ui, i18n));
         }
 
         addFieldTouchListeners(container);

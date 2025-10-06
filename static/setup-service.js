@@ -1,11 +1,12 @@
 import { showValidationErrors } from './validator.js';
 
 export class SetupService {
-    constructor(apiClient, navigation, ui, config) {
+    constructor(apiClient, navigation, ui, config, i18n) {
         this.apiClient = apiClient;
         this.navigation = navigation;
         this.ui = ui;
         this.config = config;
+        this.i18n = i18n;
         this.token = null;
         this.outputPath = null;
     }
@@ -25,7 +26,7 @@ export class SetupService {
                 return apiResult;
             }, (error) => {
                 if (error.validationErrors && error.validationErrors.length > 0) {
-                    showValidationErrors(error.validationErrors, window.i18n);
+                    showValidationErrors(error.validationErrors, this.i18n);
                 } else {
                     this.ui.showAlert('error', error.message);
                 }
@@ -46,7 +47,7 @@ export class SetupService {
 
         try {
             generateBtn.disabled = true;
-            const generatingText = window.i18n ? window.i18n.t('setup.review.generating') : 'Generating...';
+            const generatingText = this.i18n ? this.i18n.t('setup.review.generating') : 'Generating...';
             generateBtn.innerHTML = generatingText;
 
             await this.apiClient.protectedApiCall('generateConfig', async () => {
@@ -75,21 +76,21 @@ export class SetupService {
         } catch (error) {
             generateBtn.disabled = false;
             generateBtn.innerHTML = originalBtnText;
-            if (window.i18n) {
-                window.i18n.applyTranslations();
+            if (this.i18n) {
+                this.i18n.applyTranslations();
             }
 
             if (error.message && error.message.includes('validation')) {
                 try {
                     const errorData = JSON.parse(error.message.split('validation failed: ')[1]);
-                    const errorMsg = window.i18n ? window.i18n.t('setup.review.generation_failed') : 'Configuration validation failed. Please check all fields and try again.';
+                    const errorMsg = this.i18n ? this.i18n.t('setup.review.generation_failed') : 'Configuration validation failed. Please check all fields and try again.';
                     this.ui.showAlert('error', errorMsg);
                 } catch (parseError) {
-                    const errorMsg = window.i18n ? window.i18n.t('setup.review.generation_failed') : 'Configuration validation failed. Please check all fields and try again.';
+                    const errorMsg = this.i18n ? this.i18n.t('setup.review.generation_failed') : 'Configuration validation failed. Please check all fields and try again.';
                     this.ui.showAlert('error', errorMsg);
                 }
             } else {
-                const errorMsg = window.i18n ? window.i18n.t('setup.review.generation_error') : 'Configuration generation failed. Please try again.';
+                const errorMsg = this.i18n ? this.i18n.t('setup.review.generation_error') : 'Configuration generation failed. Please try again.';
                 this.ui.showAlert('error', errorMsg);
             }
         }
@@ -102,14 +103,14 @@ export class SetupService {
 
                 if (onClearCache) onClearCache();
 
-                this.ui.showAlert('success', window.i18n ? window.i18n.t('messages.setup_completed') : 'Setup completed successfully! Your BakLab application is ready to use.');
+                this.ui.showAlert('success', this.i18n ? this.i18n.t('messages.setup_completed') : 'Setup completed successfully! Your BakLab application is ready to use.');
 
                 setTimeout(() => {
                     if (onRenderCompleted) onRenderCompleted();
                 }, 3000);
             }, (error) => {
                 if (error.validationErrors && error.validationErrors.length > 0) {
-                    showValidationErrors(error.validationErrors, window.i18n);
+                    showValidationErrors(error.validationErrors, this.i18n);
                 } else {
                     this.ui.showAlert('error', error.message);
                 }

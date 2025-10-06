@@ -1,10 +1,10 @@
-// BakLab Setup - Frontend Application - v1.3 (Dependency Injection)
 import { ApiClient } from './api.js';
 import { ConfigStore } from './config-store.js';
 import { Navigation } from './navigation.js';
 import { UI } from './ui.js';
 import { Config } from './config.js';
 import { SetupService } from './setup-service.js';
+import { SetupI18n } from './i18n.js';
 import * as InitStep from './steps/init.js';
 import * as DatabaseStep from './steps/database.js';
 import * as AdminStep from './steps/admin.js';
@@ -23,7 +23,9 @@ class SetupApp {
         this.currentStep = 0;
         this.token = null;
         this.shouldAutoScroll = true;
-        this.apiClient = new ApiClient();
+
+        this.i18n = new SetupI18n();
+        this.apiClient = new ApiClient(this.i18n);
 
         const defaultConfig = {
             database: {
@@ -119,7 +121,7 @@ class SetupApp {
             }
         );
 
-        this.ui = new UI();
+        this.ui = new UI(this.i18n);
 
         this.config = new Config(
             this.configStore,
@@ -132,7 +134,8 @@ class SetupApp {
             this.apiClient,
             this.navigation,
             this.ui,
-            this.config
+            this.config,
+            this.i18n
         );
 
         this.init();
@@ -148,6 +151,9 @@ class SetupApp {
     
     async init() {
         this.setFavicon();
+
+        await this.i18n.init();
+        this.i18n.setLanguageChangeCallback(() => this.render());
 
         try {
             this.loadFromLocalCache();
@@ -206,20 +212,19 @@ class SetupApp {
             navigation: this.navigation,
             ui: this.ui,
             apiClient: this.apiClient,
-            setupService: this.setupService
+            setupService: this.setupService,
+            i18n: this.i18n
         });
-        
-        if (window.i18n) {
-            window.i18n.applyTranslations();
 
-            const languageSwitcherContainer = document.getElementById('language-switcher');
-            if (languageSwitcherContainer) {
-                window.i18n.generateLanguageSelector('language-switcher', {
-                    showLabel: false,
-                    className: 'language-selector',
-                    style: 'dropdown'
-                });
-            }
+        this.i18n.applyTranslations();
+
+        const languageSwitcherContainer = document.getElementById('language-switcher');
+        if (languageSwitcherContainer) {
+            this.i18n.generateLanguageSelector('language-switcher', {
+                showLabel: false,
+                className: 'language-selector',
+                style: 'dropdown'
+            });
         }
 
         document.querySelectorAll('.sidebar-step[data-step-index]').forEach(stepElement => {
@@ -273,7 +278,7 @@ class SetupApp {
     }
 
     updateUploadStates() {
-        updateGeoFileDisplay(this.config);
+        updateGeoFileDisplay(this.config, this.i18n);
     }
 
     setFavicon() {

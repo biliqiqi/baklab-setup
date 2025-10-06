@@ -1,6 +1,10 @@
 import { showValidationErrors } from './validator.js';
 
 export class UI {
+    constructor(i18n) {
+        this.i18n = i18n;
+    }
+
     updateRadioStyles(radioName) {
         const radios = document.querySelectorAll(`input[name="${radioName}"]`);
         radios.forEach(radio => {
@@ -16,7 +20,7 @@ export class UI {
     showAlert(type, message) {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type}`;
-        alertDiv.textContent = window.i18n && message.includes('.') ? window.i18n.t(message) : message;
+        alertDiv.textContent = this.i18n && message.includes('.') ? this.i18n.t(message) : message;
 
         const setupCard = document.querySelector('.setup-card');
         if (setupCard) {
@@ -31,6 +35,6 @@ export class UI {
     }
 
     showValidationErrors(errors) {
-        showValidationErrors(errors, window.i18n);
+        showValidationErrors(errors, this.i18n);
     }
 }

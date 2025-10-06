@@ -1,6 +1,6 @@
 import { showValidationErrors, showFormErrors, addFieldTouchListeners } from '../validator.js';
 
-async function testSMTPConnection(apiClient, config, ui) {
+async function testSMTPConnection(apiClient, config, ui, i18n) {
     await apiClient.protectedApiCall('testSMTP', async () => {
         const testConfig = { ...config.getAll() };
 
@@ -15,20 +15,20 @@ async function testSMTPConnection(apiClient, config, ui) {
         const testBtn = document.getElementById('smtp-test-btn');
         const originalText = testBtn.textContent;
         testBtn.disabled = true;
-        testBtn.textContent = window.i18n ? window.i18n.t('common.testing') : 'Testing...';
+        testBtn.textContent = i18n ? i18n.t('common.testing') : 'Testing...';
 
         try {
             const result = await apiClient.testConnections('smtp', testConfig);
             displayConnectionResults(result.data, 'smtp');
         } catch (error) {
-            ui.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
+            ui.showAlert('error', i18n ? i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
         } finally {
             testBtn.disabled = false;
             testBtn.textContent = originalText;
         }
     }, (error) => {
         if (error.validationErrors && error.validationErrors.length > 0) {
-            showValidationErrors(error.validationErrors, window.i18n);
+            showValidationErrors(error.validationErrors, i18n);
         } else {
             ui.showAlert('error', error.message);
         }
@@ -83,7 +83,7 @@ function addSMTPFieldListeners() {
     checkFieldsComplete();
 }
 
-export function render(container, { config, navigation, ui, apiClient }) {
+export function render(container, { config, navigation, ui, apiClient, i18n }) {
         const smtp = config.get('smtp');
 
         container.innerHTML = `
@@ -217,7 +217,7 @@ export function render(container, { config, navigation, ui, apiClient }) {
 
         const smtpTestBtn = document.getElementById('smtp-test-btn');
         if (smtpTestBtn) {
-            smtpTestBtn.addEventListener('click', () => testSMTPConnection(apiClient, config, ui));
+            smtpTestBtn.addEventListener('click', () => testSMTPConnection(apiClient, config, ui, i18n));
         }
 
         addFieldTouchListeners(container);

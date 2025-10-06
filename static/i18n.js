@@ -196,7 +196,10 @@ class SetupI18n {
         });
     }
 
-    // 设置语言并重新应用翻译
+    setLanguageChangeCallback(callback) {
+        this.languageChangeCallback = callback;
+    }
+
     async setLanguage(lang) {
         if (!this.supportedLanguages.includes(lang)) {
             console.warn(`Unsupported language: ${lang}`);
@@ -206,19 +209,15 @@ class SetupI18n {
         this.currentLanguage = lang;
         localStorage.setItem('baklab_setup_lang', lang);
 
-        // 重新加载翻译
         await this.loadTranslations();
-        
-        // 触发语言切换事件，让app重新渲染
-        document.dispatchEvent(new CustomEvent('languageChanged', { 
-            detail: { language: lang } 
+
+        document.dispatchEvent(new CustomEvent('languageChanged', {
+            detail: { language: lang }
         }));
-        
-        // 如果存在全局app实例，重新渲染页面
-        if (window.app && typeof window.app.render === 'function') {
-            window.app.render();
+
+        if (this.languageChangeCallback && typeof this.languageChangeCallback === 'function') {
+            this.languageChangeCallback();
         } else {
-            // 重新应用翻译到现有元素
             this.applyTranslations();
         }
     }
@@ -297,7 +296,6 @@ class SetupI18n {
         return languageNames[langCode] || langCode;
     }
 
-    // 生成语言选择器HTML
     generateLanguageSelector(containerId, options = {}) {
         const container = document.getElementById(containerId);
         if (!container) {
@@ -309,17 +307,17 @@ class SetupI18n {
             showLabel = true,
             labelKey = 'common.language',
             className = 'language-selector',
-            style = 'dropdown' // 'dropdown' or 'buttons'
+            style = 'dropdown'
         } = options;
 
         let html = '';
-        
+
         if (showLabel) {
             html += `<label class="language-label">${this.t(labelKey)}</label>`;
         }
 
         if (style === 'dropdown') {
-            html += `<select class="${className}" onchange="window.i18n.setLanguage(this.value)">`;
+            html += `<select class="${className}" data-i18n-selector>`;
             this.supportedLanguages.forEach(lang => {
                 const selected = lang === this.currentLanguage ? 'selected' : '';
                 html += `<option value="${lang}" ${selected}>${this.getLanguageName(lang)}</option>`;
@@ -329,7 +327,7 @@ class SetupI18n {
             html += `<div class="${className}">`;
             this.supportedLanguages.forEach(lang => {
                 const active = lang === this.currentLanguage ? 'active' : '';
-                html += `<button class="lang-btn ${active}" onclick="window.i18n.setLanguage('${lang}')" data-lang="${lang}">
+                html += `<button class="lang-btn ${active}" data-i18n-btn data-lang="${lang}">
                     ${this.getLanguageName(lang)}
                 </button>`;
             });
@@ -337,6 +335,18 @@ class SetupI18n {
         }
 
         container.innerHTML = html;
+
+        const selector = container.querySelector('[data-i18n-selector]');
+        if (selector) {
+            selector.addEventListener('change', (e) => this.setLanguage(e.target.value));
+        }
+
+        container.querySelectorAll('[data-i18n-btn]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const lang = e.target.getAttribute('data-lang');
+                this.setLanguage(lang);
+            });
+        });
     }
 
     // 工具方法：格式化日期
@@ -352,15 +362,11 @@ class SetupI18n {
     }
 }
 
-window.i18n = new SetupI18n();
-
-document.addEventListener('DOMContentLoaded', async () => {
-    await window.i18n.init();
-});
-
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = SetupI18n;
 }
+
+export { SetupI18n };
 
 // 测试函数
 function testI18n() {

@@ -1,7 +1,7 @@
 import { formatFileSize } from '../api.js';
 import { clearFormErrors, showFieldError, showFormErrors } from '../validator.js';
 
-export function updateGeoFileDisplay(config) {
+export function updateGeoFileDisplay(config, i18n) {
     const fileInfoDiv = document.getElementById('geo-file-info');
     const fileUploadContent = document.querySelector('#geo-upload-area .file-upload-content');
 
@@ -33,7 +33,7 @@ export function updateGeoFileDisplay(config) {
         }
 
         if (!fileInfoDiv.querySelector('#geo-upload-progress')) {
-            const successText = window.i18n ? window.i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
+            const successText = i18n ? i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
             const successElement = document.createElement('p');
             successElement.id = 'geo-upload-progress';
             successElement.textContent = successText;
@@ -46,7 +46,7 @@ export function updateGeoFileDisplay(config) {
     }
 }
 
-async function checkGeoFileStatus(apiClient, config) {
+async function checkGeoFileStatus(apiClient, config, i18n) {
     try {
         const response = await apiClient.getGeoFileStatus();
         if (response.success && response.data) {
@@ -62,7 +62,7 @@ async function checkGeoFileStatus(apiClient, config) {
 
                 config.set('goaccess', goaccess);
                 config.saveToLocalCache();
-                updateGeoFileDisplay(config);
+                updateGeoFileDisplay(config, i18n);
             }
             else if (!goaccess.has_geo_file && exists) {
                 console.log('Found GeoIP file but cache shows no file, updating cache...');
@@ -73,7 +73,7 @@ async function checkGeoFileStatus(apiClient, config) {
 
                 config.set('goaccess', goaccess);
                 config.saveToLocalCache();
-                updateGeoFileDisplay(config);
+                updateGeoFileDisplay(config, i18n);
             }
         }
     } catch (error) {
@@ -81,7 +81,7 @@ async function checkGeoFileStatus(apiClient, config) {
     }
 }
 
-async function handleGeoFileSelect(apiClient, config, file, fileInfoDivParam) {
+async function handleGeoFileSelect(apiClient, config, file, fileInfoDivParam, i18n) {
     const fileInfoDiv = fileInfoDivParam || document.getElementById('geo-file-info');
     const uploadArea = document.getElementById('geo-upload-area');
 
@@ -93,7 +93,7 @@ async function handleGeoFileSelect(apiClient, config, file, fileInfoDivParam) {
             }
 
             if (!file.name.endsWith('.mmdb')) {
-                const errorMsg = window.i18n ? window.i18n.t('setup.goaccess.invalid_file_type') :
+                const errorMsg = i18n ? i18n.t('setup.goaccess.invalid_file_type') :
                                'Please select a valid .mmdb file';
                 alert(errorMsg);
                 return;
@@ -101,7 +101,7 @@ async function handleGeoFileSelect(apiClient, config, file, fileInfoDivParam) {
 
             const maxSize = 100 * 1024 * 1024;
             if (file.size > maxSize) {
-                const errorMsg = window.i18n ? window.i18n.t('setup.goaccess.file_too_large') :
+                const errorMsg = i18n ? i18n.t('setup.goaccess.file_too_large') :
                                'File size too large. Maximum allowed size is 100MB';
                 alert(errorMsg);
                 return;
@@ -138,7 +138,7 @@ async function handleGeoFileSelect(apiClient, config, file, fileInfoDivParam) {
                 existingProgress.remove();
             }
 
-            const uploadingText = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'Uploading...';
+            const uploadingText = i18n ? i18n.t('setup.app.jwt_uploading') : 'Uploading...';
             const progressElement = document.createElement('p');
             progressElement.id = 'geo-upload-progress';
             progressElement.textContent = uploadingText;
@@ -149,7 +149,7 @@ async function handleGeoFileSelect(apiClient, config, file, fileInfoDivParam) {
             if (uploadResult.success) {
                 const progressEl = fileInfoDiv.querySelector('#geo-upload-progress');
                 if (progressEl) {
-                    const successText = window.i18n ? window.i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
+                    const successText = i18n ? i18n.t('setup.app.jwt_upload_success') : 'Upload successful!';
                     progressEl.textContent = successText;
                     progressEl.style.color = 'var(--success-color)';
                 }
@@ -178,7 +178,7 @@ async function handleGeoFileSelect(apiClient, config, file, fileInfoDivParam) {
         if (fileInfoDiv) {
             const progressEl = fileInfoDiv.querySelector('#geo-upload-progress');
             if (progressEl) {
-                const failedText = window.i18n ? window.i18n.t('setup.app.jwt_upload_failed') : 'Upload failed';
+                const failedText = i18n ? i18n.t('setup.app.jwt_upload_failed') : 'Upload failed';
                 progressEl.textContent = `${failedText}: ${error.message}`;
                 progressEl.style.color = 'var(--error-color)';
             }
@@ -214,7 +214,7 @@ function showGeoUploadArea() {
     }
 }
 
-function validateGoAccessForm(config, form) {
+function validateGoAccessForm(config, form, i18n) {
     let valid = true;
     clearFormErrors(form);
 
@@ -229,7 +229,7 @@ function validateGoAccessForm(config, form) {
             let errorMessage;
 
             if (!goaccess.has_geo_file) {
-                errorMessage = window.i18n ? window.i18n.t('setup.goaccess.geo_file_required') :
+                errorMessage = i18n ? i18n.t('setup.goaccess.geo_file_required') :
                                'GeoIP database file is required when GoAccess is enabled';
             } else {
                 errorMessage = 'GeoIP database file is no longer available. Please re-upload your GeoIP database file.';
@@ -242,7 +242,7 @@ function validateGoAccessForm(config, form) {
     return valid;
 }
 
-export function render(container, { config, navigation, apiClient }) {
+export function render(container, { config, navigation, apiClient, i18n }) {
         const goaccess = config.get('goaccess');
 
         container.innerHTML = `
@@ -339,13 +339,13 @@ export function render(container, { config, navigation, apiClient }) {
             e.preventDefault();
             uploadArea.classList.remove('drag-over');
             if (apiClient.requestLocks.geoFileUpload) {
-                const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
+                const warningMsg = i18n ? i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
                 alert(warningMsg);
                 return;
             }
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                handleGeoFileSelect(apiClient, config, files[0], fileInfo);
+                handleGeoFileSelect(apiClient, config, files[0], fileInfo, i18n);
             }
         });
 
@@ -353,7 +353,7 @@ export function render(container, { config, navigation, apiClient }) {
         if (selectBtn) {
             selectBtn.addEventListener('click', () => {
                 if (apiClient.requestLocks.geoFileUpload) {
-                    const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
+                    const warningMsg = i18n ? i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
                     alert(warningMsg);
                     return;
                 }
@@ -371,18 +371,18 @@ export function render(container, { config, navigation, apiClient }) {
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 if (apiClient.requestLocks.geoFileUpload) {
-                    const warningMsg = window.i18n ? window.i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
+                    const warningMsg = i18n ? i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
                     alert(warningMsg);
                     e.target.value = '';
                     return;
                 }
-                handleGeoFileSelect(apiClient, config, e.target.files[0], fileInfo);
+                handleGeoFileSelect(apiClient, config, e.target.files[0], fileInfo, i18n);
             }
         });
 
         container.querySelector('#goaccess-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            if (validateGoAccessForm(config, e.target)) {
+            if (validateGoAccessForm(config, e.target, i18n)) {
                 const form = e.target;
                 const goaccessConfig = config.get('goaccess');
                 goaccessConfig.enabled = form.querySelector('#goaccess-enabled').checked;
@@ -394,6 +394,6 @@ export function render(container, { config, navigation, apiClient }) {
             }
         });
 
-        checkGeoFileStatus(apiClient, config);
+        checkGeoFileStatus(apiClient, config, i18n);
     }
 

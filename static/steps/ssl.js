@@ -1,6 +1,6 @@
 import { clearFormErrors, showFieldError, addFieldTouchListeners } from '../validator.js';
 
-export function handleDomainSSLIntegration(config) {
+export function handleDomainSSLIntegration(config, i18n) {
     const sslUseSetupCertCheckbox = document.getElementById('ssl-use-setup-cert');
     const sslEnabled = document.getElementById('ssl-enabled');
 
@@ -25,8 +25,8 @@ export function handleDomainSSLIntegration(config) {
         const parentLabel = sslUseSetupCertCheckbox.closest('.checkbox-label');
         if (parentLabel) {
             parentLabel.style.opacity = '0.7';
-            parentLabel.title = window.i18n ?
-                window.i18n.t('setup.ssl.auto_selected_due_to_domain') :
+            parentLabel.title = i18n ?
+                i18n.t('setup.ssl.auto_selected_due_to_domain') :
                 'Automatically selected because you are using the setup program domain';
 
             let autoNote = parentLabel.querySelector('.auto-selection-note');
@@ -41,8 +41,8 @@ export function handleDomainSSLIntegration(config) {
                     parentLabel.appendChild(autoNote);
                 }
             }
-            const noteText = window.i18n ?
-                window.i18n.t('setup.ssl.auto_selected_due_to_domain') :
+            const noteText = i18n ?
+                i18n.t('setup.ssl.auto_selected_due_to_domain') :
                 'Automatically selected because you are using the setup program domain';
             autoNote.textContent = ` (${noteText})`;
         }
@@ -88,7 +88,7 @@ export function clearSSLAutoSelection(config) {
     }
 }
 
-export function render(container, { config, navigation, apiClient }) {
+export function render(container, { config, navigation, apiClient, i18n }) {
         const ssl = config.get('ssl');
         const appConfig = config.get('app');
 
@@ -158,7 +158,7 @@ export function render(container, { config, navigation, apiClient }) {
                 const sslConfig = config.get('ssl');
                 sslConfig.enabled = true;
                 config.set('ssl', sslConfig);
-                setTimeout(() => handleDomainSSLIntegration(config), 0);
+                setTimeout(() => handleDomainSSLIntegration(config, i18n), 0);
             } else {
                 configDiv.style.display = 'none';
                 certPath.required = false;
@@ -195,7 +195,7 @@ export function render(container, { config, navigation, apiClient }) {
             }
         });
 
-        handleDomainSSLIntegration(config);
+        handleDomainSSLIntegration(config, i18n);
 
         document.getElementById('ssl-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -213,12 +213,12 @@ export function render(container, { config, navigation, apiClient }) {
 
             if (sslConfig.enabled) {
                 if (!sslConfig.cert_path.trim()) {
-                    const message = window.i18n ? window.i18n.t('setup.ssl.cert_path_required') : 'Certificate path is required when SSL is enabled';
+                    const message = i18n ? i18n.t('setup.ssl.cert_path_required') : 'Certificate path is required when SSL is enabled';
                     showFieldError(document.getElementById('ssl-cert-path'), message);
                     isValid = false;
                 }
                 if (!sslConfig.key_path.trim()) {
-                    const message = window.i18n ? window.i18n.t('setup.ssl.key_path_required') : 'Private key path is required when SSL is enabled';
+                    const message = i18n ? i18n.t('setup.ssl.key_path_required') : 'Private key path is required when SSL is enabled';
                     showFieldError(document.getElementById('ssl-key-path'), message);
                     isValid = false;
                 }

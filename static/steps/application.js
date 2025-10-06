@@ -26,7 +26,7 @@ function updateJWTMethodDisplay() {
     }
 }
 
-export function render(container, { config, navigation, ui, apiClient }) {
+export function render(container, { config, navigation, ui, apiClient, i18n }) {
         const appConfig = config.get('app');
 
         container.innerHTML = `
@@ -221,7 +221,7 @@ export function render(container, { config, navigation, ui, apiClient }) {
                     jwtKeyFilePath = document.getElementById('jwt-key-path').value.trim();
                     if (!jwtKeyFilePath) {
                         const pathInput = document.getElementById('jwt-key-path');
-                        pathInput.setCustomValidity(window.i18n ? window.i18n.t('setup.app.jwt_path_required') : 'JWT key file path is required');
+                        pathInput.setCustomValidity(i18n ? i18n.t('setup.app.jwt_path_required') : 'JWT key file path is required');
                         pathInput.reportValidity();
                         return;
                     }

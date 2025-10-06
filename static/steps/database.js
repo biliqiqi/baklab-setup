@@ -1,6 +1,6 @@
 import { validateDatabasePasswordStrength, validateExternalServicePassword, showValidationErrors, hideCustomError, showCustomError, showFormErrors, addFieldTouchListeners } from '../validator.js';
 
-async function testDatabaseConnection(apiClient, config, ui) {
+async function testDatabaseConnection(apiClient, config, ui, i18n) {
     await apiClient.protectedApiCall('testDatabase', async () => {
         const testConfig = { ...config.getAll() };
         const serviceType = document.querySelector('input[name="db-service-type"]:checked').value;
@@ -25,20 +25,20 @@ async function testDatabaseConnection(apiClient, config, ui) {
         const testBtn = document.getElementById('db-test-btn');
         const originalText = testBtn.textContent;
         testBtn.disabled = true;
-        testBtn.textContent = window.i18n ? window.i18n.t('common.testing') : 'Testing...';
+        testBtn.textContent = i18n ? i18n.t('common.testing') : 'Testing...';
 
         try {
             const result = await apiClient.testConnections('database', testConfig);
             displayConnectionResults(result.data, 'database');
         } catch (error) {
-            ui.showAlert('error', window.i18n ? window.i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
+            ui.showAlert('error', i18n ? i18n.t('messages.errors.failed_test_connections', {error: error.message}) : 'Connection test failed: ' + error.message);
         } finally {
             testBtn.disabled = false;
             testBtn.textContent = originalText;
         }
     }, (error) => {
         if (error.validationErrors && error.validationErrors.length > 0) {
-            showValidationErrors(error.validationErrors, window.i18n);
+            showValidationErrors(error.validationErrors, i18n);
         } else {
             ui.showAlert('error', error.message);
         }
@@ -202,7 +202,7 @@ function updateDatabaseHostField(serviceType) {
     }
 }
 
-export function render(container, { config, navigation, ui, apiClient }) {
+export function render(container, { config, navigation, ui, apiClient, i18n }) {
     const database = config.get('database');
 
     container.innerHTML = `
@@ -398,7 +398,7 @@ export function render(container, { config, navigation, ui, apiClient }) {
             const appPassword = document.getElementById('db-app-password').value;
 
             if (superUser === appUser && superUser !== '' && appUser !== '') {
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.username_duplicate_error') : 'Application username must be different from super user username';
+                const errorMsg = i18n ? i18n.t('setup.database.username_duplicate_error') : 'Application username must be different from super user username';
                 appUserField.setCustomValidity(errorMsg);
                 showCustomError(appUserField, errorMsg);
             } else {
@@ -415,7 +415,7 @@ export function render(container, { config, navigation, ui, apiClient }) {
             const appPassword = document.getElementById('db-app-password').value;
 
             if (superPassword === appPassword && superPassword !== '' && appPassword !== '') {
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.password_duplicate_error') : 'Application password must be different from super user password';
+                const errorMsg = i18n ? i18n.t('setup.database.password_duplicate_error') : 'Application password must be different from super user password';
                 appPasswordField.setCustomValidity(errorMsg);
                 showCustomError(appPasswordField, errorMsg);
                 return;
@@ -426,7 +426,7 @@ export function render(container, { config, navigation, ui, apiClient }) {
         const superPassword = document.getElementById('db-super-password').value;
         if (serviceType === 'docker' && superPassword) {
             const isValid = validateDatabasePasswordStrength(superPassword);
-            const errorMsg = window.i18n ? window.i18n.t('setup.database.super_password_error') :
+            const errorMsg = i18n ? i18n.t('setup.database.super_password_error') :
                 'Super password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
 
             if (!isValid) {
@@ -448,11 +448,11 @@ export function render(container, { config, navigation, ui, apiClient }) {
 
             if (serviceType === 'docker') {
                 isValid = validateDatabasePasswordStrength(appPassword);
-                errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') :
+                errorMsg = i18n ? i18n.t('setup.database.app_password_error') :
                     'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
             } else {
                 isValid = validateExternalServicePassword(appPassword);
-                errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_external_error') :
+                errorMsg = i18n ? i18n.t('setup.database.app_password_external_error') :
                     'App password must be 1-128 characters and cannot contain control characters';
             }
 
@@ -497,7 +497,7 @@ export function render(container, { config, navigation, ui, apiClient }) {
 
         if (serviceType === 'docker') {
             if (superPassword && !validateDatabasePasswordStrength(superPassword)) {
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.super_password_error') : 'Super password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                const errorMsg = i18n ? i18n.t('setup.database.super_password_error') : 'Super password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
                 superPasswordField.setCustomValidity(errorMsg);
             } else {
                 superPasswordField.setCustomValidity('');
@@ -514,10 +514,10 @@ export function render(container, { config, navigation, ui, apiClient }) {
 
             if (serviceType === 'docker') {
                 isValid = validateDatabasePasswordStrength(appPassword);
-                errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                errorMsg = i18n ? i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
             } else {
                 isValid = validateExternalServicePassword(appPassword);
-                errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_external_error') : 'App password must be 1-128 characters and cannot contain control characters';
+                errorMsg = i18n ? i18n.t('setup.database.app_password_external_error') : 'App password must be 1-128 characters and cannot contain control characters';
             }
 
             if (!isValid) {
@@ -535,14 +535,14 @@ export function render(container, { config, navigation, ui, apiClient }) {
             const appUserField = document.getElementById('db-app-user');
 
             if (superUser === appUser && superUser !== '') {
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.username_duplicate_error') : 'Application username must be different from super user username';
+                const errorMsg = i18n ? i18n.t('setup.database.username_duplicate_error') : 'Application username must be different from super user username';
                 appUserField.setCustomValidity(errorMsg);
             } else {
                 appUserField.setCustomValidity('');
             }
 
             if (superPassword === appPassword && superPassword !== '') {
-                const errorMsg = window.i18n ? window.i18n.t('setup.database.password_duplicate_error') : 'Application password must be different from super user password';
+                const errorMsg = i18n ? i18n.t('setup.database.password_duplicate_error') : 'Application password must be different from super user password';
                 appPasswordField.setCustomValidity(errorMsg);
             } else if (appPassword) {
                 let isValid = true;
@@ -550,10 +550,10 @@ export function render(container, { config, navigation, ui, apiClient }) {
 
                 if (serviceType === 'docker') {
                     isValid = validateDatabasePasswordStrength(appPassword);
-                    errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
+                    errorMsg = i18n ? i18n.t('setup.database.app_password_error') : 'App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)';
                 } else {
                     isValid = validateExternalServicePassword(appPassword);
-                    errorMsg = window.i18n ? window.i18n.t('setup.database.app_password_external_error') : 'App password must be 1-128 characters and cannot contain control characters';
+                    errorMsg = i18n ? i18n.t('setup.database.app_password_external_error') : 'App password must be 1-128 characters and cannot contain control characters';
                 }
 
                 if (!isValid) {
@@ -590,7 +590,7 @@ export function render(container, { config, navigation, ui, apiClient }) {
 
     const testBtn = document.getElementById('db-test-btn');
     if (testBtn) {
-        testBtn.addEventListener('click', () => testDatabaseConnection(apiClient, config, ui));
+        testBtn.addEventListener('click', () => testDatabaseConnection(apiClient, config, ui, i18n));
     }
 
     addFieldTouchListeners(container);

@@ -1,4 +1,4 @@
-export function render(container, { setupService }) {
+export function render(container, { setupService, i18n }) {
         container.innerHTML = `
             <div class="form-section">
                 <h3 style="text-align: center;">
@@ -16,7 +16,7 @@ export function render(container, { setupService }) {
         `;
 
         setTimeout(() => {
-            if (window.i18n) {
+            if (i18n) {
                 const outputPath = setupService.outputPath || './output';
                 const params = { outputPath: outputPath };
 
@@ -24,12 +24,12 @@ export function render(container, { setupService }) {
                 const readyDescription = document.getElementById('ready-description');
 
                 if (readyNotice) {
-                    const noticeText = window.i18n.t('setup.config_complete.ready_notice', params);
+                    const noticeText = i18n.t('setup.config_complete.ready_notice', params);
                     readyNotice.innerHTML = noticeText;
                     readyNotice.removeAttribute('data-i18n-html');
                 }
                 if (readyDescription) {
-                    const descText = window.i18n.t('setup.config_complete.ready_description', params);
+                    const descText = i18n.t('setup.config_complete.ready_description', params);
                     const processedText = descText.replace(/<code>([^<]*cd [^<]*)<\/code>/g, '<code class="complete-step-code">$1</code>');
                     readyDescription.innerHTML = processedText;
                     readyDescription.removeAttribute('data-i18n-html');
