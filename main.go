@@ -73,12 +73,6 @@ func main() {
 		log.Fatalf("Private key file not found: %s", keyPath)
 	}
 
-	log.Printf("Starting BakLab HTTPS-Only Setup Service")
-	log.Printf("Data directory: %s", *dataDir)
-	log.Printf("Domain: %s", *domain)
-	log.Printf("Certificate: %s", certPath)
-	log.Printf("Private key: %s", keyPath)
-	log.Printf("HTTPS port: %s", *port)
 
 	jsonStorage := storage.NewJSONStorage(*dataDir)
 
@@ -88,7 +82,6 @@ func main() {
 		if err := importConfigFile(setupService, *configFile); err != nil {
 			log.Fatalf("Failed to import config file: %v", err)
 		}
-		log.Printf("Configuration imported from: %s", *configFile)
 	}
 
 	i18nManager := i18n.NewI18nManager(language.English)
@@ -144,15 +137,13 @@ func main() {
 
 	accessURL := fmt.Sprintf("https://%s:%s?token=%s", *domain, *port, token.Token)
 
-	fmt.Println(strings.Repeat("=", 80))
 	fmt.Printf("BakLab HTTPS-Only Setup Service Started\n")
-	fmt.Printf("One-time Access URL:\n")
-	fmt.Printf("   %s\n", accessURL)
+	fmt.Printf("\nOne-time Access URL:\n")
+	fmt.Printf("   %s\n\n", accessURL)
 	fmt.Printf("Token expires at: %s\n", token.ExpiresAt.Format("2006-01-02 15:04:05"))
 	fmt.Printf("Authorized domain: %s\n", *domain)
 	fmt.Printf("WARNING: This URL can only be used ONCE!\n")
 	fmt.Printf("WARNING: Service will auto-close after setup completion\n")
-	fmt.Println(strings.Repeat("=", 80))
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", *port),

@@ -300,15 +300,10 @@ func (s *SetupService) ImportConfiguration(configData []byte) (*model.SetupConfi
 	if sanitizedImport {
 		cfg.RevisionMode.ModifiedSteps = append(cfg.RevisionMode.ModifiedSteps,
 			"NOTICE: Passwords and secrets need to be re-entered")
-		log.Printf("Imported sanitized configuration - passwords and secrets need to be re-entered")
 	}
 
 	validationErrors := s.validator.ValidateConfig(&cfg)
 	if len(validationErrors) > 0 {
-		log.Printf("Imported configuration has %d validation warnings (will be addressed during setup):", len(validationErrors))
-		for _, err := range validationErrors {
-			log.Printf("  - %s: %s", err.Field, err.Message)
-		}
 		cfg.RevisionMode.ModifiedSteps = append(cfg.RevisionMode.ModifiedSteps,
 			fmt.Sprintf("VALIDATION_WARNINGS: %d fields need attention", len(validationErrors)))
 	}
