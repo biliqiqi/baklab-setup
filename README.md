@@ -1,12 +1,18 @@
 # BakLab Setup Tool
 
-A standalone setup tool for generating Docker Compose production environment configurations for BakLab applications.
+[English](README.md) | [中文](README.zh.md)
+
+A standalone setup tool for generating Docker Compose production environment configurations for BakLab applications. The guided interface walks you through configuring essential services (database, Redis, email), application settings (domain, security, branding), admin account creation, and optional features like OAuth login and analytics.
 
 ## Quick Start
 
-### 1. Prepare SSL Certificate
+### 1. Prerequisites
 
-The setup tool requires HTTPS and needs SSL certificates prepared in advance. It's recommended to use the same certificate as your production application.
+Before running the setup tool, prepare the following:
+
+- **SSL Certificate**: TLS certificate and private key files for HTTPS. Recommended to use the same certificate as your production application (e.g., Let's Encrypt certificate).
+- **SMTP Service**: Email server credentials for sending notifications and user registration emails.
+- **Optional Services**: External PostgreSQL database, Redis server, OAuth applications (Google/GitHub), GeoIP database file for analytics.
 
 ### 2. Run Setup Tool
 
@@ -28,27 +34,9 @@ go build -o setup .
 After the tool starts, it will display a one-time access link, similar to:
 `https://your-domain.com:8443?token=abc123...`
 
-### 4. Configuration Steps
+### 4. Security
 
-Follow the interface instructions to complete the setup process, including:
-
-- **Database** - Configure PostgreSQL connection (supports Docker or external service)
-- **Redis** - Configure Redis/Valkey cache service (supports Docker or external service)
-- **SMTP Email** - Configure email service for notifications
-- **Application** - Set domain, branding, CORS, and other application configurations
-- **SSL/HTTPS** - Configure SSL certificates for secure connections
-- **Admin User** - Create system administrator account
-- **Third-party Login** - Configure OAuth providers (Google, GitHub)
-- **Analytics** - Configure GoAccess web analytics (optional)
-- **Review** - Check configuration and test connections
-- **Configuration Complete** - Generate configuration files and complete deployment
-
-### 5. Security Features
-
-- **One-time Access Token**: Generates unique access token for each startup
-- **HTTPS Enforcement**: All communications through encrypted connections
-- **Auto Timeout**: Automatically closes and cleans sensitive data after 30 minutes
-- **Domain Validation**: Strict CORS and CSP security policies
+The setup tool enforces HTTPS for all communications and generates a unique one-time access token for each session. Sessions automatically expire after a configurable timeout (default 30 minutes), cleaning up sensitive data. Domain validation with strict CORS and CSP security policies ensures only authorized access. After configuration completion, the setup tool and temporary data can be safely deleted.
 
 ## Generated Configuration Files
 
@@ -72,14 +60,6 @@ output/
 ├── manage_static/               # Static file management
 └── static/                      # Static resources directory
 ```
-
-## Technical Features
-
-- **Flexible Deployment Modes**: Supports Docker containerized deployment or external service connections
-- **Database Support**: PostgreSQL with pg_cron extension, automatic initialization scripts
-- **Cache Service**: Redis/Valkey with ACL user permission management
-- **Web Service**: Nginx reverse proxy, supports SSL/TLS
-- **Security Configuration**: User isolation, permission control, security header settings
 
 ## Deployment Process
 
@@ -132,11 +112,3 @@ Optional options:
 - **static/**: Web interface static resources
 - **output/**: Generated configuration files output directory
 - **data/**: Temporary data storage during setup process
-
-## Security Reminders
-
-⚠️ **Important Security Measures**:
-
-- The setup tool will automatically timeout and clean sensitive data after 30 minutes
-- Setup tool and temporary data can be deleted after configuration completion
-- Recommended to backup generated configuration files in production environment
