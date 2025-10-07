@@ -410,6 +410,7 @@ services:
       - ./keys:/app/keys
       {{- end }}
       - ./frontend_dist:/frontend:ro
+      - ./static:/static_output
     command: >
       sh -c "
         if [ -f /frontend/.frontend-manifest.json ]; then
@@ -424,6 +425,11 @@ services:
           echo 'Frontend manifest not found, using defaults' &&
           export FRONTEND_SCRIPTS='' &&
           export FRONTEND_STYLES=''
+        fi &&
+        if [ -f /frontend/manifest.webmanifest ]; then
+          echo 'Copying PWA manifest to static directory...' &&
+          cp /frontend/manifest.webmanifest /static_output/site.webmanifest &&
+          echo 'PWA manifest copied successfully'
         fi &&
         echo 'Starting baklab with entrypoint script...' &&
         ./docker-entrypoint.sh
@@ -559,6 +565,7 @@ services:
       - BASE_URL=/static/frontend/
       - API_PATH_PREFIX=/api/
       - OAUTH_PROVIDERS={{ oauthProviders .OAuth }}
+      - BRAND_NAME=$BRAND_NAME
     volumes:
       - ./frontend_dist:/output
     restart: "no"
