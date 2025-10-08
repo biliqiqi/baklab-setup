@@ -1,6 +1,6 @@
 # BakLab Setup Tool
 
-[English](README.md) | [中文](README.zh.md)
+[English](README.md) | 中文
 
 独立的 setup 工具，用于生成 BakLab 应用的 Docker Compose 生产环境配置。通过引导式界面完成核心服务（数据库、Redis、邮件）、应用设置（域名、安全、品牌）、管理员账户创建，以及 OAuth 登录和网站分析等可选功能的配置。
 
@@ -10,7 +10,8 @@
 
 运行 setup 工具前，请准备以下内容：
 
-- **SSL 证书**：用于 HTTPS 的 TLS 证书和私钥文件。推荐使用与最终托管应用相同的证书（如 Let's Encrypt 证书）。
+- **域名**：指向您服务器的有效域名（HTTPS 访问和 SSL 证书配置所必需）。
+- **SSL 证书**：与您的域名相匹配的 TLS 证书和私钥文件，用于 HTTPS。
 - **SMTP 服务**：用于发送通知和用户注册邮件的邮件服务器凭据。
 - **可选服务**：外部 PostgreSQL 数据库、Redis 服务器、OAuth 应用（Google/GitHub）、用于分析的 GeoIP 数据库文件。
 

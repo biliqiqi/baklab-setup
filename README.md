@@ -1,6 +1,6 @@
 # BakLab Setup Tool
 
-[English](README.md) | [中文](README.zh.md)
+English | [中文](README.zh.md)
 
 A standalone setup tool for generating Docker Compose production environment configurations for BakLab applications. The guided interface walks you through configuring essential services (database, Redis, email), application settings (domain, security, branding), admin account creation, and optional features like OAuth login and analytics.
 
@@ -10,7 +10,8 @@ A standalone setup tool for generating Docker Compose production environment con
 
 Before running the setup tool, prepare the following:
 
-- **SSL Certificate**: TLS certificate and private key files for HTTPS. Recommended to use the same certificate as your production application (e.g., Let's Encrypt certificate).
+- **Domain Name**: A valid domain name that points to your server (required for HTTPS access and SSL certificate configuration).
+- **SSL Certificate**: TLS certificate and private key files that match your domain for HTTPS.
 - **SMTP Service**: Email server credentials for sending notifications and user registration emails.
 - **Optional Services**: External PostgreSQL database, Redis server, OAuth applications (Google/GitHub), GeoIP database file for analytics.
 
