@@ -410,7 +410,7 @@ services:
       - ./keys:/app/keys
       {{- end }}
       - ./frontend_dist:/frontend:ro
-      - ./static:/static_output
+      - static-data:/app/static
     command: >
       sh -c "
         if [ -f /frontend/.frontend-manifest.json ]; then
@@ -428,7 +428,7 @@ services:
         fi &&
         if [ -f /frontend/manifest.webmanifest ]; then
           echo 'Copying PWA manifest to static directory...' &&
-          cp /frontend/manifest.webmanifest /static_output/site.webmanifest &&
+          cp /frontend/manifest.webmanifest /app/static/site.webmanifest &&
           echo 'PWA manifest copied successfully'
         fi &&
         echo 'Starting baklab with entrypoint script...' &&
@@ -578,7 +578,7 @@ services:
       - APP_PORT=$APP_PORT
       - ROOT_DOMAIN_NAME=$ROOT_DOMAIN_NAME
     volumes:
-      - ./static:/data/static
+      - static-data:/data/static:ro
       - ./manage_static:/data/manage_static
       - ./frontend_dist:/data/static/frontend:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -624,12 +624,11 @@ services:
       nginx:
         condition: service_healthy{{ end }}
 
-{{ if or (eq .Database.ServiceType "docker") (eq .Redis.ServiceType "docker") }}
-volumes:{{ if eq .Database.ServiceType "docker" }}
+volumes:
+  static-data:{{ if eq .Database.ServiceType "docker" }}
   db-data:{{ end }}{{ if eq .Redis.ServiceType "docker" }}
   redis-data:
   redis-config:{{ end }}
-{{ end }}
 `
 
 	dockerFuncMap := template.FuncMap{
@@ -853,10 +852,6 @@ func (g *GeneratorService) generateAdditionalConfigs(cfg *model.SetupConfig) err
 		if err := g.generateGoAccessConfig(); err != nil {
 			return fmt.Errorf("failed to generate goaccess config: %w", err)
 		}
-	}
-
-	if err := g.copyStaticFiles(cfg); err != nil {
-		return fmt.Errorf("failed to create static directory: %w", err)
 	}
 
 	if err := g.createKeysDirectory(); err != nil {
