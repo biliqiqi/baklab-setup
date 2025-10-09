@@ -578,7 +578,7 @@ services:
       - APP_PORT=$APP_PORT
       - ROOT_DOMAIN_NAME=$ROOT_DOMAIN_NAME
     volumes:
-      - static-data:/data/static:ro
+      - static-data:/data/static
       - ./manage_static:/data/manage_static
       - ./frontend_dist:/data/static/frontend:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
