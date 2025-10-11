@@ -59,6 +59,14 @@ server {
     location /robots.txt {
         alias /data/static/robots.txt;
     }
+
+    location = /sw.js {
+        alias /data/static/frontend/sw.js;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires "0";
+        add_header Service-Worker-Allowed "/";
+    }
 {{end}}
 }
 
@@ -132,6 +140,14 @@ server {
 
     location /robots.txt {
         alias /data/static/robots.txt;
+    }
+
+    location = /sw.js {
+        alias /data/static/frontend/sw.js;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires "0";
+        add_header Service-Worker-Allowed "/";
     }
 }
 {{end}}
