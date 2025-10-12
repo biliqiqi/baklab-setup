@@ -48,10 +48,6 @@ server {
         alias /data/static;
     }
 
-    location /manage_static {
-        alias /data/manage_static;
-    }
-
     location /favicon.ico {
         alias /data/static/favicon.ico;
     }
@@ -128,10 +124,6 @@ server {
 
     location /static {
         alias /data/static;
-    }
-
-    location /manage_static {
-        alias /data/manage_static;
     }
 
     location /favicon.ico {
