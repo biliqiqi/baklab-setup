@@ -411,7 +411,7 @@ services:
       {{- end }}
       - ./frontend_dist:/frontend:ro
       - ./manage_static:/app/manage_static:ro
-      - static-data:/app/static:ro
+      - static-data:/app/static
     command: >
       sh -c "
         if [ -f /frontend/.frontend-manifest.json ]; then
