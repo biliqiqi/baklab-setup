@@ -410,8 +410,8 @@ services:
       - ./keys:/app/keys
       {{- end }}
       - ./frontend_dist:/frontend:ro
-      - static-data:/app/static
       - ./manage_static:/app/manage_static:ro
+      - static-data:/app/static:ro
     command: >
       sh -c "
         if [ -f /frontend/.frontend-manifest.json ]; then
@@ -579,8 +579,7 @@ services:
       - APP_PORT=$APP_PORT
       - ROOT_DOMAIN_NAME=$ROOT_DOMAIN_NAME
     volumes:
-      - static-data:/data/static
-      - ./manage_static:/data/manage_static
+      - static-data:/data/static:ro
       - ./frontend_dist:/data/static/frontend:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates/baklab.conf.template:/etc/nginx/templates/baklab.conf.template:ro
