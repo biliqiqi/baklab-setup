@@ -342,6 +342,26 @@ func (g *GeneratorService) GenerateDockerConfig(cfg *model.SetupConfig) error {
 # Production Docker Compose Configuration
 
 services:
+  static-initializer:
+    image: ghcr.io/biliqiqi/baklab:$APP_VERSION
+    container_name: "baklab-static-init"
+    volumes:
+      - ./frontend_dist:/frontend:ro
+      - static-data:/static-output
+    command: >
+      sh -c "
+        echo 'Initializing static files from app image...' &&
+        cp -r /app/static/* /static-output/ &&
+        if [ -f /frontend/manifest.webmanifest ]; then
+          echo 'Copying PWA manifest to static directory...' &&
+          cp /frontend/manifest.webmanifest /static-output/site.webmanifest &&
+          chmod 644 /static-output/site.webmanifest &&
+          echo 'PWA manifest copied successfully'
+        fi &&
+        echo 'Static files initialization completed'
+      "
+    restart: "no"
+
   app:
     image: ghcr.io/biliqiqi/baklab:$APP_VERSION
     container_name: "baklab-app"
@@ -411,7 +431,6 @@ services:
       {{- end }}
       - ./frontend_dist:/frontend:ro
       - ./manage_static:/app/manage_static:ro
-      - static-data:/app/static
     command: >
       sh -c "
         if [ -f /frontend/.frontend-manifest.json ]; then
@@ -427,15 +446,12 @@ services:
           export FRONTEND_SCRIPTS='' &&
           export FRONTEND_STYLES=''
         fi &&
-        if [ -f /frontend/manifest.webmanifest ]; then
-          echo 'Copying PWA manifest to static directory...' &&
-          cp /frontend/manifest.webmanifest /app/static/site.webmanifest &&
-          echo 'PWA manifest copied successfully'
-        fi &&
         echo 'Starting baklab with entrypoint script...' &&
         ./docker-entrypoint.sh
       "
     depends_on:
+      static-initializer:
+        condition: service_completed_successfully
       frontend-builder:
         condition: service_completed_successfully
       {{- if eq .Database.ServiceType "docker" }}
@@ -579,7 +595,7 @@ services:
       - APP_PORT=$APP_PORT
       - ROOT_DOMAIN_NAME=$ROOT_DOMAIN_NAME
     volumes:
-      - static-data:/data/static:ro
+      - static-data:/data/static
       - ./frontend_dist:/data/static/frontend:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates/baklab.conf.template:/etc/nginx/templates/baklab.conf.template:ro
