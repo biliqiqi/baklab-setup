@@ -360,6 +360,9 @@ services:
         fi &&
         echo 'Static files initialization completed'
       "
+    depends_on:
+      frontend-builder:
+        condition: service_completed_successfully
     restart: "no"
 
   app:
@@ -451,8 +454,6 @@ services:
       "
     depends_on:
       static-initializer:
-        condition: service_completed_successfully
-      frontend-builder:
         condition: service_completed_successfully
       {{- if eq .Database.ServiceType "docker" }}
       db:
