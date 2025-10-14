@@ -1,7 +1,7 @@
 {
   "common": {
     "next": "下一步",
-    "previous": "上一步", 
+    "previous": "上一步",
     "save": "保存",
     "cancel": "取消",
     "loading": "加载中...",
@@ -12,12 +12,19 @@
     "required": "*",
     "optional": "（可选）",
     "yes": "是",
-    "no": "否", 
+    "no": "否",
     "ok": "确定",
     "close": "关闭",
     "confirm": "确认",
     "retry": "重试",
-    "testing": "测试中..."
+    "testing": "测试中...",
+    "unknown": "未知",
+    "file_size_units": {
+      "bytes": "字节",
+      "kb": "KB",
+      "mb": "MB",
+      "gb": "GB"
+    }
   },
   
   "setup": {
@@ -339,21 +346,22 @@
     "goaccess": {
       "title": "分析与监控",
       "description": "配置 GoAccess 实时网站分析。此服务提供详细的网站流量和访客行为分析。",
-      
+
       "enable_label": "启用 GoAccess 分析",
-      
+
       "geo_file_label": "地理IP数据库文件",
       "geo_file_help": "拖拽 GeoLite2-City.mmdb 文件到此处或点击选择",
       "geo_file_note": "地理数据可视化需要GeoIP数据库。免费下载 GeoLite2-City.mmdb：",
       "download_link": "MaxMind GeoLite2",
-      
+
       "select_file": "选择文件",
       "selected_file": "已选择文件",
       "file_size": "文件大小",
-      
+
       "invalid_file_type": "请选择有效的 .mmdb 文件",
       "file_too_large": "文件大小过大。最大允许大小为100MB",
-      "geo_file_required": "启用 GoAccess 时必须上传 GeoIP 数据库文件"
+      "geo_file_required": "启用 GoAccess 时必须上传 GeoIP 数据库文件",
+      "geo_file_missing": "GeoIP 数据库文件不可用。请重新上传 GeoIP 数据库文件。"
     },
 
     "admin": {
@@ -482,7 +490,8 @@
     "setup_already_completed": "设置已经完成。",
     "validation_failed": "配置验证失败",
     "fix_errors": "请修复下面的验证错误，然后重试。",
-    
+    "upload_in_progress": "文件上传中...",
+
     "errors": {
       "method_not_allowed": "不允许的方法",
       "invalid_json": "无效的JSON格式",
@@ -491,7 +500,15 @@
       "failed_test_connections": "连接测试失败：{{error}}",
       "failed_tests": "连接测试失败：{{error}}",
       "failed_generate": "生成配置失败：{{error}}",
-      "failed_complete": "完成设置失败：{{error}}"
+      "failed_complete": "完成设置失败：{{error}}",
+      "validation_failed": "验证失败",
+      "validation_error_generic": "验证错误",
+      "request_failed": "请求失败",
+      "invalid_response": "无效的响应格式",
+      "upload_failed": "上传失败",
+      "network_error_upload": "上传时网络错误",
+      "upload_cancelled": "上传已取消",
+      "failed_save_config": "保存配置失败"
     }
   }
 }

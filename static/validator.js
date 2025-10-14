@@ -68,7 +68,8 @@ export function validateGoAccessForm(form, config, clearFormErrorsFn, showFieldE
                 errorMessage = i18n ? i18n.t('setup.goaccess.geo_file_required') :
                                'GeoIP database file is required when GoAccess is enabled';
             } else {
-                errorMessage = 'GeoIP database file is no longer available. Please re-upload your GeoIP database file.';
+                errorMessage = i18n ? i18n.t('setup.goaccess.geo_file_missing') :
+                               'GeoIP database file is no longer available. Please re-upload your GeoIP database file.';
             }
 
             showFieldErrorFn(uploadArea, errorMessage);
@@ -181,7 +182,7 @@ export function hideCustomError(field) {
     }
 }
 
-export function handleBackendValidationErrors(error, showAlertFn) {
+export function handleBackendValidationErrors(error, showAlertFn, i18n = null) {
     if (error.errors && Array.isArray(error.errors)) {
         document.querySelectorAll('.form-group.error').forEach(group => {
             group.classList.remove('error');
@@ -244,7 +245,8 @@ export function handleBackendValidationErrors(error, showAlertFn) {
 
         showAlertFn('error', 'Please fix the validation errors below and try again.');
     } else {
-        showAlertFn('error', 'Failed to save configuration: ' + (error.message || 'Unknown error'));
+        const msg = i18n ? i18n.t('messages.errors.failed_save_config') : 'Failed to save configuration';
+        showAlertFn('error', msg + ': ' + (error.message || 'Unknown error'));
     }
 }
 
@@ -268,7 +270,8 @@ export function showValidationErrors(errors, i18n = null) {
         const errorItem = document.createElement('li');
         errorItem.className = 'validation-error-item';
 
-        const message = error.message || 'Validation error';
+        const fallback = i18n ? i18n.t('messages.errors.validation_error_generic') : 'Validation error';
+        const message = error.message || fallback;
         errorItem.textContent = message;
 
         errorList.appendChild(errorItem);

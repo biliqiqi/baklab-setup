@@ -17,7 +17,14 @@
     "close": "Close",
     "confirm": "Confirm",
     "retry": "Retry",
-    "testing": "Testing..."
+    "testing": "Testing...",
+    "unknown": "Unknown",
+    "file_size_units": {
+      "bytes": "Bytes",
+      "kb": "KB",
+      "mb": "MB",
+      "gb": "GB"
+    }
   },
   
   "setup": {
@@ -339,21 +346,22 @@
     "goaccess": {
       "title": "Analytics & Monitoring",
       "description": "Configure GoAccess real-time web analytics. This service provides detailed analysis of your website traffic and visitor behavior.",
-      
+
       "enable_label": "Enable GoAccess Analytics",
-      
+
       "geo_file_label": "GeoIP Database File",
       "geo_file_help": "Drop a GeoLite2-City.mmdb file here or click to select",
       "geo_file_note": "GeoIP database is required for geographic data visualization. Download free GeoLite2-City.mmdb from: ",
       "download_link": "MaxMind GeoLite2",
-      
+
       "select_file": "Select File",
       "selected_file": "Selected File",
       "file_size": "File Size",
-      
+
       "invalid_file_type": "Please select a valid .mmdb file",
       "file_too_large": "File size too large. Maximum allowed size is 100MB",
-      "geo_file_required": "GeoIP database file is required when GoAccess is enabled"
+      "geo_file_required": "GeoIP database file is required when GoAccess is enabled",
+      "geo_file_missing": "GeoIP database file is no longer available. Please re-upload your GeoIP database file."
     },
 
     "admin": {
@@ -482,7 +490,8 @@
     "setup_already_completed": "Setup has already been completed.",
     "validation_failed": "Configuration validation failed",
     "fix_errors": "Please fix the validation errors below and try again.",
-    
+    "upload_in_progress": "File upload in progress...",
+
     "errors": {
       "method_not_allowed": "Method not allowed",
       "invalid_json": "Invalid JSON format",
@@ -491,7 +500,15 @@
       "failed_test_connections": "Connection test failed: {{error}}",
       "failed_tests": "Connection tests failed: {{error}}",
       "failed_generate": "Failed to generate configuration: {{error}}",
-      "failed_complete": "Failed to complete setup: {{error}}"
+      "failed_complete": "Failed to complete setup: {{error}}",
+      "validation_failed": "Validation failed",
+      "validation_error_generic": "Validation error",
+      "request_failed": "Request failed",
+      "invalid_response": "Invalid response format",
+      "upload_failed": "Upload failed",
+      "network_error_upload": "Network error during upload",
+      "upload_cancelled": "Upload cancelled",
+      "failed_save_config": "Failed to save configuration"
     }
   }
 }

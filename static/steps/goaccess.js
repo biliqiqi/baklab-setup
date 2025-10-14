@@ -23,8 +23,9 @@ export function updateGeoFileDisplay(config, i18n) {
 
         if (fileNameEl) fileNameEl.textContent = fileName;
         if (fileSizeEl) {
+            const unknownText = i18n ? i18n.t('common.unknown') : 'Unknown';
             fileSizeEl.textContent = (typeof fileSize === 'number' && fileSize > 0) ?
-                formatFileSize(fileSize) : 'Unknown';
+                formatFileSize(fileSize, i18n) : unknownText;
         }
 
         const existingProgress = fileInfoDiv.querySelector('#geo-upload-progress');
@@ -131,7 +132,7 @@ async function handleGeoFileSelect(apiClient, config, file, fileInfoDivParam, i1
 
             fileInfoDiv.style.display = 'block';
             fileInfoDiv.querySelector('#geo-file-name').textContent = file.name;
-            fileInfoDiv.querySelector('#geo-file-size').textContent = formatFileSize(file.size);
+            fileInfoDiv.querySelector('#geo-file-size').textContent = formatFileSize(file.size, i18n);
 
             const existingProgress = fileInfoDiv.querySelector('#geo-upload-progress');
             if (existingProgress) {
@@ -168,7 +169,8 @@ async function handleGeoFileSelect(apiClient, config, file, fileInfoDivParam, i1
 
                 return uploadResult;
             } else {
-                throw new Error(uploadResult.message || 'Upload failed');
+                const fallback = i18n ? i18n.t('messages.errors.upload_failed') : 'Upload failed';
+                throw new Error(uploadResult.message || fallback);
             }
         });
 
@@ -232,7 +234,8 @@ function validateGoAccessForm(config, form, i18n) {
                 errorMessage = i18n ? i18n.t('setup.goaccess.geo_file_required') :
                                'GeoIP database file is required when GoAccess is enabled';
             } else {
-                errorMessage = 'GeoIP database file is no longer available. Please re-upload your GeoIP database file.';
+                errorMessage = i18n ? i18n.t('setup.goaccess.geo_file_missing') :
+                               'GeoIP database file is no longer available. Please re-upload your GeoIP database file.';
             }
 
             showFieldError(uploadArea, errorMessage);
@@ -339,7 +342,7 @@ export function render(container, { config, navigation, apiClient, i18n }) {
             e.preventDefault();
             uploadArea.classList.remove('drag-over');
             if (apiClient.requestLocks.geoFileUpload) {
-                const warningMsg = i18n ? i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
+                const warningMsg = i18n ? i18n.t('messages.upload_in_progress') : 'File upload in progress...';
                 alert(warningMsg);
                 return;
             }
@@ -353,7 +356,7 @@ export function render(container, { config, navigation, apiClient, i18n }) {
         if (selectBtn) {
             selectBtn.addEventListener('click', () => {
                 if (apiClient.requestLocks.geoFileUpload) {
-                    const warningMsg = i18n ? i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
+                    const warningMsg = i18n ? i18n.t('messages.upload_in_progress') : 'File upload in progress...';
                     alert(warningMsg);
                     return;
                 }
@@ -371,7 +374,7 @@ export function render(container, { config, navigation, apiClient, i18n }) {
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 if (apiClient.requestLocks.geoFileUpload) {
-                    const warningMsg = i18n ? i18n.t('setup.app.jwt_uploading') : 'File upload in progress...';
+                    const warningMsg = i18n ? i18n.t('messages.upload_in_progress') : 'File upload in progress...';
                     alert(warningMsg);
                     e.target.value = '';
                     return;

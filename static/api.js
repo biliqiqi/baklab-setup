@@ -47,11 +47,13 @@ export class ApiClient {
 
         if (!response.ok) {
             if (result.errors && result.errors.length > 0) {
-                const error = new Error(result.message || 'Validation failed');
+                const fallback = this.i18n ? this.i18n.t('messages.errors.validation_failed') : 'Validation failed';
+                const error = new Error(result.message || fallback);
                 error.validationErrors = result.errors;
                 throw error;
             }
-            throw new Error(result.message || 'Request failed');
+            const fallback = this.i18n ? this.i18n.t('messages.errors.request_failed') : 'Request failed';
+            throw new Error(result.message || fallback);
         }
 
         return result;
@@ -128,26 +130,31 @@ export class ApiClient {
                         const result = JSON.parse(xhr.responseText);
                         resolve(result);
                     } catch (e) {
-                        reject(new Error('Invalid response format'));
+                        const msg = this.i18n ? this.i18n.t('messages.errors.invalid_response') : 'Invalid response format';
+                        reject(new Error(msg));
                     }
                 } else {
                     try {
                         const error = JSON.parse(xhr.responseText);
-                        reject(new Error(error.message || 'Upload failed'));
+                        const fallback = this.i18n ? this.i18n.t('messages.errors.upload_failed') : 'Upload failed';
+                        reject(new Error(error.message || fallback));
                     } catch (e) {
-                        reject(new Error('Upload failed'));
+                        const msg = this.i18n ? this.i18n.t('messages.errors.upload_failed') : 'Upload failed';
+                        reject(new Error(msg));
                     }
                 }
             });
 
             xhr.addEventListener('error', () => {
-                const error = new Error('Network error during upload');
+                const msg = this.i18n ? this.i18n.t('messages.errors.network_error_upload') : 'Network error during upload';
+                const error = new Error(msg);
                 if (onError) onError(error);
                 reject(error);
             });
 
             xhr.addEventListener('abort', () => {
-                const error = new Error('Upload cancelled');
+                const msg = this.i18n ? this.i18n.t('messages.errors.upload_cancelled') : 'Upload cancelled';
+                const error = new Error(msg);
                 if (onError) onError(error);
                 reject(error);
             });
@@ -182,10 +189,14 @@ export class ApiClient {
     }
 }
 
-export function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
+export function formatFileSize(bytes, i18n = null) {
+    if (bytes === 0) {
+        const unit = i18n ? i18n.t('common.file_size_units.bytes') : 'Bytes';
+        return '0 ' + unit;
+    }
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizeKeys = ['bytes', 'kb', 'mb', 'gb'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    const unit = i18n ? i18n.t(`common.file_size_units.${sizeKeys[i]}`) : sizeKeys[i].toUpperCase();
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + unit;
 }
