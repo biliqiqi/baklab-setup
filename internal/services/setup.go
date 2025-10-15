@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -336,4 +337,135 @@ func (s *SetupService) isSanitizedConfig(cfg *model.SetupConfig) bool {
 	return cfg.Database.AppPassword == "" &&
 		   cfg.Redis.Password == "" &&
 		   cfg.AdminUser.Password == ""
+}
+
+func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig, error) {
+	configPath := fmt.Sprintf("%s/.baklab-setup/config.json", outputDir)
+	envPath := fmt.Sprintf("%s/.env.production", outputDir)
+
+	log.Printf("Reading config from: %s", configPath)
+	configData, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config.json: %w", err)
+	}
+
+	cfg, err := s.ImportConfiguration(configData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to import base configuration: %w", err)
+	}
+
+	log.Printf("Reading .env from: %s", envPath)
+	envVars, err := parseEnvFile(envPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse .env file: %w", err)
+	}
+
+	log.Printf("Parsed %d environment variables", len(envVars))
+
+	cfg.Database.SuperPassword = envVars["PG_PASSWORD"]
+	cfg.Database.AppPassword = envVars["APP_DB_PASSWORD"]
+	cfg.Redis.Password = envVars["REDIS_PASSWORD"]
+	cfg.Redis.AdminPassword = envVars["REDISCLI_AUTH"]
+	cfg.SMTP.Password = envVars["SMTP_PASSWORD"]
+	cfg.AdminUser.Password = envVars["SUPER_PASSWORD"]
+	cfg.OAuth.GoogleSecret = envVars["GOOGLE_CLIENT_SECRET"]
+	cfg.OAuth.GithubSecret = envVars["GITHUB_CLIENT_SECRET"]
+	cfg.App.OAuth.GoogleSecret = envVars["GOOGLE_CLIENT_SECRET"]
+	cfg.App.OAuth.GithubSecret = envVars["GITHUB_CLIENT_SECRET"]
+	cfg.App.CloudflareSecret = envVars["CLOUDFLARE_SECRET"]
+
+	log.Printf("Populated passwords: DB_App=%v, Redis=%v, Admin=%v",
+		cfg.Database.AppPassword != "",
+		cfg.Redis.Password != "",
+		cfg.AdminUser.Password != "")
+
+	geoipPath := fmt.Sprintf("%s/geoip/GeoLite2-City.mmdb", outputDir)
+	if fileInfo, err := os.Stat(geoipPath); err == nil {
+		tempDir := "./data/temp"
+		if err := os.MkdirAll(tempDir, 0755); err != nil {
+			log.Printf("Warning: failed to create temp directory for GeoIP: %v", err)
+		} else {
+			tempGeoipPath := fmt.Sprintf("%s/GeoLite2-City.mmdb", tempDir)
+			if err := copyFile(geoipPath, tempGeoipPath); err != nil {
+				log.Printf("Warning: failed to copy GeoIP file to temp: %v", err)
+			} else {
+				cfg.GoAccess.HasGeoFile = true
+				cfg.GoAccess.GeoDBPath = "./geoip/GeoLite2-City.mmdb"
+				cfg.GoAccess.GeoTempPath = tempGeoipPath
+				cfg.GoAccess.OriginalFileName = "GeoLite2-City.mmdb"
+				cfg.GoAccess.FileSize = fileInfo.Size()
+				log.Printf("Copied GeoIP file to temp directory: %s (%d bytes)", tempGeoipPath, fileInfo.Size())
+			}
+		}
+	}
+
+	jwtKeyPath := fmt.Sprintf("%s/keys/jwt-private.pem", outputDir)
+	if _, err := os.Stat(jwtKeyPath); err == nil {
+		cfg.App.JWTKeyFilePath = jwtKeyPath
+		cfg.App.JWTKeyFromFile = true
+		cfg.App.HasJWTKeyFile = true
+		log.Printf("Found JWT key file at: %s", jwtKeyPath)
+	}
+
+	cfg.RevisionMode.ModifiedSteps = []string{
+		"Imported from previous output directory with full configuration",
+	}
+
+	if err := s.storage.SaveSetupConfig(cfg); err != nil {
+		return nil, fmt.Errorf("failed to save imported configuration: %w", err)
+	}
+
+	if err := s.updateSetupProgress("import", 25, "Configuration imported from output directory"); err != nil {
+		log.Printf("Warning: failed to update setup progress: %v", err)
+	}
+
+	log.Printf("Successfully imported configuration from output directory")
+	return cfg, nil
+}
+
+func parseEnvFile(envPath string) (map[string]string, error) {
+	content, err := os.ReadFile(envPath)
+	if err != nil {
+		return nil, err
+	}
+
+	envVars := make(map[string]string)
+	lines := strings.Split(string(content), "\n")
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+		value = strings.Trim(value, "'\"")
+
+		envVars[key] = value
+	}
+
+	return envVars, nil
+}
+
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = destFile.ReadFrom(sourceFile)
+	return err
 }

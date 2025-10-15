@@ -251,12 +251,23 @@ func (h *SetupHandlers) GetConfigHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	safeCfg := *cfg
-	safeCfg.Database.SuperPassword = ""
-	safeCfg.Database.AppPassword = ""
-	safeCfg.Redis.Password = ""
-	safeCfg.Redis.AdminPassword = ""
-	safeCfg.SMTP.Password = ""
-	safeCfg.AdminUser.Password = ""
+
+	isFullImport := false
+	for _, step := range cfg.RevisionMode.ModifiedSteps {
+		if step == "Imported from previous output directory with full configuration" {
+			isFullImport = true
+			break
+		}
+	}
+
+	if !isFullImport {
+		safeCfg.Database.SuperPassword = ""
+		safeCfg.Database.AppPassword = ""
+		safeCfg.Redis.Password = ""
+		safeCfg.Redis.AdminPassword = ""
+		safeCfg.SMTP.Password = ""
+		safeCfg.AdminUser.Password = ""
+	}
 
 	h.writeJSONResponse(w, model.SetupResponse{
 		Success: true,

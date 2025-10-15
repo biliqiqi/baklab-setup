@@ -30,8 +30,9 @@ var (
 	certFile   = flag.String("cert", "", "TLS certificate file path (REQUIRED)")
 	keyFile    = flag.String("key", "", "TLS private key file path (REQUIRED)")
 	domain     = flag.String("domain", "", "Domain name for HTTPS access (REQUIRED)")
-	
-	configFile = flag.String("config", "", "Import existing config.json file for revision")
+
+	configFile = flag.String("config", "", "Import sanitized config.json file (passwords removed, safe to share)")
+	inputDir   = flag.String("input", "", "Import from previous output directory (includes passwords and sensitive data)")
 	timeout = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
 	port      = flag.String("port", "8443", "HTTPS port to run the setup server on")
 	dataDir   = flag.String("data", "./data", "Directory to store setup data")
@@ -78,9 +79,19 @@ func main() {
 
 	setupService := services.NewSetupService(jsonStorage)
 
+	if *configFile != "" && *inputDir != "" {
+		log.Fatal("Cannot use both -config and -input flags simultaneously. Use -config for sanitized config (no passwords) or -input for full output directory (with passwords)")
+	}
+
 	if *configFile != "" {
 		if err := importConfigFile(setupService, *configFile); err != nil {
 			log.Fatalf("Failed to import config file: %v", err)
+		}
+	}
+
+	if *inputDir != "" {
+		if err := importFromOutputDir(setupService, *inputDir); err != nil {
+			log.Fatalf("Failed to import from output directory: %v", err)
 		}
 	}
 
@@ -307,5 +318,24 @@ func importConfigFile(setupService *services.SetupService, configPath string) er
 		return fmt.Errorf("failed to import configuration: %w", err)
 	}
 
+	return nil
+}
+
+func importFromOutputDir(setupService *services.SetupService, outputDir string) error {
+	absPath, err := filepath.Abs(outputDir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		return fmt.Errorf("output directory not found: %s", absPath)
+	}
+
+	_, err = setupService.ImportFromOutputDir(absPath)
+	if err != nil {
+		return fmt.Errorf("failed to import from output directory: %w", err)
+	}
+
+	log.Printf("Successfully imported configuration from: %s", absPath)
 	return nil
 }
