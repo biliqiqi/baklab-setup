@@ -46,14 +46,22 @@ server {
 
     location /static {
         alias /data/static;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
     }
 
     location /favicon.ico {
         alias /data/static/favicon.ico;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
     }
 
     location /robots.txt {
         alias /data/static/robots.txt;
+        expires 7d;
+        add_header Cache-Control "public";
     }
 
     location = /sw.js {
@@ -124,14 +132,22 @@ server {
 
     location /static {
         alias /data/static;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
     }
 
     location /favicon.ico {
         alias /data/static/favicon.ico;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
     }
 
     location /robots.txt {
         alias /data/static/robots.txt;
+        expires 7d;
+        add_header Cache-Control "public";
     }
 
     location = /sw.js {
