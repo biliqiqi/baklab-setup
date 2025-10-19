@@ -498,14 +498,6 @@ services:
       - postgres
       - -c
       - config_file=/etc/postgresql/custom/postgresql.conf
-      - -c
-      - log_statement=all
-      - -c
-      - log_destination=stderr
-      - -c
-      - shared_preload_libraries=pg_cron
-      - -c
-      - cron.database_name=postgres
     environment:
       - POSTGRES_USER=${PG_USER}
       - POSTGRES_DB=postgres
