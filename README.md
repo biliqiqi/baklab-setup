@@ -6,21 +6,48 @@ A standalone setup tool for generating Docker Compose production environment con
 
 ## Installation
 
-### Install via go install
+### Download Pre-built Binary (Recommended)
 
-The easiest way to install baklab-setup is using `go install`:
+Download the latest release for your platform:
+
+**Linux (amd64)**
+```bash
+wget https://github.com/biliqiqi/baklab-setup/releases/latest/download/baklab-setup-linux-amd64
+chmod +x baklab-setup-linux-amd64
+mv baklab-setup-linux-amd64 baklab-setup
+```
+
+**macOS (Apple Silicon)**
+```bash
+wget https://github.com/biliqiqi/baklab-setup/releases/latest/download/baklab-setup-darwin-arm64
+chmod +x baklab-setup-darwin-arm64
+mv baklab-setup-darwin-arm64 baklab-setup
+```
+
+**Windows**
+- Download [baklab-setup-windows-amd64.exe](https://github.com/biliqiqi/baklab-setup/releases/latest)
+
+Or visit the [Releases page](https://github.com/biliqiqi/baklab-setup/releases) for all versions and platforms.
+
+### Install via go install
 
 ```bash
 go install github.com/biliqiqi/baklab-setup@latest
 ```
-
-This will download and compile the binary with all static assets and templates embedded.
 
 ### Build from source
 
 ```bash
 git clone https://github.com/biliqiqi/baklab-setup.git
 cd baklab-setup
+
+# Build frontend
+cd static
+npm install
+npm run build
+cd ..
+
+# Build Go binary
 go build -o baklab-setup
 ```
 

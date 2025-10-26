@@ -6,21 +6,48 @@
 
 ## 安装
 
-### 通过 go install 安装
+### 下载预编译二进制文件（推荐）
 
-最简单的安装方式是使用 `go install`：
+为您的平台下载最新版本：
+
+**Linux (amd64)**
+```bash
+wget https://github.com/biliqiqi/baklab-setup/releases/latest/download/baklab-setup-linux-amd64
+chmod +x baklab-setup-linux-amd64
+mv baklab-setup-linux-amd64 baklab-setup
+```
+
+**macOS (Apple Silicon)**
+```bash
+wget https://github.com/biliqiqi/baklab-setup/releases/latest/download/baklab-setup-darwin-arm64
+chmod +x baklab-setup-darwin-arm64
+mv baklab-setup-darwin-arm64 baklab-setup
+```
+
+**Windows**
+- 下载 [baklab-setup-windows-amd64.exe](https://github.com/biliqiqi/baklab-setup/releases/latest)
+
+或访问 [Releases 页面](https://github.com/biliqiqi/baklab-setup/releases) 查看所有版本和平台。
+
+### 通过 go install 安装
 
 ```bash
 go install github.com/biliqiqi/baklab-setup@latest
 ```
-
-这会下载并编译包含所有静态资源和模板的二进制文件。
 
 ### 从源码构建
 
 ```bash
 git clone https://github.com/biliqiqi/baklab-setup.git
 cd baklab-setup
+
+# 构建前端
+cd static
+npm install
+npm run build
+cd ..
+
+# 构建 Go 二进制文件
 go build -o baklab-setup
 ```
 

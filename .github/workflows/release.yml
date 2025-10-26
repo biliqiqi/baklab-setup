@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Build frontend
+      working-directory: ./static
+      run: |
+        npm ci
+        npm run build
+
+    - name: Build binaries
+      run: |
+        # Linux amd64
+        GOOS=linux GOARCH=amd64 go build -o baklab-setup-linux-amd64 -ldflags="-s -w"
+
+        # Linux arm64
+        GOOS=linux GOARCH=arm64 go build -o baklab-setup-linux-arm64 -ldflags="-s -w"
+
+        # macOS amd64
+        GOOS=darwin GOARCH=amd64 go build -o baklab-setup-darwin-amd64 -ldflags="-s -w"
+
+        # macOS arm64 (Apple Silicon)
+        GOOS=darwin GOARCH=arm64 go build -o baklab-setup-darwin-arm64 -ldflags="-s -w"
+
+        # Windows amd64
+        GOOS=windows GOARCH=amd64 go build -o baklab-setup-windows-amd64.exe -ldflags="-s -w"
+
+    - name: Create checksums
+      run: |
+        sha256sum baklab-setup-* > checksums.txt
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          baklab-setup-linux-amd64
+          baklab-setup-linux-arm64
+          baklab-setup-darwin-amd64
+          baklab-setup-darwin-arm64
+          baklab-setup-windows-amd64.exe
+          checksums.txt
+        body: |
+          ## Installation
+
+          ### Linux/macOS
+          ```bash
+          # Download
+          wget https://github.com/biliqiqi/baklab-setup/releases/download/${{ github.ref_name }}/baklab-setup-linux-amd64
+
+          # Make executable
+          chmod +x baklab-setup-linux-amd64
+
+          # Run
+          ./baklab-setup-linux-amd64 -domain=your-domain.com -auto-cert
+          ```
+
+          ### Windows
+          Download `baklab-setup-windows-amd64.exe` and run from command prompt.
+
+          ### Using go install
+          ```bash
+          go install github.com/biliqiqi/baklab-setup@${{ github.ref_name }}
+          ```
+
+          ## Checksums
+          ```
+          $(cat checksums.txt)
+          ```
+        draft: false
+        prerelease: false
