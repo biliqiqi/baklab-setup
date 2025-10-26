@@ -10,21 +10,20 @@ A standalone setup tool for generating Docker Compose production environment con
 
 Before running the setup tool, prepare the following:
 
-- **Domain Name**: A valid domain name that points to your server (required for HTTPS access and SSL certificate configuration).
-- **SSL Certificate**: TLS certificate and private key files that match your domain for HTTPS.
+- **Domain Name**: A valid domain name that points to your server (required for HTTPS access).
+- **SSL Certificate**: Choose one of the following methods:
+  - Use existing certificates: Provide TLS certificate and private key files
+  - Auto certificate: Use `-auto-cert` to automatically obtain from Let's Encrypt (port 80 must be accessible)
 - **SMTP Service**: Email server credentials for sending notifications and user registration emails.
 - **Optional Services**: External PostgreSQL database, Redis server, OAuth applications (Google/GitHub), GeoIP database file for analytics.
 
 ### 2. Run Setup Tool
 
 ```bash
-# Example: Using Let's Encrypt certificate
-go run . -cert=/etc/letsencrypt/live/your-domain.com/fullchain.pem \
-         -key=/etc/letsencrypt/live/your-domain.com/privkey.pem \
-         -domain=your-domain.com
+# Option 1: Automatically obtain Let's Encrypt certificate
+./setup -auto-cert -domain=your-domain.com
 
-# Or run after compilation
-go build -o setup .
+# Option 2: Use existing certificates
 ./setup -cert=/etc/letsencrypt/live/your-domain.com/fullchain.pem \
         -key=/etc/letsencrypt/live/your-domain.com/privkey.pem \
         -domain=your-domain.com
@@ -94,16 +93,20 @@ curl -I https://your-domain.com
 ```
 
 Required options:
-- `-cert string`: TLS certificate file path (REQUIRED)
-- `-key string`: TLS private key file path (REQUIRED)
 - `-domain string`: Domain name for HTTPS access (REQUIRED)
 
+Certificate options (choose one):
+- `-auto-cert`: Automatically obtain certificate from Let's Encrypt
+- `-cert string` + `-key string`: Use existing certificate and private key files
+
 Optional options:
+- `-cache-dir string`: Auto certificate cache directory (default "./cert-cache")
 - `-port string`: HTTPS port (default "8443")
 - `-data string`: Data directory (default "./data")
 - `-static string`: Static files directory (default "./static")
 - `-timeout duration`: Maximum session duration (default 30m)
 - `-config string`: Import existing config.json file for revision
+- `-input string`: Import from previous output directory (includes passwords and sensitive data)
 
 ## Development Notes
 

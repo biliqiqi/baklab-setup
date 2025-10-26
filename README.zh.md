@@ -10,21 +10,20 @@
 
 运行 setup 工具前，请准备以下内容：
 
-- **域名**：指向您服务器的有效域名（HTTPS 访问和 SSL 证书配置所必需）。
-- **SSL 证书**：与您的域名相匹配的 TLS 证书和私钥文件，用于 HTTPS。
+- **域名**：指向您服务器的有效域名（HTTPS 访问所必需）。
+- **SSL 证书**：两种方式二选一
+  - 使用现有证书：提供 TLS 证书和私钥文件
+  - 自动证书：使用 `-auto-cert` 从 Let's Encrypt 自动获取（需要端口 80 可访问）
 - **SMTP 服务**：用于发送通知和用户注册邮件的邮件服务器凭据。
 - **可选服务**：外部 PostgreSQL 数据库、Redis 服务器、OAuth 应用（Google/GitHub）、用于分析的 GeoIP 数据库文件。
 
 ### 2. 运行 setup 工具
 
 ```bash
-# 示例：使用 Let's Encrypt 证书
-go run . -cert=/etc/letsencrypt/live/your-domain.com/fullchain.pem \
-         -key=/etc/letsencrypt/live/your-domain.com/privkey.pem \
-         -domain=your-domain.com
+# 方式一：自动获取 Let's Encrypt 证书
+./setup -auto-cert -domain=your-domain.com
 
-# 或编译后运行
-go build -o setup .
+# 方式二：使用现有证书
 ./setup -cert=/etc/letsencrypt/live/your-domain.com/fullchain.pem \
         -key=/etc/letsencrypt/live/your-domain.com/privkey.pem \
         -domain=your-domain.com
@@ -94,11 +93,14 @@ curl -I https://your-domain.com
 ```
 
 必需选项：
-- `-cert string`: TLS 证书文件路径（必需）
-- `-key string`: TLS 私钥文件路径（必需）
 - `-domain string`: HTTPS 访问域名（必需）
 
+证书选项（二选一）：
+- `-auto-cert`: 自动从 Let's Encrypt 获取证书
+- `-cert string` + `-key string`: 使用现有证书和私钥文件
+
 可选选项：
+- `-cache-dir string`: 自动证书缓存目录（默认 "./cert-cache"）
 - `-port string`: HTTPS 端口（默认 "8443"）
 - `-data string`: 数据目录（默认 "./data"）
 - `-static string`: 静态文件目录（默认 "./static"）

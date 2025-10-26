@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"log"
@@ -18,6 +20,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/text/language"
 
 	"github.com/biliqiqi/baklab-setup/internal/i18n"
@@ -27,16 +30,18 @@ import (
 )
 
 var (
-	certFile   = flag.String("cert", "", "TLS certificate file path (REQUIRED)")
-	keyFile    = flag.String("key", "", "TLS private key file path (REQUIRED)")
+	certFile   = flag.String("cert", "", "TLS certificate file path (required unless -auto-cert is used)")
+	keyFile    = flag.String("key", "", "TLS private key file path (required unless -auto-cert is used)")
 	domain     = flag.String("domain", "", "Domain name for HTTPS access (REQUIRED)")
+	autoCert   = flag.Bool("auto-cert", false, "Automatically obtain and renew SSL certificates from Let's Encrypt")
+	cacheDir   = flag.String("cache-dir", "./cert-cache", "Directory to cache auto-generated certificates")
 
 	configFile = flag.String("config", "", "Import sanitized config.json file (passwords removed, safe to share)")
 	inputDir   = flag.String("input", "", "Import from previous output directory (includes passwords and sensitive data)")
-	timeout = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
-	port      = flag.String("port", "8443", "HTTPS port to run the setup server on")
-	dataDir   = flag.String("data", "./data", "Directory to store setup data")
-	staticDir = flag.String("static", "./static", "Directory containing static files")
+	timeout    = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
+	port       = flag.String("port", "8443", "HTTPS port to run the setup server on")
+	dataDir    = flag.String("data", "./data", "Directory to store setup data")
+	staticDir  = flag.String("static", "./static", "Directory containing static files")
 )
 
 func main() {
@@ -47,31 +52,62 @@ func main() {
 		log.Printf("Development mode enabled (environment variable detected)")
 	}
 
-	if *certFile == "" {
-		log.Fatal("TLS certificate file is required. Use -cert flag.")
-	}
-	if *keyFile == "" {
-		log.Fatal("TLS private key file is required. Use -key flag.")
-	}
 	if *domain == "" {
 		log.Fatal("Domain name is required. Use -domain flag.")
 	}
 
-	certPath, err := filepath.Abs(*certFile)
-	if err != nil {
-		log.Fatalf("Failed to get absolute path for certificate: %v", err)
-	}
-	keyPath, err := filepath.Abs(*keyFile)
-	if err != nil {
-		log.Fatalf("Failed to get absolute path for private key: %v", err)
-	}
+	var certPath, keyPath string
+	var certManager *autocert.Manager
+	var exportedCertPath, exportedKeyPath string
 
-	if _, err := os.Stat(certPath); os.IsNotExist(err) {
-		log.Fatalf("Certificate file not found: %s", certPath)
-	}
+	if *autoCert {
+		if err := os.MkdirAll(*cacheDir, 0700); err != nil {
+			log.Fatalf("Failed to create certificate cache directory: %v", err)
+		}
 
-	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-		log.Fatalf("Private key file not found: %s", keyPath)
+		certManager = &autocert.Manager{
+			Prompt:      autocert.AcceptTOS,
+			HostPolicy:  autocert.HostWhitelist(*domain),
+			Cache:       autocert.DirCache(*cacheDir),
+		}
+
+		exportDir := filepath.Join(*dataDir, "autocert-export")
+		if err := os.MkdirAll(exportDir, 0700); err != nil {
+			log.Fatalf("Failed to create autocert export directory: %v", err)
+		}
+
+		exportedCertPath = filepath.Join(exportDir, "fullchain.pem")
+		exportedKeyPath = filepath.Join(exportDir, "privkey.pem")
+
+		log.Printf("Auto-cert mode enabled for domain: %s", *domain)
+		log.Printf("Certificate cache directory: %s", *cacheDir)
+		log.Printf("Exported certificate will be available at: %s", exportedCertPath)
+		log.Printf("WARNING: Port 80 must be accessible for Let's Encrypt HTTP-01 challenge")
+	} else {
+		if *certFile == "" {
+			log.Fatal("TLS certificate file is required. Use -cert flag or enable -auto-cert.")
+		}
+		if *keyFile == "" {
+			log.Fatal("TLS private key file is required. Use -key flag or enable -auto-cert.")
+		}
+
+		var err error
+		certPath, err = filepath.Abs(*certFile)
+		if err != nil {
+			log.Fatalf("Failed to get absolute path for certificate: %v", err)
+		}
+		keyPath, err = filepath.Abs(*keyFile)
+		if err != nil {
+			log.Fatalf("Failed to get absolute path for private key: %v", err)
+		}
+
+		if _, err := os.Stat(certPath); os.IsNotExist(err) {
+			log.Fatalf("Certificate file not found: %s", certPath)
+		}
+
+		if _, err := os.Stat(keyPath); os.IsNotExist(err) {
+			log.Fatalf("Private key file not found: %s", keyPath)
+		}
 	}
 
 
@@ -97,7 +133,14 @@ func main() {
 
 	i18nManager := i18n.NewI18nManager(language.English)
 
-	handlers := web.NewSetupHandlers(setupService, i18nManager, devMode, certPath, keyPath)
+	finalCertPath := certPath
+	finalKeyPath := keyPath
+	if *autoCert {
+		finalCertPath = exportedCertPath
+		finalKeyPath = exportedKeyPath
+	}
+
+	handlers := web.NewSetupHandlers(setupService, i18nManager, devMode, finalCertPath, finalKeyPath)
 	middlewares := web.NewSetupMiddleware(setupService, devMode)
 
 	r := chi.NewRouter()
@@ -114,6 +157,11 @@ func main() {
 	r.Use(middleware.NoCache)
 
 	r.Use(web.I18nMiddleware)
+
+	if *autoCert && certManager != nil {
+		r.Handle("/.well-known/acme-challenge/*", certManager.HTTPHandler(nil))
+		log.Printf("ACME HTTP-01 challenge handler registered at /.well-known/acme-challenge/")
+	}
 
 	workDir, _ := os.Getwd()
 	staticPath := filepath.Join(workDir, *staticDir)
@@ -156,21 +204,27 @@ func main() {
 	fmt.Printf("WARNING: This URL can only be used ONCE!\n")
 	fmt.Printf("WARNING: Service will auto-close after setup completion\n")
 
-	server := &http.Server{
-		Addr:    fmt.Sprintf(":%s", *port),
-		Handler: r,
-		TLSConfig: &tls.Config{
-			MinVersion: tls.VersionTLS12,
-			CipherSuites: []uint16{
-				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
-				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
-			},
-			PreferServerCipherSuites: true,
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
 		},
+		PreferServerCipherSuites: true,
+	}
+
+	if *autoCert && certManager != nil {
+		tlsConfig.GetCertificate = certManager.GetCertificate
+	}
+
+	server := &http.Server{
+		Addr:      fmt.Sprintf(":%s", *port),
+		Handler:   r,
+		TLSConfig: tlsConfig,
 	}
 
 	go func() {
@@ -197,8 +251,49 @@ func main() {
 
 	log.Printf("Press Ctrl+C to stop the server")
 
-	if err := server.ListenAndServeTLS(certPath, keyPath); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("HTTPS server failed to start: %v", err)
+	var httpServer *http.Server
+	if *autoCert && certManager != nil {
+		httpServer = &http.Server{
+			Addr:    ":80",
+			Handler: certManager.HTTPHandler(nil),
+		}
+
+		go func() {
+			log.Printf("Starting HTTP server on :80 for ACME challenge...")
+			if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Printf("HTTP server error: %v", err)
+			}
+		}()
+
+		go func() {
+			time.Sleep(5 * time.Second)
+			if err := exportAutocertCertificate(certManager, *domain, exportedCertPath, exportedKeyPath); err != nil {
+				log.Printf("Warning: Failed to export autocert certificate initially: %v", err)
+				log.Printf("Certificate will be exported on first successful HTTPS connection")
+			}
+
+			ticker := time.NewTicker(24 * time.Hour)
+			defer ticker.Stop()
+			for range ticker.C {
+				if err := exportAutocertCertificate(certManager, *domain, exportedCertPath, exportedKeyPath); err != nil {
+					log.Printf("Warning: Failed to refresh exported certificate: %v", err)
+				}
+			}
+		}()
+
+		if err := server.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTPS server failed to start: %v", err)
+		}
+
+		if httpServer != nil {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			httpServer.Shutdown(shutdownCtx)
+		}
+	} else {
+		if err := server.ListenAndServeTLS(certPath, keyPath); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTPS server failed to start: %v", err)
+		}
 	}
 
 	log.Println("Setup server stopped")
@@ -337,5 +432,54 @@ func importFromOutputDir(setupService *services.SetupService, outputDir string) 
 	}
 
 	log.Printf("Successfully imported configuration from: %s", absPath)
+	return nil
+}
+
+func exportAutocertCertificate(manager *autocert.Manager, domain, certPath, keyPath string) error {
+	hello := &tls.ClientHelloInfo{
+		ServerName: domain,
+	}
+
+	cert, err := manager.GetCertificate(hello)
+	if err != nil {
+		return fmt.Errorf("failed to get certificate from autocert: %w", err)
+	}
+
+	if len(cert.Certificate) == 0 {
+		return fmt.Errorf("no certificate found")
+	}
+
+	var certPEM []byte
+	for _, certDER := range cert.Certificate {
+		certPEM = append(certPEM, pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: certDER,
+		})...)
+	}
+
+	if err := os.WriteFile(certPath, certPEM, 0600); err != nil {
+		return fmt.Errorf("failed to write certificate file: %w", err)
+	}
+
+	if cert.PrivateKey == nil {
+		return fmt.Errorf("no private key found")
+	}
+
+	keyDER, err := x509.MarshalPKCS8PrivateKey(cert.PrivateKey)
+	if err != nil {
+		return fmt.Errorf("failed to marshal private key: %w", err)
+	}
+
+	keyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: keyDER,
+	})
+
+	if err := os.WriteFile(keyPath, keyPEM, 0600); err != nil {
+		return fmt.Errorf("failed to write private key file: %w", err)
+	}
+
+	log.Printf("Successfully exported certificate to: %s", certPath)
+	log.Printf("Successfully exported private key to: %s", keyPath)
 	return nil
 }

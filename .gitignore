@@ -34,23 +34,27 @@ go.work.sum
 *.swo
 *~
 
-# Setup 项目特有文件
-# 编译后的二进制文件
+# Setup project specific files
+# Compiled binaries
 setup
 
-# 生成的配置文件目录（每次运行都会重新生成）
+# Generated configuration files directory (regenerated on each run)
 output/
 
-# 运行时数据和状态文件
+# Runtime data and state files
 data/*.json
 data/logs/
+data/autocert-export/
 *.log
 
-# 系统文件
+# SSL certificate cache (autocert Let's Encrypt certificates)
+cert-cache/
+
+# System files
 .DS_Store
 Thumbs.db
 
-# 临时文件
+# Temporary files
 tmp/
 temp/
 
