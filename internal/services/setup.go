@@ -2,9 +2,11 @@ package services
 
 import (
 	"crypto/rand"
+	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"strings"
@@ -26,6 +28,14 @@ func NewSetupService(storage *storage.JSONStorage) *SetupService {
 		validator: NewValidatorService(),
 		generator: NewGeneratorService(),
 	}
+}
+
+func (s *SetupService) SetTemplatesFS(templatesFS embed.FS) {
+	templatesSubFS, err := fs.Sub(templatesFS, "templates")
+	if err != nil {
+		log.Fatalf("Failed to get templates subdirectory: %v", err)
+	}
+	s.generator.SetTemplatesFS(templatesSubFS)
 }
 
 func (s *SetupService) InitializeSetup(ipAddress string) (*model.SetupToken, error) {

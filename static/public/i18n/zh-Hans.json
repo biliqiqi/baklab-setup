@@ -1,0 +1,514 @@
+{
+  "common": {
+    "next": "下一步",
+    "previous": "上一步",
+    "save": "保存",
+    "cancel": "取消",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "warning": "警告",
+    "info": "信息",
+    "required": "*",
+    "optional": "（可选）",
+    "yes": "是",
+    "no": "否",
+    "ok": "确定",
+    "close": "关闭",
+    "confirm": "确认",
+    "retry": "重试",
+    "testing": "测试中...",
+    "unknown": "未知",
+    "file_size_units": {
+      "bytes": "字节",
+      "kb": "KB",
+      "mb": "MB",
+      "gb": "GB"
+    }
+  },
+  
+  "setup": {
+    "title": "BakLab 设置",
+    "subtitle": "配置您的 BakLab 应用程序用于生产",
+    "page_title": "BakLab 设置",
+    
+    "steps": {
+      "welcome": "欢迎",
+      "database": "数据库",
+      "redis": "Redis缓存",
+      "smtp": "SMTP邮件",
+      "application": "应用程序",
+      "oauth": "第三方登录",
+      "ssl": "SSL/HTTPS",
+      "goaccess": "分析服务",
+      "admin_user": "管理员用户",
+      "review": "检查配置",
+      "config_complete": "配置完成"
+    },
+    
+    "init": {
+      "welcome_title": "欢迎使用 BakLab 设置向导",
+      "welcome_description_part1": "此设置向导将帮助您配置 BakLab 应用程序用于生产部署。本工具主要生成 Docker Compose 配置文件。请注意出于安全考虑，此设置会话将在",
+      "timeout_highlight": "30 分钟",
+      "welcome_description_part2": "后或完成配置时自动关闭。点击下面的按钮开始配置过程。",
+      "language_label": "设置向导界面语言",
+      "initialize_button": "初始化设置",
+
+      "prerequisites_title": "准备工作清单",
+      "prerequisites_description": "开始设置之前，请确保您已准备好以下服务和资源：",
+
+      "required_services": "必需服务：",
+      "required_smtp": "SMTP 邮箱服务用于系统通知",
+      "required_https": "HTTPS/SSL 证书文件（.crt 和 .key）用于安全连接",
+      "required_static": "静态文件托管服务或 CDN 用于资源服务",
+
+      "optional_services": "可选服务：",
+      "optional_database": "外部 PostgreSQL 数据库服务器",
+      "optional_redis": "外部 Redis 服务器",
+      "optional_oauth": "Google/GitHub OAuth 应用配置用于第三方登录",
+      "optional_goaccess": "GeoIP 数据库文件（.mmdb）用于 GoAccess 分析",
+
+      "prerequisites_note": "不用担心，如果您还没有准备好所有服务 - 您可以在设置过程中进行配置。"
+    },
+    
+    "database": {
+      "title": "数据库配置",
+      "description": "配置您的 PostgreSQL 数据库连接设置。连接将在 Docker 配置验证。",
+      
+      "service_type_label": "服务类型",
+      "service_type_docker": "Docker Compose",
+      "service_type_external": "外部服务",
+      
+      "host_label": "主机地址",
+      "host_placeholder": "localhost",
+      "host_help": "主机名或IP地址（例如：localhost、db.example.com、192.168.1.10）",
+      "host_error": "请输入有效的主机名或IP地址",
+      
+      "port_label": "端口",
+      "port_placeholder": "5433",
+      "port_help": "PostgreSQL 端口号（默认：5433，范围：1-65535）", 
+      "port_error": "端口必须在 1 到 65535 之间",
+      
+      "name_label": "数据库名称",
+      "name_placeholder": "baklab",
+      "name_help": "以字母开头，只能包含字母/数字/下划线（例如：baklab、my_app_db）",
+      "name_error": "数据库名称必须以字母开头，只能包含字母、数字和下划线（最大63个字符）",
+      
+      "super_user_title": "PostgreSQL 超级用户配置（仅Docker模式）",
+      "super_username_label": "超级用户名",
+      "super_username_placeholder": "baklab_super",
+      "super_username_help": "PostgreSQL 超级用户，用于Docker容器初始化（例如：baklab_super、postgres_admin）",
+      "super_username_error": "超级用户名必须以字母开头，只能包含字母、数字和下划线（最大63个字符）",
+
+      "super_password_label": "超级用户密码",
+      "super_password_placeholder": "输入超级用户密码",
+      "super_password_help": "PostgreSQL 超级用户的强密码（12-64个字符，包含多种类型）",
+      "super_password_error": "超级用户密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+
+      "app_user_title": "应用用户配置",
+      "app_username_label": "应用用户名",
+      "app_username_placeholder": "baklab",
+      "app_username_help": "PostgreSQL 应用用户，用于应用程序数据库访问（例如：baklab、app_user）",
+      "app_username_error": "应用用户名必须以字母开头，只能包含字母、数字和下划线（最大63个字符）",
+      "app_username_external_error": "用户名不能超过128个字符",
+
+      "app_password_label": "应用用户密码",
+      "app_password_placeholder": "输入应用密码",
+      "app_password_help": "应用数据库用户的密码（12-64个字符，包含多种类型）",
+      "app_password_error": "应用密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+      "app_password_external_error": "应用密码必须是1-128个字符，不能包含控制字符",
+
+      "username_duplicate_error": "应用用户名必须与超级用户名不同",
+      "password_duplicate_error": "应用密码必须与超级用户密码不同",
+
+      "test_connection": "测试连接"
+    },
+    
+    "redis": {
+      "title": "Redis 配置",
+      "description": "配置您的 Redis 缓存服务器设置。连接将在 Docker 配置验证。",
+      
+      "service_type_label": "服务类型",
+      "service_type_docker": "Docker Compose",
+      "service_type_external": "外部服务",
+      
+      "host_label": "主机地址",
+      "host_placeholder": "localhost",
+      "host_help": "Redis 服务器主机名或IP（例如：localhost、redis.example.com、192.168.1.20）",
+      "host_error": "请输入有效的主机名或IP地址",
+      
+      "port_label": "端口",
+      "port_placeholder": "6377", 
+      "port_help": "Redis 端口号（默认：6377，范围：1-65535）",
+      "port_error": "端口必须在 1 到 65535 之间",
+
+      "user_label": "用户名",
+      "user_placeholder": "app_user",
+      "user_help": "Docker 模式：应用程序Redis用户名（必填，不能使用'default'，该名称保留给管理员）。外部模式：可选的身份验证用户名（留空以兼容旧版 Redis）。",
+      "user_error": "用户名不能是'default'且只能包含字母、数字、下划线和连字符，长度不超过128个字符",
+
+      "admin_password_title": "Redis CLI 管理配置",
+      "admin_password_description": "此配置用于Redis管理员访问，使用默认的 'default' 用户名和您设置的管理密码",
+      "admin_password_label": "CLI 管理密码",
+      "admin_password_placeholder": "输入 CLI 管理密码",
+      "admin_password_help": "用于 Redis CLI 管理访问的强密码（12-64个字符，包含多种类型）",
+      "admin_password_error": "CLI 密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+
+      "password_label": "密码",
+      "password_placeholder": "输入 Redis 密码",
+      "password_help": "12-64个字符，包含多种类型（字母、数字、符号）",
+      "password_error": "Redis 密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
+
+      "test_connection": "测试连接"
+    },
+
+    "smtp": {
+      "title": "SMTP 邮件配置",
+      "description": "配置您的 SMTP 邮件服务器设置，用于用户注册验证和系统通知。",
+
+      "server_label": "SMTP 服务器",
+      "server_placeholder": "smtp.gmail.com",
+      "server_help": "SMTP 服务器主机名（例如：smtp.gmail.com, smtp.outlook.com, mail.example.com）",
+      "server_error": "请输入有效的 SMTP 服务器主机名",
+
+      "port_label": "端口",
+      "port_placeholder": "587",
+      "port_help": "SMTP 端口号（587 用于 TLS，465 用于 SSL，25 用于普通连接）",
+      "port_error": "端口必须在 1 到 65535 之间",
+
+      "user_label": "用户名",
+      "user_placeholder": "your-email@example.com",
+      "user_help": "SMTP 认证用户名（通常是您的邮箱地址）",
+      "user_error": "SMTP 用户名是必需的",
+
+      "password_label": "密码",
+      "password_placeholder": "输入 SMTP 密码",
+      "password_help": "SMTP 认证密码或应用专用密码",
+      "password_error": "SMTP 密码是必需的",
+
+      "sender_label": "发件人邮箱",
+      "sender_placeholder": "noreply@example.com",
+      "sender_help": "将显示为发件人的邮箱地址（例如：noreply@example.com）",
+      "sender_error": "请输入有效的发件人邮箱地址",
+
+      "test_connection": "测试连接",
+      "test_connection_help": "填写完上述所有字段后可测试 SMTP 连接。这有助于确保邮件发送功能正常工作。"
+    },
+
+    "app": {
+      "title": "应用程序配置",
+      "description": "配置您的应用程序基本设置和安全选项。",
+      
+      "domain_label": "域名",
+      "domain_placeholder": "example.com",
+      "domain_error": "请输入有效的域名（例如：example.com）或 localhost",
+      "use_setup_domain": "使用设置程序域名",
+
+      "static_host_label": "静态文件主机",
+      "static_host_placeholder": "static.example.com",
+      "static_host_help": "用于 CSP 安全策略的静态文件资源主机（例如：static.example.com、cdn.example.com）",
+      "static_host_error": "请输入有效的主机名或主机名:端口格式",
+      
+      "brand_label": "品牌名称",
+      "brand_placeholder": "BakLab",
+      
+      "version_label": "应用程序版本",
+      "version_help": "选择 BakLab 应用版本",
+      
+      "cors_label": "CORS 允许来源",
+      "cors_placeholder": "https://app.example.com\nhttps://admin.example.com", 
+      "cors_help": "允许访问您API的前端URL。每行一个。格式：https://domain.com 或 http://localhost:3000",
+      "cors_error": "每行都应该是有效的 HTTP/HTTPS URL",
+      
+      "language_label": "默认语言",
+      "language_help": "应用程序界面的主要语言",
+      "language_error": "请选择默认语言",
+      
+      "debug_label": "启用调试模式",
+      "debug_help": "仅在开发环境中启用",
+
+      "ssr_section_title": "服务端渲染",
+      "ssr_section_description": "配置用于服务端渲染的前端资源。启用后，服务器将在渲染的 HTML 页面中注入前端 JavaScript 和 CSS 文件以便水合。",
+
+      "ssr_enabled_label": "启用服务端渲染",
+      "ssr_enabled_help": "启用服务端渲染，注入前端资源以支持 React/Vue 水合",
+
+      "frontend_scripts_label": "前端 JavaScript 文件",
+      "frontend_scripts_placeholder": "https://static.example.com/assets/main.js\nhttps://static.example.com/assets/vendor.js",
+      "frontend_scripts_help": "将注入到渲染页面中的 JavaScript 文件 URL。每行一个 URL。",
+      "frontend_scripts_error": "请输入有效的 HTTPS JavaScript 文件 URL",
+      "frontend_scripts_required": "启用 SSR 时，前端脚本为必填项",
+
+      "frontend_styles_label": "前端 CSS 文件",
+      "frontend_styles_placeholder": "https://static.example.com/assets/main.css\nhttps://static.example.com/assets/vendor.css",
+      "frontend_styles_help": "将注入到渲染页面中的 CSS 文件 URL。每行一个 URL。",
+      "frontend_styles_error": "请输入有效的 HTTPS CSS 文件 URL",
+      "frontend_styles_required": "启用 SSR 时，前端样式为必填项",
+
+      "frontend_container_id_label": "前端容器 ID",
+      "frontend_container_id_placeholder": "root",
+      "frontend_container_id_help": "前端应用挂载的 DOM 容器 ID。此 ID 必须与打包的前端 HTML 中的容器元素 ID 匹配（例如：'root'、'app'）",
+      "frontend_container_id_error": "请输入有效的容器 ID",
+      "frontend_container_id_required": "启用 SSR 时，前端容器 ID 为必填项",
+
+      "jwt_section_title": "JWT 密钥配置",
+      "jwt_section_description": "配置用于身份验证令牌的 JWT 签名密钥。BakLab 支持 RSA 和 Ed25519 私钥。您可以自动生成安全的密钥或指定宿主机文件路径用于 Docker 卷挂载。",
+
+      "jwt_method_label": "JWT 密钥方式",
+      "jwt_method_auto": "自动生成 JWT 密钥（推荐）",
+      "jwt_method_path": "指定宿主机文件路径",
+
+      "jwt_auto_description": "将自动生成一个安全的 Ed25519 私钥用于 JWT 签名。这是推荐且最安全的选项。",
+      
+      "jwt_file_label": "JWT 密钥文件",
+      "jwt_file_help": "将 JWT 私钥文件拖放到此处或点击选择（仅支持 .pem 格式）",
+      "jwt_file_note": "要求：PEM 格式的私钥（RSA 或 Ed25519）",
+      "select_jwt_file": "选择 JWT 密钥文件",
+      "selected_file": "已选择文件",
+      "file_size": "文件大小",
+      
+      "jwt_path_label": "JWT 密钥文件路径（宿主机）",
+      "jwt_path_placeholder": "/host/path/to/jwt.pem",
+      "jwt_path_help": "宿主机上 JWT 私钥文件（.pem）的绝对路径",
+      "jwt_path_required": "JWT 密钥文件路径为必填项",
+      "jwt_upload_required": "请先上传 JWT 密钥文件",
+      "jwt_uploading": "上传中...",
+      "jwt_upload_success": "上传成功！",
+      "jwt_upload_failed": "上传失败",
+      "jwt_upload_failed_alert": "JWT 密钥文件上传失败",
+      
+      "jwt_generation_title": "如何生成 JWT 私钥",
+      "jwt_generation_commands": "<strong>Ed25519（推荐）：</strong><br><code>openssl genpkey -algorithm Ed25519 -out jwt.pem</code><br><br><strong>RSA-3072：</strong><br><code>openssl genrsa -out jwt.pem 3072</code><br><br><strong>设置正确的文件权限：</strong><br><code>chmod 600 jwt.pem</code>"
+    },
+
+    "oauth": {
+      "title": "第三方登录配置",
+      "description": "配置 OAuth 提供商，允许用户使用 Google、GitHub 等现有账户登录。所有 OAuth 提供商都是可选的。",
+
+      "google_enable_label": "启用 Google OAuth",
+      "google_enable_help": "允许用户使用 Google 账户登录",
+      "google_client_id_label": "Google 客户端 ID",
+      "google_client_id_placeholder": "输入 Google OAuth 客户端 ID",
+      "google_client_id_help": "从 Google Cloud Console（API 和服务 → 凭据）获取",
+      "google_client_id_error": "启用 Google OAuth 时必须提供客户端 ID",
+      "google_client_secret_label": "Google 客户端密钥",
+      "google_client_secret_placeholder": "输入 Google OAuth 客户端密钥",
+      "google_client_secret_help": "来自 Google Cloud Console 的密钥，请妥善保管",
+      "google_client_secret_error": "启用 Google OAuth 时必须提供客户端密钥",
+
+      "github_enable_label": "启用 GitHub OAuth",
+      "github_enable_help": "允许用户使用 GitHub 账户登录",
+      "github_client_id_label": "GitHub 客户端 ID",
+      "github_client_id_placeholder": "输入 GitHub OAuth 客户端 ID",
+      "github_client_id_help": "从 GitHub 设置 → 开发者设置 → OAuth Apps 获取",
+      "github_client_id_error": "启用 GitHub OAuth 时必须提供客户端 ID",
+      "github_client_secret_label": "GitHub 客户端密钥",
+      "github_client_secret_placeholder": "输入 GitHub OAuth 客户端密钥",
+      "github_client_secret_help": "来自 GitHub OAuth App 设置的密钥，请妥善保管",
+      "github_client_secret_error": "启用 GitHub OAuth 时必须提供客户端密钥",
+
+      "google_docs_description": "官方文档：",
+      "google_docs_link": "Google OAuth 配置指南",
+      "github_docs_description": "官方文档：",
+      "github_docs_link": "GitHub OAuth 应用创建指南",
+
+      "frontend_origin_title": "前端源地址配置",
+      "frontend_origin_label": "前端源地址 URL",
+      "frontend_origin_placeholder": "https://yourdomain.com",
+      "frontend_origin_help": "仅当您的前端页面与后端服务器分开托管时才需要修改此项。对于大多数部署，请使用服务器地址。此 URL 用于 OAuth 重定向和 CORS 配置。",
+      "frontend_origin_error": "如果指定，请输入有效的 URL",
+
+      "general_note": "OAuth 配置是可选的。您可以仅启用需要的提供商，或者如果只想使用邮箱/密码认证，也可以完全跳过此步骤。"
+    },
+
+    "ssl": {
+      "title": "SSL/HTTPS 配置",
+      "description": "配置 SSL 证书以启用 HTTPS。您可以选择禁用 HTTPS（仅使用 HTTP）或提供证书文件路径以启用安全连接。",
+
+      "domain_match_warning_text": "您的 SSL 证书必须与应用程序的托管域名 ({{domain}}) 匹配，否则 nginx 将无法启动。",
+
+      "enable_label": "启用 HTTPS",
+      
+      "use_setup_cert_label": "使用与设置程序相同的证书",
+      "use_setup_cert_help": "自动填入当前设置程序正在使用的证书路径",
+      
+      "cert_path_label": "证书文件路径",
+      "cert_path_help": "SSL 证书文件的完整路径（例如：/etc/ssl/certs/domain.crt 或 /etc/letsencrypt/live/domain.com/fullchain.pem）",
+      "cert_path_required": "启用 SSL 时证书路径为必填项",
+
+      "key_path_label": "私钥文件路径",
+      "key_path_help": "SSL 私钥文件的完整路径（例如：/etc/ssl/private/domain.key 或 /etc/letsencrypt/live/domain.com/privkey.pem）",
+      "key_path_required": "启用 SSL 时私钥路径为必填项",
+
+      "auto_selected_due_to_domain": "因为您使用了设置程序域名而自动选择"
+    },
+    
+    "goaccess": {
+      "title": "分析与监控",
+      "description": "配置 GoAccess 实时网站分析。此服务提供详细的网站流量和访客行为分析。",
+
+      "enable_label": "启用 GoAccess 分析",
+
+      "geo_file_label": "地理IP数据库文件",
+      "geo_file_help": "拖拽 GeoLite2-City.mmdb 文件到此处或点击选择",
+      "geo_file_note": "地理数据可视化需要GeoIP数据库。免费下载 GeoLite2-City.mmdb：",
+      "download_link": "MaxMind GeoLite2",
+
+      "select_file": "选择文件",
+      "selected_file": "已选择文件",
+      "file_size": "文件大小",
+
+      "invalid_file_type": "请选择有效的 .mmdb 文件",
+      "file_too_large": "文件大小过大。最大允许大小为100MB",
+      "geo_file_required": "启用 GoAccess 时必须上传 GeoIP 数据库文件",
+      "geo_file_missing": "GeoIP 数据库文件不可用。请重新上传 GeoIP 数据库文件。"
+    },
+
+    "admin": {
+      "title": "管理员用户",
+      "description": "创建应用程序的初始管理员账户。邮箱默认为系统管理员邮箱，但您可以根据需要更改。",
+      
+      "username_label": "用户名",
+      "username_placeholder": "admin",
+      "username_help": "4-20个字符，以字母/数字开头和结尾，可包含点、下划线、连字符",
+      "username_error": "用户名必须是4-20个字符，以字母数字字符开头和结尾",
+      
+      "email_label": "邮箱",
+      "email_help": "管理员用户登录邮箱（默认为系统管理员邮箱，可以不同）",
+      "email_error": "请输入有效的邮箱地址",
+      
+      "password_label": "密码", 
+      "password_placeholder": "输入安全密码",
+      "password_help": "12-64个字符，包含多种类型（字母、数字、符号）",
+      "password_error": "密码必须是12-64个字符，包含小写、大写、数字和特殊字符（!@#$%^&*）",
+      
+      "password_confirm_label": "确认密码",
+      "password_confirm_placeholder": "确认您的密码", 
+      "password_confirm_error": "密码必须匹配"
+    },
+    
+    "review": {
+      "title": "检查配置",
+      "description": "请在生成配置文件之前检查您的配置。",
+      "generate_button": "生成配置",
+      "generating": "生成中...",
+      "generation_failed": "配置验证失败，请检查所有字段后重试。",
+      "generation_error": "配置生成失败，请重试。",
+      
+      "sections": {
+        "database": "数据库",
+        "redis": "Redis缓存",
+        "smtp": "邮件服务",
+        "oauth": "第三方登录",
+        "ssl": "SSL/HTTPS",
+        "goaccess": "分析服务",
+        "application": "应用程序",
+        "administrator": "管理员"
+      },
+      
+      "fields": {
+        "host": "主机",
+        "database": "数据库",
+        "user": "用户",
+        "app_user": "应用用户",
+        "super_user": "超级用户",
+        "service_type": "服务类型",
+        "password": "密码",
+        "smtp_server": "SMTP 服务器",
+        "smtp_user": "SMTP 用户",
+        "smtp_sender": "发件人地址",
+        "ssl_enabled": "启用 SSL",
+        "ssl_cert_path": "证书路径",
+        "ssl_key_path": "私钥路径",
+        "ssl_use_setup_cert": "使用 Setup 证书",
+        "goaccess_enabled": "启用分析服务",
+        "goaccess_geo_file": "GeoIP 数据库文件",
+        "domain": "域名",
+        "static_host": "静态文件主机",
+        "brand": "品牌",
+        "version": "版本",
+        "language": "语言",
+        "cors_origins": "CORS 来源",
+        "jwt_mode": "JWT 密钥模式",
+        "jwt_file_path": "JWT 密钥文件路径",
+        "google_oauth": "Google OAuth",
+        "github_oauth": "GitHub OAuth",
+        "oauth_enabled": "已启用",
+        "oauth_disabled": "已禁用",
+        "ssr_enabled": "服务端渲染已启用",
+        "frontend_scripts": "前端脚本",
+        "frontend_styles": "前端样式",
+        "frontend_container_id": "前端容器 ID",
+        "build_status": "构建状态",
+        "output_directory": "输出目录",
+        "username": "用户名",
+        "email": "邮箱"
+      },
+      
+      "cors_configured": {
+        "zero": "未配置 CORS 来源",
+        "one": "已配置 {{count}} 个 CORS 来源",
+        "other": "已配置 {{count}} 个 CORS 来源"
+      },
+
+      "jwt_auto_generate": "自动生成",
+      "jwt_from_file": "从文件加载"
+    },
+    
+    "config_complete": {
+      "title": "配置完成！",
+      "description": "您的 BakLab 应用程序已成功配置。您现在可以使用生成的配置文件手动部署。",
+      "ready_notice": "配置文件已生成在 <code>{{outputPath}}</code>",
+      "ready_description": "手动部署命令: <code>cd {{outputPath}} && docker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
+      "complete_button": "完成设置"
+    },
+
+    "completed": {
+      "title": "设置完成！",
+      "description": "您的 BakLab 应用程序已成功配置。",
+      "congratulations": "恭喜！您的 BakLab 实例现在已准备就绪。设置服务仍可用于未来的配置更新。",
+      
+      "next_steps": "下一步",
+      "steps_list": [
+        "访问您的应用程序：访问您的域名开始使用 BakLab",
+        "配置更新：您可以随时重新运行设置来更新配置",
+        "备份：设置数据和配置的定期备份",
+        "监控：使用 docker-compose ps 监控您的服务",
+        "日志：使用 docker-compose logs -f 查看日志"
+      ],
+
+      "run_again_button": "重新运行设置"
+    }
+
+  },
+  
+  "messages": {
+    "setup_initialized": "设置初始化成功",
+    "config_saved": "配置保存成功",
+    "config_generated": "配置文件生成成功",
+    "setup_completed": "设置完成成功！现在可以启动主应用程序。",
+    "setup_already_completed": "设置已经完成。",
+    "validation_failed": "配置验证失败",
+    "fix_errors": "请修复下面的验证错误，然后重试。",
+    "upload_in_progress": "文件上传中...",
+
+    "errors": {
+      "method_not_allowed": "不允许的方法",
+      "invalid_json": "无效的JSON格式",
+      "failed_check_status": "检查设置状态失败",
+      "failed_get_config": "获取配置失败",
+      "failed_test_connections": "连接测试失败：{{error}}",
+      "failed_tests": "连接测试失败：{{error}}",
+      "failed_generate": "生成配置失败：{{error}}",
+      "failed_complete": "完成设置失败：{{error}}",
+      "validation_failed": "验证失败",
+      "validation_error_generic": "验证错误",
+      "request_failed": "请求失败",
+      "invalid_response": "无效的响应格式",
+      "upload_failed": "上传失败",
+      "network_error_upload": "上传时网络错误",
+      "upload_cancelled": "上传已取消",
+      "failed_save_config": "保存配置失败"
+    }
+  }
+}

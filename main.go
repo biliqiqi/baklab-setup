@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"embed"
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -29,6 +31,12 @@ import (
 	"github.com/biliqiqi/baklab-setup/internal/web"
 )
 
+//go:embed static/dist
+var staticFS embed.FS
+
+//go:embed templates
+var templatesFS embed.FS
+
 var (
 	certFile   = flag.String("cert", "", "TLS certificate file path (required unless -auto-cert is used)")
 	keyFile    = flag.String("key", "", "TLS private key file path (required unless -auto-cert is used)")
@@ -41,7 +49,6 @@ var (
 	timeout    = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
 	port       = flag.String("port", "8443", "HTTPS port to run the setup server on")
 	dataDir    = flag.String("data", "./data", "Directory to store setup data")
-	staticDir  = flag.String("static", "./static", "Directory containing static files")
 )
 
 func main() {
@@ -114,6 +121,7 @@ func main() {
 	jsonStorage := storage.NewJSONStorage(*dataDir)
 
 	setupService := services.NewSetupService(jsonStorage)
+	setupService.SetTemplatesFS(templatesFS)
 
 	if *configFile != "" && *inputDir != "" {
 		log.Fatal("Cannot use both -config and -input flags simultaneously. Use -config for sanitized config (no passwords) or -input for full output directory (with passwords)")
@@ -163,9 +171,11 @@ func main() {
 		log.Printf("ACME HTTP-01 challenge handler registered at /.well-known/acme-challenge/")
 	}
 
-	workDir, _ := os.Getwd()
-	staticPath := filepath.Join(workDir, *staticDir)
-	FileServer(r, "/static", http.Dir(staticPath))
+	staticSubFS, err := fs.Sub(staticFS, "static/dist")
+	if err != nil {
+		log.Fatalf("Failed to get static/dist subdirectory: %v", err)
+	}
+	FileServer(r, "/static", http.FS(staticSubFS))
 
 	r.Route("/api", func(r chi.Router) {
 		r.Use(middlewares.SetupAuth)

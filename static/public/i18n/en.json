@@ -1,0 +1,514 @@
+{
+  "common": {
+    "next": "Next",
+    "previous": "Previous",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info",
+    "required": "*",
+    "optional": "(optional)",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "close": "Close",
+    "confirm": "Confirm",
+    "retry": "Retry",
+    "testing": "Testing...",
+    "unknown": "Unknown",
+    "file_size_units": {
+      "bytes": "Bytes",
+      "kb": "KB",
+      "mb": "MB",
+      "gb": "GB"
+    }
+  },
+  
+  "setup": {
+    "title": "BakLab Setup",
+    "subtitle": "Configure your BakLab application for production",
+    "page_title": "BakLab Setup",
+    
+    "steps": {
+      "welcome": "Welcome",
+      "database": "Database",
+      "redis": "Redis",
+      "smtp": "SMTP Email",
+      "application": "Application",
+      "oauth": "Third-party Login",
+      "ssl": "SSL/HTTPS",
+      "goaccess": "Analytics",
+      "admin_user": "Admin User",
+      "review": "Review",
+      "config_complete": "Configuration Complete"
+    },
+    
+    "init": {
+      "welcome_title": "Welcome to BakLab Setup",
+      "welcome_description_part1": "This setup wizard will help you configure your BakLab application for production. It generates Docker Compose configuration files for deployment. Please note that this setup session will automatically close after",
+      "timeout_highlight": "30 minutes",
+      "welcome_description_part2": "or upon completion for security reasons. Click the button below to begin the configuration process.",
+      "language_label": "Setup Interface Language",
+      "initialize_button": "Initialize Setup",
+
+      "prerequisites_title": "Prerequisites Checklist",
+      "prerequisites_description": "Before starting the setup, please ensure you have prepared the following services and resources:",
+
+      "required_services": "Required Services:",
+      "required_smtp": "SMTP email service for system notifications",
+      "required_https": "HTTPS/SSL certificate files (.crt and .key) for secure connections",
+      "required_static": "Static file hosting service or CDN for serving assets",
+
+      "optional_services": "Optional Services:",
+      "optional_database": "External PostgreSQL database server",
+      "optional_redis": "External Redis server",
+      "optional_oauth": "OAuth applications from Google/GitHub for third-party login",
+      "optional_goaccess": "GeoIP database file (.mmdb) for GoAccess analytics",
+
+      "prerequisites_note": "Don't worry if you don't have all services ready - you can configure them during the setup process."
+    },
+    
+    "database": {
+      "title": "Database Configuration",
+      "description": "Configure your PostgreSQL database connection settings.",
+      
+      "service_type_label": "Service Type",
+      "service_type_docker": "Docker Compose",
+      "service_type_external": "External Service",
+      
+      "host_label": "Host",
+      "host_placeholder": "localhost", 
+      "host_help": "Hostname or IP address (e.g., localhost, db.example.com, 192.168.1.10)",
+      "host_error": "Please enter a valid hostname or IP address",
+      
+      "port_label": "Port",
+      "port_placeholder": "5433",
+      "port_help": "PostgreSQL port number (default: 5433, range: 1-65535)",
+      "port_error": "Port must be between 1 and 65535",
+      
+      "name_label": "Database Name",
+      "name_placeholder": "baklab",
+      "name_help": "Start with letter, only letters/numbers/underscores (e.g., baklab, my_app_db)",
+      "name_error": "Database name must start with a letter and contain only letters, numbers, and underscores (max 63 characters)",
+      
+      "super_user_title": "PostgreSQL Super User Configuration (Docker Only)",
+      "super_username_label": "Super User Name",
+      "super_username_placeholder": "baklab_super",
+      "super_username_help": "PostgreSQL super user for Docker container initialization (e.g., baklab_super, postgres_admin)",
+      "super_username_error": "Super username must start with a letter and contain only letters, numbers, and underscores (max 63 characters)",
+
+      "super_password_label": "Super User Password",
+      "super_password_placeholder": "Enter super user password",
+      "super_password_help": "Strong password for PostgreSQL super user (12-64 chars, mixed types)",
+      "super_password_error": "Super password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+
+      "app_user_title": "Application User Configuration",
+      "app_username_label": "Application User Name",
+      "app_username_placeholder": "baklab",
+      "app_username_help": "PostgreSQL user for application database access (e.g., baklab, app_user)",
+      "app_username_error": "App username must start with a letter and contain only letters, numbers, and underscores (max 63 characters)",
+      "app_username_external_error": "Username cannot exceed 128 characters",
+
+      "app_password_label": "Application User Password",
+      "app_password_placeholder": "Enter application password",
+      "app_password_help": "Password for application database user (12-64 chars, mixed types)",
+      "app_password_error": "App password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+      "app_password_external_error": "App password must be 1-128 characters and cannot contain control characters",
+
+      "username_duplicate_error": "Application username must be different from super user username",
+      "password_duplicate_error": "Application password must be different from super user password",
+
+      "test_connection": "Test Connection"
+    },
+    
+    "redis": {
+      "title": "Redis Configuration",
+      "description": "Configure your Redis cache server settings.",
+      
+      "service_type_label": "Service Type",
+      "service_type_docker": "Docker Compose",
+      "service_type_external": "External Service",
+      
+      "host_label": "Host",
+      "host_placeholder": "localhost",
+      "host_help": "Redis server hostname or IP (e.g., localhost, redis.example.com, 192.168.1.20)",
+      "host_error": "Please enter a valid hostname or IP address",
+      
+      "port_label": "Port", 
+      "port_placeholder": "6377",
+      "port_help": "Redis port number (default: 6377, range: 1-65535)",
+      "port_error": "Port must be between 1 and 65535",
+
+      "user_label": "Username",
+      "user_placeholder": "app_user",
+      "user_help": "Docker mode: Application Redis username (required, cannot use 'default', reserved for administrator). External mode: Optional username for authentication (leave empty for legacy Redis compatibility).",
+      "user_error": "Username cannot be 'default' and can only contain letters, numbers, underscores and hyphens, max 128 characters",
+
+      "admin_password_title": "Redis CLI Management Configuration",
+      "admin_password_description": "This configuration is for Redis administrator access, using the default 'default' username and your configured management password",
+      "admin_password_label": "CLI Management Password",
+      "admin_password_placeholder": "Enter CLI management password",
+      "admin_password_help": "Strong password for Redis CLI management access (12-64 chars, mixed types)",
+      "admin_password_error": "CLI password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+
+      "password_label": "Password",
+      "password_placeholder": "Enter Redis password",
+      "password_help": "12-64 characters with mixed types (letters, numbers, symbols)",
+      "password_error": "Redis password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
+
+      "test_connection": "Test Connection"
+    },
+
+    "smtp": {
+      "title": "SMTP Configuration",
+      "description": "Configure your SMTP email server settings for user registration and notifications.",
+
+      "server_label": "SMTP Server",
+      "server_placeholder": "smtp.gmail.com",
+      "server_help": "SMTP server hostname (e.g., smtp.gmail.com, smtp.outlook.com, mail.example.com)",
+      "server_error": "Please enter a valid SMTP server hostname",
+
+      "port_label": "Port",
+      "port_placeholder": "587",
+      "port_help": "SMTP port number (587 for TLS, 465 for SSL, 25 for plain)",
+      "port_error": "Port must be between 1 and 65535",
+
+      "user_label": "Username",
+      "user_placeholder": "your-email@example.com",
+      "user_help": "SMTP authentication username (usually your email address)",
+      "user_error": "SMTP username is required",
+
+      "password_label": "Password",
+      "password_placeholder": "Enter SMTP password",
+      "password_help": "SMTP authentication password or app-specific password",
+      "password_error": "SMTP password is required",
+
+      "sender_label": "Sender Email",
+      "sender_placeholder": "noreply@example.com",
+      "sender_help": "Email address that will appear as sender (e.g., noreply@example.com)",
+      "sender_error": "Please enter a valid sender email address",
+
+      "test_connection": "Test Connection",
+      "test_connection_help": "Fill in all fields above to test your SMTP connection. This helps ensure email delivery will work correctly."
+    },
+
+    "app": {
+      "title": "Application Configuration",
+      "description": "Configure your application's basic settings and security options.",
+      
+      "domain_label": "Domain Name",
+      "domain_placeholder": "example.com",
+      "domain_error": "Please enter a valid domain name (e.g., example.com) or localhost",
+      "use_setup_domain": "Use setup domain",
+
+      "static_host_label": "Static Files Host",
+      "static_host_placeholder": "static.example.com",
+      "static_host_help": "Host for static file resources used in CSP security policy (e.g., static.example.com, cdn.example.com)",
+      "static_host_error": "Please enter a valid hostname or hostname:port format",
+      
+      "brand_label": "Brand Name",
+      "brand_placeholder": "BakLab",
+      
+      "version_label": "Application Version",
+      "version_help": "Select BakLab application version",
+      
+      "cors_label": "CORS Allow Origins",
+      "cors_placeholder": "https://app.example.com\nhttps://admin.example.com",
+      "cors_help": "Frontend URLs allowed to access your API. One per line. Format: https://domain.com or http://localhost:3000",
+      "cors_error": "Each line should be a valid HTTP/HTTPS URL",
+      
+      "language_label": "Default Language",
+      "language_help": "Primary language for the application interface",
+      "language_error": "Please select a default language",
+      
+      "debug_label": "Enable Debug Mode",
+      "debug_help": "Only enable for development environments",
+
+      "ssr_section_title": "Server-Side Rendering",
+      "ssr_section_description": "Configure frontend resources for server-side rendering. When enabled, the server will inject frontend JavaScript and CSS files into rendered HTML pages for hydration.",
+
+      "ssr_enabled_label": "Enable Server-Side Rendering",
+      "ssr_enabled_help": "Enable server-side rendering with frontend resource injection for React/Vue hydration",
+
+      "frontend_scripts_label": "Frontend JavaScript Files",
+      "frontend_scripts_placeholder": "https://static.example.com/assets/main.js\nhttps://static.example.com/assets/vendor.js",
+      "frontend_scripts_help": "URLs to JavaScript files that will be injected into rendered pages. One URL per line.",
+      "frontend_scripts_error": "Please enter valid HTTPS URLs for JavaScript files",
+      "frontend_scripts_required": "Frontend scripts are required when SSR is enabled",
+
+      "frontend_styles_label": "Frontend CSS Files",
+      "frontend_styles_placeholder": "https://static.example.com/assets/main.css\nhttps://static.example.com/assets/vendor.css",
+      "frontend_styles_help": "URLs to CSS files that will be injected into rendered pages. One URL per line.",
+      "frontend_styles_error": "Please enter valid HTTPS URLs for CSS files",
+      "frontend_styles_required": "Frontend styles are required when SSR is enabled",
+
+      "frontend_container_id_label": "Frontend Container ID",
+      "frontend_container_id_placeholder": "root",
+      "frontend_container_id_help": "ID of the DOM element where the frontend application mounts. This must match the container element ID in your bundled frontend HTML (e.g., 'root', 'app')",
+      "frontend_container_id_error": "Please enter a valid container ID",
+      "frontend_container_id_required": "Frontend container ID is required when SSR is enabled",
+
+      "jwt_section_title": "JWT Key Configuration",
+      "jwt_section_description": "Configure JWT signing key for authentication tokens. BakLab supports RSA and Ed25519 private keys. You can auto-generate a secure key or specify a host machine path for Docker volume mounting.",
+
+      "jwt_method_label": "JWT Key Method",
+      "jwt_method_auto": "Auto-generate JWT key (Recommended)",
+      "jwt_method_path": "Specify Host File Path",
+
+      "jwt_auto_description": "A secure Ed25519 private key will be automatically generated for JWT signing. This is the recommended and most secure option.",
+      
+      "jwt_file_label": "JWT Key File",
+      "jwt_file_help": "Drop a JWT private key file here or click to select (.pem format only)",
+      "jwt_file_note": "Required: PEM format private key (RSA or Ed25519)",
+      "select_jwt_file": "Select JWT Key File",
+      "selected_file": "Selected File",
+      "file_size": "File Size",
+      
+      "jwt_path_label": "JWT Key File Path (Host Machine)",
+      "jwt_path_placeholder": "/host/path/to/jwt.pem",
+      "jwt_path_help": "Absolute path to JWT private key file (.pem) on host machine",
+      "jwt_path_required": "JWT key file path is required",
+      "jwt_upload_required": "Please upload a JWT key file first",
+      "jwt_uploading": "Uploading...",
+      "jwt_upload_success": "Upload successful!",
+      "jwt_upload_failed": "Upload failed",
+      "jwt_upload_failed_alert": "JWT key file upload failed",
+      
+      "jwt_generation_title": "How to Generate JWT Private Key",
+      "jwt_generation_commands": "<strong>Ed25519 (Recommended):</strong><br><code>openssl genpkey -algorithm Ed25519 -out jwt.pem</code><br><br><strong>RSA-3072:</strong><br><code>openssl genrsa -out jwt.pem 3072</code><br><br><strong>Set proper permissions:</strong><br><code>chmod 600 jwt.pem</code>"
+    },
+
+    "oauth": {
+      "title": "Third-party Login Configuration",
+      "description": "Configure OAuth providers to allow users to sign in with their existing accounts from Google, GitHub, and other services. All OAuth providers are optional.",
+
+      "google_enable_label": "Enable Google OAuth",
+      "google_enable_help": "Allow users to sign in with their Google accounts",
+      "google_client_id_label": "Google Client ID",
+      "google_client_id_placeholder": "Enter Google OAuth Client ID",
+      "google_client_id_help": "Obtain from Google Cloud Console (APIs & Services → Credentials)",
+      "google_client_id_error": "Google Client ID is required when Google OAuth is enabled",
+      "google_client_secret_label": "Google Client Secret",
+      "google_client_secret_placeholder": "Enter Google OAuth Client Secret",
+      "google_client_secret_help": "Secret key from Google Cloud Console, keep it secure",
+      "google_client_secret_error": "Google Client Secret is required when Google OAuth is enabled",
+
+      "github_enable_label": "Enable GitHub OAuth",
+      "github_enable_help": "Allow users to sign in with their GitHub accounts",
+      "github_client_id_label": "GitHub Client ID",
+      "github_client_id_placeholder": "Enter GitHub OAuth Client ID",
+      "github_client_id_help": "Obtain from GitHub Settings → Developer settings → OAuth Apps",
+      "github_client_id_error": "GitHub Client ID is required when GitHub OAuth is enabled",
+      "github_client_secret_label": "GitHub Client Secret",
+      "github_client_secret_placeholder": "Enter GitHub OAuth Client Secret",
+      "github_client_secret_help": "Secret key from GitHub OAuth App settings, keep it secure",
+      "github_client_secret_error": "GitHub Client Secret is required when GitHub OAuth is enabled",
+
+      "google_docs_description": "Official documentation:",
+      "google_docs_link": "Google OAuth Configuration Guide",
+      "github_docs_description": "Official documentation:",
+      "github_docs_link": "GitHub OAuth App Creation Guide",
+
+      "frontend_origin_title": "Frontend Origin Configuration",
+      "frontend_origin_label": "Frontend Origin URL",
+      "frontend_origin_placeholder": "https://yourdomain.com",
+      "frontend_origin_help": "Only change this if your frontend is hosted separately from the backend server. For most deployments, use the server's address. This URL is used for OAuth redirects and CORS configuration.",
+      "frontend_origin_error": "Please enter a valid URL if specified",
+
+      "general_note": "OAuth configuration is optional. You can enable only the providers you need, or skip this step entirely if you prefer email/password authentication only."
+    },
+
+    "ssl": {
+      "title": "SSL/HTTPS Configuration",
+      "description": "Configure SSL certificates for HTTPS. You can either disable HTTPS (HTTP only) or provide certificate file paths for secure connections.",
+
+      "domain_match_warning_text": "Your SSL certificate must match the application's hosting domain ({{domain}}), otherwise nginx will fail to start.",
+
+      "enable_label": "Enable HTTPS",
+      
+      "use_setup_cert_label": "Use same certificates as setup program",
+      "use_setup_cert_help": "Automatically fill in the certificate paths currently used by this setup program",
+      
+      "cert_path_label": "Certificate File Path",
+      "cert_path_help": "Full path to SSL certificate file (e.g., /etc/ssl/certs/domain.crt or /etc/letsencrypt/live/domain.com/fullchain.pem)",
+      "cert_path_required": "Certificate path is required when SSL is enabled",
+
+      "key_path_label": "Private Key File Path",
+      "key_path_help": "Full path to SSL private key file (e.g., /etc/ssl/private/domain.key or /etc/letsencrypt/live/domain.com/privkey.pem)",
+      "key_path_required": "Private key path is required when SSL is enabled",
+
+      "auto_selected_due_to_domain": "Automatically selected because you are using the setup program domain"
+    },
+    
+    "goaccess": {
+      "title": "Analytics & Monitoring",
+      "description": "Configure GoAccess real-time web analytics. This service provides detailed analysis of your website traffic and visitor behavior.",
+
+      "enable_label": "Enable GoAccess Analytics",
+
+      "geo_file_label": "GeoIP Database File",
+      "geo_file_help": "Drop a GeoLite2-City.mmdb file here or click to select",
+      "geo_file_note": "GeoIP database is required for geographic data visualization. Download free GeoLite2-City.mmdb from: ",
+      "download_link": "MaxMind GeoLite2",
+
+      "select_file": "Select File",
+      "selected_file": "Selected File",
+      "file_size": "File Size",
+
+      "invalid_file_type": "Please select a valid .mmdb file",
+      "file_too_large": "File size too large. Maximum allowed size is 100MB",
+      "geo_file_required": "GeoIP database file is required when GoAccess is enabled",
+      "geo_file_missing": "GeoIP database file is no longer available. Please re-upload your GeoIP database file."
+    },
+
+    "admin": {
+      "title": "Administrator User",
+      "description": "Create the initial administrator account for your application. The email defaults to the system admin email, but you can change it if needed.",
+      
+      "username_label": "Username",
+      "username_placeholder": "admin",
+      "username_help": "4-20 characters, start/end with letters/numbers, can contain dots, underscores, hyphens",
+      "username_error": "Username must be 4-20 characters, start and end with alphanumeric characters",
+      
+      "email_label": "Email",
+      "email_help": "Admin user login email (defaults to system admin email, can be different)",
+      "email_error": "Please enter a valid email address",
+      
+      "password_label": "Password",
+      "password_placeholder": "Enter secure password",
+      "password_help": "12-64 characters with mixed types (letters, numbers, symbols)",
+      "password_error": "Password must be 12-64 characters with lowercase, uppercase, numbers, and special characters (!@#$%^&*)",
+      
+      "password_confirm_label": "Confirm Password",
+      "password_confirm_placeholder": "Confirm your password",
+      "password_confirm_error": "Passwords must match"
+    },
+    
+    "review": {
+      "title": "Review Configuration",
+      "description": "Please review your configuration before generating the configuration files.",
+      "generate_button": "Generate Config",
+      "generating": "Generating...",
+      "generation_failed": "Configuration validation failed. Please check all fields and try again.",
+      "generation_error": "Configuration generation failed. Please try again.",
+      
+      "sections": {
+        "database": "Database",
+        "redis": "Redis",
+        "smtp": "Email Service",
+        "oauth": "Third-party Login",
+        "ssl": "SSL/HTTPS",
+        "goaccess": "Analytics Service",
+        "application": "Application",
+        "administrator": "Administrator"
+      },
+      
+      "fields": {
+        "host": "Host",
+        "database": "Database",
+        "user": "User",
+        "app_user": "App User",
+        "super_user": "Super User",
+        "service_type": "Service Type",
+        "password": "Password",
+        "smtp_server": "SMTP Server",
+        "smtp_user": "SMTP User",
+        "smtp_sender": "Sender Address",
+        "ssl_enabled": "SSL Enabled",
+        "ssl_cert_path": "Certificate Path",
+        "ssl_key_path": "Private Key Path",
+        "ssl_use_setup_cert": "Use Setup Certificate",
+        "goaccess_enabled": "Analytics Enabled",
+        "goaccess_geo_file": "GeoIP Database File",
+        "domain": "Domain",
+        "static_host": "Static Files Host",
+        "brand": "Brand",
+        "version": "Version",
+        "language": "Language",
+        "cors_origins": "CORS Origins",
+        "jwt_mode": "JWT Key Mode",
+        "jwt_file_path": "JWT Key File Path",
+        "google_oauth": "Google OAuth",
+        "github_oauth": "GitHub OAuth",
+        "oauth_enabled": "Enabled",
+        "oauth_disabled": "Disabled",
+        "ssr_enabled": "Server-Side Rendering Enabled",
+        "frontend_scripts": "Frontend Scripts",
+        "frontend_styles": "Frontend Styles",
+        "frontend_container_id": "Frontend Container ID",
+        "build_status": "Build Status",
+        "output_directory": "Output Directory",
+        "username": "Username",
+        "email": "Email"
+      },
+      
+      "cors_configured": {
+        "zero": "No CORS origins configured",
+        "one": "{{count}} CORS origin configured",
+        "other": "{{count}} CORS origins configured"
+      },
+
+      "jwt_auto_generate": "Auto Generate",
+      "jwt_from_file": "From File"
+    },
+    
+    "config_complete": {
+      "title": "Configuration Complete!",
+      "description": "Your BakLab application has been successfully configured. You can now manually deploy using the generated configuration files.",
+      "ready_notice": "Configuration files generated in <code>{{outputPath}}</code>",
+      "ready_description": "Manual deployment: <code>cd {{outputPath}} && docker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
+      "complete_button": "Complete Setup"
+    },
+
+    "completed": {
+      "title": "Setup Complete!",
+      "description": "Your BakLab application has been successfully configured.",
+      "congratulations": "Congratulations! Your BakLab instance is now ready for use. The setup service remains available for future configuration updates.",
+      
+      "next_steps": "Next Steps",
+      "steps_list": [
+        "Access your application: Visit your domain to start using BakLab",
+        "Configuration updates: You can re-run setup anytime to update your configuration", 
+        "Backups: Set up regular backups of your data and configuration",
+        "Monitoring: Monitor your services with docker-compose ps",
+        "Logs: Check logs with docker-compose logs -f"
+      ],
+
+      "run_again_button": "Run Setup Again"
+    }
+
+  },
+  
+  "messages": {
+    "setup_initialized": "Setup initialized successfully",
+    "config_saved": "Configuration saved successfully",
+    "config_generated": "Configuration files generated successfully",
+    "setup_completed": "Setup completed successfully! You can now start the main application.",
+    "setup_already_completed": "Setup has already been completed.",
+    "validation_failed": "Configuration validation failed",
+    "fix_errors": "Please fix the validation errors below and try again.",
+    "upload_in_progress": "File upload in progress...",
+
+    "errors": {
+      "method_not_allowed": "Method not allowed",
+      "invalid_json": "Invalid JSON format",
+      "failed_check_status": "Failed to check setup status",
+      "failed_get_config": "Failed to get configuration",
+      "failed_test_connections": "Connection test failed: {{error}}",
+      "failed_tests": "Connection tests failed: {{error}}",
+      "failed_generate": "Failed to generate configuration: {{error}}",
+      "failed_complete": "Failed to complete setup: {{error}}",
+      "validation_failed": "Validation failed",
+      "validation_error_generic": "Validation error",
+      "request_failed": "Request failed",
+      "invalid_response": "Invalid response format",
+      "upload_failed": "Upload failed",
+      "network_error_upload": "Network error during upload",
+      "upload_cancelled": "Upload cancelled",
+      "failed_save_config": "Failed to save configuration"
+    }
+  }
+}

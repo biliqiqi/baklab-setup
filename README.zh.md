@@ -4,6 +4,26 @@
 
 独立的 setup 工具，用于生成 BakLab 应用的 Docker Compose 生产环境配置。通过引导式界面完成核心服务（数据库、Redis、邮件）、应用设置（域名、安全、品牌）、管理员账户创建，以及 OAuth 登录和网站分析等可选功能的配置。
 
+## 安装
+
+### 通过 go install 安装
+
+最简单的安装方式是使用 `go install`：
+
+```bash
+go install github.com/biliqiqi/baklab-setup@latest
+```
+
+这会下载并编译包含所有静态资源和模板的二进制文件。
+
+### 从源码构建
+
+```bash
+git clone https://github.com/biliqiqi/baklab-setup.git
+cd baklab-setup
+go build -o baklab-setup
+```
+
 ## 快速开始
 
 ### 1. 准备工作
@@ -21,12 +41,12 @@
 
 ```bash
 # 方式一：自动获取 Let's Encrypt 证书
-./setup -auto-cert -domain=your-domain.com
+baklab-setup -auto-cert -domain=your-domain.com
 
 # 方式二：使用现有证书
-./setup -cert=/etc/letsencrypt/live/your-domain.com/fullchain.pem \
-        -key=/etc/letsencrypt/live/your-domain.com/privkey.pem \
-        -domain=your-domain.com
+baklab-setup -cert=/etc/letsencrypt/live/your-domain.com/fullchain.pem \
+             -key=/etc/letsencrypt/live/your-domain.com/privkey.pem \
+             -domain=your-domain.com
 ```
 
 ### 3. 访问配置界面

@@ -597,7 +597,7 @@ func (h *SetupHandlers) renderUnauthorizedPage(w http.ResponseWriter, r *http.Re
 
 	localizer := h.getLocalizerFromContext(r)
 	message := localizer.MustLocalize("messages.unauthorized_setup_token_required", nil, nil)
-	_, err := fmt.Fprintf(w, message)
+	_, err := fmt.Fprintf(w, "%s", message)
 	if err != nil {
 		log.Printf("Warning: failed to write unauthorized page: %v", err)
 	}

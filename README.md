@@ -4,6 +4,26 @@ English | [中文](README.zh.md)
 
 A standalone setup tool for generating Docker Compose production environment configurations for BakLab applications. The guided interface walks you through configuring essential services (database, Redis, email), application settings (domain, security, branding), admin account creation, and optional features like OAuth login and analytics.
 
+## Installation
+
+### Install via go install
+
+The easiest way to install baklab-setup is using `go install`:
+
+```bash
+go install github.com/biliqiqi/baklab-setup@latest
+```
+
+This will download and compile the binary with all static assets and templates embedded.
+
+### Build from source
+
+```bash
+git clone https://github.com/biliqiqi/baklab-setup.git
+cd baklab-setup
+go build -o baklab-setup
+```
+
 ## Quick Start
 
 ### 1. Prerequisites
@@ -21,12 +41,12 @@ Before running the setup tool, prepare the following:
 
 ```bash
 # Option 1: Automatically obtain Let's Encrypt certificate
-./setup -auto-cert -domain=your-domain.com
+baklab-setup -auto-cert -domain=your-domain.com
 
 # Option 2: Use existing certificates
-./setup -cert=/etc/letsencrypt/live/your-domain.com/fullchain.pem \
-        -key=/etc/letsencrypt/live/your-domain.com/privkey.pem \
-        -domain=your-domain.com
+baklab-setup -cert=/etc/letsencrypt/live/your-domain.com/fullchain.pem \
+             -key=/etc/letsencrypt/live/your-domain.com/privkey.pem \
+             -domain=your-domain.com
 ```
 
 ### 3. Access Configuration Interface

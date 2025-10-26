@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -19,7 +20,8 @@ import (
 )
 
 type GeneratorService struct {
-	outputDir string
+	outputDir   string
+	templatesFS fs.FS
 }
 
 func (g *GeneratorService) buildOAuthProviders(oauth model.OAuthConfig) string {
@@ -41,6 +43,10 @@ func NewGeneratorService() *GeneratorService {
 
 func (g *GeneratorService) SetOutputDir(dir string) {
 	g.outputDir = dir
+}
+
+func (g *GeneratorService) SetTemplatesFS(templatesFS fs.FS) {
+	g.templatesFS = templatesFS
 }
 
 func (g *GeneratorService) GetAbsoluteOutputDir() (string, error) {
@@ -688,22 +694,22 @@ func (g *GeneratorService) copyTemplateFiles(cfg *model.SetupConfig) error {
 			return fmt.Errorf("failed to create db directory: %w", err)
 		}
 
-		srcInitdbDir := "./templates/db/initdb"
 		destInitdbDir := filepath.Join(dbDir, "initdb")
-		if err := g.copyDir(srcInitdbDir, destInitdbDir); err != nil {
+		if err := g.copyDirFromFS("db/initdb", destInitdbDir); err != nil {
 			return fmt.Errorf("failed to copy initdb directory: %w", err)
 		}
 
-		srcPostgresqlConf := "./templates/db/postgresql.conf"
 		destPostgresqlConf := filepath.Join(dbDir, "postgresql.conf")
-		if err := g.copyFile(srcPostgresqlConf, destPostgresqlConf); err != nil {
+		if err := g.copyFileFromFS("db/postgresql.conf", destPostgresqlConf); err != nil {
 			return fmt.Errorf("failed to copy postgresql.conf: %w", err)
 		}
 
-		srcDockerfile := "./Dockerfile.pg"
 		destDockerfile := filepath.Join(g.outputDir, "Dockerfile.pg")
-		if err := g.copyFile(srcDockerfile, destDockerfile); err != nil {
-			return fmt.Errorf("failed to copy Dockerfile.pg: %w", err)
+		dockerfileContent := `FROM postgres:16-alpine
+RUN apk add --no-cache postgresql16-pg_cron
+`
+		if err := os.WriteFile(destDockerfile, []byte(dockerfileContent), 0644); err != nil {
+			return fmt.Errorf("failed to write Dockerfile.pg: %w", err)
 		}
 	}
 
@@ -725,6 +731,47 @@ func (g *GeneratorService) copyFile(src, dest string) error {
 
 	_, err = destFile.ReadFrom(sourceFile)
 	return err
+}
+
+func (g *GeneratorService) copyFileFromFS(src, dest string) error {
+	content, err := fs.ReadFile(g.templatesFS, src)
+	if err != nil {
+		return fmt.Errorf("failed to read from embedded FS: %w", err)
+	}
+
+	if err := os.WriteFile(dest, content, 0644); err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	return nil
+}
+
+func (g *GeneratorService) copyDirFromFS(src, dest string) error {
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	entries, err := fs.ReadDir(g.templatesFS, src)
+	if err != nil {
+		return fmt.Errorf("failed to read embedded directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		destPath := filepath.Join(dest, entry.Name())
+
+		if entry.IsDir() {
+			if err := g.copyDirFromFS(srcPath, destPath); err != nil {
+				return err
+			}
+		} else {
+			if err := g.copyFileFromFS(srcPath, destPath); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (g *GeneratorService) copyDir(src, dest string) error {
@@ -766,8 +813,7 @@ func (g *GeneratorService) generateRedisConfig(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to create redis directory: %w", err)
 	}
 
-	redisConfTemplate := "./templates/redis/redis.conf"
-	redisConfContent, err := os.ReadFile(redisConfTemplate)
+	redisConfContent, err := fs.ReadFile(g.templatesFS, "redis/redis.conf")
 	if err != nil {
 		return fmt.Errorf("failed to read redis.conf template: %w", err)
 	}
@@ -788,8 +834,7 @@ func (g *GeneratorService) GenerateNginxConfig(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to create nginx directories: %w", err)
 	}
 
-	nginxConfTemplate := "./templates/nginx/nginx.conf"
-	nginxConfContent, err := os.ReadFile(nginxConfTemplate)
+	nginxConfContent, err := fs.ReadFile(g.templatesFS, "nginx/nginx.conf")
 	if err != nil {
 		return fmt.Errorf("failed to read nginx.conf template: %w", err)
 	}
@@ -799,8 +844,7 @@ func (g *GeneratorService) GenerateNginxConfig(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to write nginx.conf: %w", err)
 	}
 
-	baklabTemplateFile := "./templates/nginx/baklab.conf.template"
-	baklabTemplateContent, err := os.ReadFile(baklabTemplateFile)
+	baklabTemplateContent, err := fs.ReadFile(g.templatesFS, "nginx/baklab.conf.template")
 	if err != nil {
 		return fmt.Errorf("failed to read baklab.conf.template: %w", err)
 	}
