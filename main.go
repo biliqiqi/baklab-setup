@@ -256,7 +256,9 @@ func main() {
 		time.Sleep(*timeout)
 		log.Printf("Setup timeout (%v) reached, shutting down...", *timeout)
 		cleanupSensitiveData(*dataDir)
-		server.Shutdown(context.Background())
+		if err := server.Shutdown(context.Background()); err != nil {
+			log.Printf("Error during server shutdown: %v", err)
+		}
 	}()
 
 	log.Printf("Press Ctrl+C to stop the server")
@@ -298,7 +300,9 @@ func main() {
 		if httpServer != nil {
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			httpServer.Shutdown(shutdownCtx)
+			if err := httpServer.Shutdown(shutdownCtx); err != nil {
+				log.Printf("Error during HTTP server shutdown: %v", err)
+			}
 		}
 	} else {
 		if err := server.ListenAndServeTLS(certPath, keyPath); err != nil && err != http.ErrServerClosed {

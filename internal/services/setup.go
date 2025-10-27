@@ -14,6 +14,7 @@ import (
 
 	"github.com/biliqiqi/baklab-setup/internal/model"
 	"github.com/biliqiqi/baklab-setup/internal/storage"
+	"github.com/biliqiqi/baklab-setup/internal/utils"
 )
 
 type SetupService struct {
@@ -468,13 +469,13 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer utils.Close(sourceFile, "source file: "+src)
 
 	destFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer destFile.Close()
+	defer utils.Close(destFile, "dest file: "+dst)
 
 	_, err = destFile.ReadFrom(sourceFile)
 	return err

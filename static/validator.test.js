@@ -8,7 +8,7 @@ import {
     showCustomError,
     hideCustomError,
     validateAndSetFieldError
-} from './validator.js';
+} from './src/js/validator.js';
 
 describe('validatePasswordStrength', () => {
     test('valid password with all requirements', () => {

@@ -4,7 +4,6 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/x509"
-	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -17,6 +16,7 @@ import (
 	"time"
 
 	"github.com/biliqiqi/baklab-setup/internal/model"
+	"github.com/biliqiqi/baklab-setup/internal/utils"
 )
 
 type GeneratorService struct {
@@ -777,13 +777,13 @@ func (g *GeneratorService) copyFile(src, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer utils.Close(sourceFile, "source file: "+src)
 
 	destFile, err := os.Create(dest)
 	if err != nil {
 		return err
 	}
-	defer destFile.Close()
+	defer utils.Close(destFile, "dest file: "+dest)
 
 	_, err = destFile.ReadFrom(sourceFile)
 	return err
@@ -822,39 +822,6 @@ func (g *GeneratorService) copyDirFromFS(src, dest string) error {
 			}
 		} else {
 			if err := g.copyFileFromFS(srcPath, destPath); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func (g *GeneratorService) copyDir(src, dest string) error {
-	srcInfo, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-
-	if err := os.MkdirAll(dest, srcInfo.Mode()); err != nil {
-		return err
-	}
-
-	entries, err := os.ReadDir(src)
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range entries {
-		srcPath := filepath.Join(src, entry.Name())
-		destPath := filepath.Join(dest, entry.Name())
-
-		if entry.IsDir() {
-			if err := g.copyDir(srcPath, destPath); err != nil {
-				return err
-			}
-		} else {
-			if err := g.copyFile(srcPath, destPath); err != nil {
 				return err
 			}
 		}
@@ -928,15 +895,6 @@ func (g *GeneratorService) GenerateNginxConfig(cfg *model.SetupConfig) error {
 	return nil
 }
 
-func (g *GeneratorService) generateSecretKey(length int) string {
-	bytes := make([]byte, length/2)
-	if _, err := rand.Read(bytes); err != nil {
-		// fallback to timestamp-based key if random fails
-		return fmt.Sprintf("%x", time.Now().UnixNano())
-	}
-	return hex.EncodeToString(bytes)
-}
-
 func (g *GeneratorService) GenerateJWTKey() ([]byte, error) {
 	_, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -983,99 +941,6 @@ geoip-database /data/geoip/GeoLite2-City.mmdb`
 	filePath := filepath.Join(g.outputDir, "goaccess.conf")
 	if err := os.WriteFile(filePath, []byte(goAccessConfig), 0644); err != nil {
 		return fmt.Errorf("failed to write goaccess.conf: %w", err)
-	}
-
-	return nil
-}
-
-func (g *GeneratorService) copyStaticFiles(cfg *model.SetupConfig) error {
-	staticDir := filepath.Join(g.outputDir, "static")
-	if err := os.MkdirAll(staticDir, 0755); err != nil {
-		return fmt.Errorf("failed to create static directory: %w", err)
-	}
-
-	dataStaticDir := "./data/static"
-	if _, err := os.Stat(dataStaticDir); err == nil {
-		if err := g.copyStaticWithTemplateProcessing(dataStaticDir, staticDir, cfg); err != nil {
-			return fmt.Errorf("failed to copy main project static files from data: %w", err)
-		}
-		log.Printf("Copied main project static files from %s to %s", dataStaticDir, staticDir)
-	} else {
-		log.Printf("Preloaded static directory not found at %s, creating placeholder files", dataStaticDir)
-
-		robotsContent := `User-agent: *
-Allow: /
-
-Sitemap: https://example.com/sitemap.xml`
-
-		robotsPath := filepath.Join(staticDir, "robots.txt")
-		if err := os.WriteFile(robotsPath, []byte(robotsContent), 0644); err != nil {
-			return fmt.Errorf("failed to create robots.txt: %w", err)
-		}
-		log.Printf("Created placeholder robots.txt")
-	}
-
-	return nil
-}
-
-func (g *GeneratorService) copyStaticWithTemplateProcessing(src, dest string, cfg *model.SetupConfig) error {
-	srcInfo, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-
-	if err := os.MkdirAll(dest, srcInfo.Mode()); err != nil {
-		return err
-	}
-
-	entries, err := os.ReadDir(src)
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range entries {
-		srcPath := filepath.Join(src, entry.Name())
-		destPath := filepath.Join(dest, entry.Name())
-
-		if entry.IsDir() {
-			if err := g.copyStaticWithTemplateProcessing(srcPath, destPath, cfg); err != nil {
-				return err
-			}
-		} else {
-			if entry.Name() == "site.webmanifest" && cfg != nil {
-				if err := g.processTemplateFile(srcPath, destPath, cfg); err != nil {
-					return err
-				}
-			} else {
-				if err := g.copyFile(srcPath, destPath); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func (g *GeneratorService) processTemplateFile(srcPath, destPath string, cfg *model.SetupConfig) error {
-	templateContent, err := os.ReadFile(srcPath)
-	if err != nil {
-		return fmt.Errorf("failed to read template file %s: %w", srcPath, err)
-	}
-
-	tmpl, err := template.New(filepath.Base(srcPath)).Parse(string(templateContent))
-	if err != nil {
-		return fmt.Errorf("failed to parse template file %s: %w", srcPath, err)
-	}
-
-	destFile, err := os.Create(destPath)
-	if err != nil {
-		return fmt.Errorf("failed to create output file %s: %w", destPath, err)
-	}
-	defer destFile.Close()
-
-	if err := tmpl.Execute(destFile, cfg); err != nil {
-		return fmt.Errorf("failed to execute template %s: %w", srcPath, err)
 	}
 
 	return nil

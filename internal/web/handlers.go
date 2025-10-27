@@ -1,9 +1,7 @@
 package web
 
 import (
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +13,7 @@ import (
 	"github.com/biliqiqi/baklab-setup/internal/i18n"
 	"github.com/biliqiqi/baklab-setup/internal/model"
 	"github.com/biliqiqi/baklab-setup/internal/services"
+	"github.com/biliqiqi/baklab-setup/internal/utils"
 	"golang.org/x/text/language"
 )
 
@@ -458,7 +457,7 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 		}, http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer utils.Close(file, "uploaded file")
 
 	if !strings.HasSuffix(strings.ToLower(handler.Filename), ".mmdb") {
 		h.writeJSONResponse(w, model.SetupResponse{
@@ -496,12 +495,14 @@ func (h *SetupHandlers) UploadGeoFileHandler(w http.ResponseWriter, r *http.Requ
 		}, http.StatusInternalServerError)
 		return
 	}
-	defer destFile.Close()
+	defer utils.Close(destFile, "destination file: "+destPath)
 
 	bytesWritten, err := io.Copy(destFile, file)
 	if err != nil {
 		log.Printf("Failed to copy file: %v", err)
-		os.Remove(destPath)
+		if removeErr := os.Remove(destPath); removeErr != nil {
+			log.Printf("Failed to remove incomplete file %s: %v", destPath, removeErr)
+		}
 		h.writeJSONResponse(w, model.SetupResponse{
 			Success: false,
 			Message: h.localizeMessage(r, "messages.failed_save_file"),
@@ -527,8 +528,8 @@ func (h *SetupHandlers) CheckGeoFileStatusHandler(w http.ResponseWriter, r *http
 	tempFilePath := filepath.Join("./data", "temp", "GeoLite2-City.mmdb")
 
 	fileExists := false
-	var fileSize int64 = 0
-	var fileName string = ""
+	var fileSize int64
+	var fileName string
 
 	if fileInfo, err := os.Stat(tempFilePath); err == nil {
 		fileExists = true
@@ -548,32 +549,6 @@ func (h *SetupHandlers) CheckGeoFileStatusHandler(w http.ResponseWriter, r *http
 	}, http.StatusOK)
 }
 
-
-func validateJWTKeyFile(keyBytes []byte) error {
-	block, _ := pem.Decode(keyBytes)
-	if block == nil {
-		return fmt.Errorf("invalid PEM format")
-	}
-
-	switch block.Type {
-	case "PRIVATE KEY":
-		_, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-		if err != nil {
-			return fmt.Errorf("invalid PKCS#8 private key: %w", err)
-		}
-		return nil
-
-	case "RSA PRIVATE KEY":
-		_, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-		if err != nil {
-			return fmt.Errorf("invalid PKCS#1 RSA private key: %w", err)
-		}
-		return nil
-
-	default:
-		return fmt.Errorf("unsupported PEM block type: %s. Expected 'PRIVATE KEY' (PKCS#8) or 'RSA PRIVATE KEY' (PKCS#1)", block.Type)
-	}
-}
 
 func (h *SetupHandlers) GetCurrentCertPathsHandler(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{

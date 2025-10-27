@@ -17,7 +17,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/biliqiqi/baklab-setup/internal/model"
-	_ "github.com/lib/pq" // PostgreSQL driver
+	"github.com/biliqiqi/baklab-setup/internal/utils"
+	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -172,7 +173,7 @@ func (v *ValidatorService) TestDatabaseConnection(cfg model.DatabaseConfig) mode
 		result.Message = "key:validation.database.config_invalid"
 		return result
 	}
-	defer db.Close()
+	defer utils.Close(db, "database connection")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -223,7 +224,7 @@ func (v *ValidatorService) TestRedisConnection(cfg model.RedisConfig) model.Conn
 	}
 
 	client := redis.NewClient(opts)
-	defer client.Close()
+	defer utils.Close(client, "redis connection")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -565,17 +566,18 @@ func (v *ValidatorService) validateRedisConfig(cfg model.RedisConfig) []model.Va
 	}
 
 	if cfg.ServiceType == "docker" {
-		if cfg.User == "" {
+		switch cfg.User {
+		case "":
 			errors = append(errors, model.ValidationError{
 				Field:   "redis.user",
 				Message: "key:validation.redis.user_required",
 			})
-		} else if cfg.User == "default" {
+		case "default":
 			errors = append(errors, model.ValidationError{
 				Field:   "redis.user",
 				Message: "key:validation.redis.user_default_forbidden",
 			})
-		} else {
+		default:
 			userRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 			if !userRegex.MatchString(cfg.User) {
 				errors = append(errors, model.ValidationError{
