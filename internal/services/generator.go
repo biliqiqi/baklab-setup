@@ -761,11 +761,8 @@ func (g *GeneratorService) copyTemplateFiles(cfg *model.SetupConfig) error {
 		}
 
 		destDockerfile := filepath.Join(g.outputDir, "Dockerfile.pg")
-		dockerfileContent := `FROM postgres:16-alpine
-RUN apk add --no-cache postgresql16-pg_cron
-`
-		if err := os.WriteFile(destDockerfile, []byte(dockerfileContent), 0644); err != nil {
-			return fmt.Errorf("failed to write Dockerfile.pg: %w", err)
+		if err := g.copyFileFromFS("db/Dockerfile.pg", destDockerfile); err != nil {
+			return fmt.Errorf("failed to copy Dockerfile.pg: %w", err)
 		}
 	}
 
