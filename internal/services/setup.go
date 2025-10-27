@@ -411,11 +411,21 @@ func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig
 	}
 
 	jwtKeyPath := fmt.Sprintf("%s/keys/jwt-private.pem", outputDir)
-	if _, err := os.Stat(jwtKeyPath); err == nil {
+	if fileInfo, err := os.Stat(jwtKeyPath); err == nil && !fileInfo.IsDir() {
 		cfg.App.JWTKeyFilePath = jwtKeyPath
 		cfg.App.JWTKeyFromFile = true
 		cfg.App.HasJWTKeyFile = true
 		log.Printf("Found JWT key file at: %s", jwtKeyPath)
+	} else if err == nil && fileInfo.IsDir() {
+		log.Printf("Warning: %s is a directory, not a file. Will generate new JWT key.", jwtKeyPath)
+		cfg.App.JWTKeyFromFile = false
+		cfg.App.HasJWTKeyFile = false
+		cfg.App.JWTKeyFilePath = ""
+	} else {
+		log.Printf("JWT key file not found at %s, will generate new key", jwtKeyPath)
+		cfg.App.JWTKeyFromFile = false
+		cfg.App.HasJWTKeyFile = false
+		cfg.App.JWTKeyFilePath = ""
 	}
 
 	cfg.RevisionMode.ModifiedSteps = []string{
