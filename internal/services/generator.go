@@ -340,7 +340,63 @@ GID={{ .GroupID }}
 	return nil
 }
 
+func (g *GeneratorService) handleSSLCertificates(cfg *model.SetupConfig) error {
+	if !cfg.SSL.Enabled {
+		return nil
+	}
+
+	// Create ssl directory in output
+	sslDir := filepath.Join(g.outputDir, "ssl")
+	if err := os.MkdirAll(sslDir, 0755); err != nil {
+		return fmt.Errorf("failed to create ssl directory: %w", err)
+	}
+
+	// Check if certificate files exist
+	if _, err := os.Stat(cfg.SSL.CertPath); err != nil {
+		return fmt.Errorf("certificate file not found at %s: %w", cfg.SSL.CertPath, err)
+	}
+	if _, err := os.Stat(cfg.SSL.KeyPath); err != nil {
+		return fmt.Errorf("key file not found at %s: %w", cfg.SSL.KeyPath, err)
+	}
+
+	// Copy certificate files to output/ssl
+	certDest := filepath.Join(sslDir, "fullchain.pem")
+	keyDest := filepath.Join(sslDir, "privkey.pem")
+
+	if err := copyFile(cfg.SSL.CertPath, certDest); err != nil {
+		return fmt.Errorf("failed to copy certificate: %w", err)
+	}
+	if err := copyFile(cfg.SSL.KeyPath, keyDest); err != nil {
+		return fmt.Errorf("failed to copy key: %w", err)
+	}
+
+	log.Printf("Copied SSL certificates to output/ssl/")
+
+	// Get absolute path of output directory
+	absOutputDir, err := filepath.Abs(g.outputDir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute output path: %w", err)
+	}
+
+	// Update config to use absolute paths
+	cfg.SSL.CertPath = filepath.Join(absOutputDir, "ssl", "fullchain.pem")
+	cfg.SSL.KeyPath = filepath.Join(absOutputDir, "ssl", "privkey.pem")
+
+	log.Printf("Updated SSL paths to absolute:")
+	log.Printf("  Cert: %s", cfg.SSL.CertPath)
+	log.Printf("  Key:  %s", cfg.SSL.KeyPath)
+
+	return nil
+}
+
 func (g *GeneratorService) GenerateDockerConfig(cfg *model.SetupConfig) error {
+	// Handle SSL certificates - copy to output and update paths to absolute
+	if cfg.SSL.Enabled {
+		if err := g.handleSSLCertificates(cfg); err != nil {
+			return fmt.Errorf("failed to handle SSL certificates: %w", err)
+		}
+	}
+
 	if err := g.copyTemplateFiles(cfg); err != nil {
 		return fmt.Errorf("failed to copy template files: %w", err)
 	}

@@ -333,12 +333,14 @@
       "use_setup_cert_help": "自动填入当前设置程序正在使用的证书路径",
       
       "cert_path_label": "证书文件路径",
-      "cert_path_help": "SSL 证书文件的完整路径（例如：/etc/ssl/certs/domain.crt 或 /etc/letsencrypt/live/domain.com/fullchain.pem）",
+      "cert_path_help": "宿主机上 SSL 证书文件的绝对路径（例如：/etc/ssl/certs/domain.crt 或 /etc/letsencrypt/live/domain.com/fullchain.pem）",
       "cert_path_required": "启用 SSL 时证书路径为必填项",
+      "cert_path_must_be_absolute": "证书路径必须是绝对路径（以 / 开头），以确保 Docker 能正确挂载文件。",
 
       "key_path_label": "私钥文件路径",
-      "key_path_help": "SSL 私钥文件的完整路径（例如：/etc/ssl/private/domain.key 或 /etc/letsencrypt/live/domain.com/privkey.pem）",
+      "key_path_help": "宿主机上 SSL 私钥文件的绝对路径（例如：/etc/ssl/private/domain.key 或 /etc/letsencrypt/live/domain.com/privkey.pem）",
       "key_path_required": "启用 SSL 时私钥路径为必填项",
+      "key_path_must_be_absolute": "私钥路径必须是绝对路径（以 / 开头），以确保 Docker 能正确挂载文件。",
 
       "auto_selected_due_to_domain": "因为您使用了设置程序域名而自动选择"
     },

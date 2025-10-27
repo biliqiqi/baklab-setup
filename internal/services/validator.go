@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/smtp"
 	"net/url"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -850,12 +851,22 @@ func (v *ValidatorService) validateSSLConfig(cfg model.SSLConfig) []model.Valida
 				Field:   "ssl.cert_path",
 				Message: "key:validation.ssl.cert_path_required",
 			})
+		} else if !filepath.IsAbs(cfg.CertPath) {
+			errors = append(errors, model.ValidationError{
+				Field:   "ssl.cert_path",
+				Message: "key:validation.ssl.cert_path_must_be_absolute",
+			})
 		}
 
 		if cfg.KeyPath == "" {
 			errors = append(errors, model.ValidationError{
 				Field:   "ssl.key_path",
 				Message: "key:validation.ssl.key_path_required",
+			})
+		} else if !filepath.IsAbs(cfg.KeyPath) {
+			errors = append(errors, model.ValidationError{
+				Field:   "ssl.key_path",
+				Message: "key:validation.ssl.key_path_must_be_absolute",
 			})
 		}
 	}

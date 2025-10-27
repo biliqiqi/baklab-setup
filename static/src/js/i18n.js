@@ -362,10 +362,6 @@ class SetupI18n {
     }
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = SetupI18n;
-}
-
 export { SetupI18n };
 
 // 测试函数

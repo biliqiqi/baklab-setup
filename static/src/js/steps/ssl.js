@@ -216,9 +216,18 @@ export function render(container, { config, navigation, apiClient, i18n }) {
                     const message = i18n ? i18n.t('setup.ssl.cert_path_required') : 'Certificate path is required when SSL is enabled';
                     showFieldError(document.getElementById('ssl-cert-path'), message);
                     isValid = false;
+                } else if (!sslConfig.cert_path.startsWith('/')) {
+                    const message = i18n ? i18n.t('setup.ssl.cert_path_must_be_absolute') : 'Certificate path must be an absolute path (starting with /)';
+                    showFieldError(document.getElementById('ssl-cert-path'), message);
+                    isValid = false;
                 }
+
                 if (!sslConfig.key_path.trim()) {
                     const message = i18n ? i18n.t('setup.ssl.key_path_required') : 'Private key path is required when SSL is enabled';
+                    showFieldError(document.getElementById('ssl-key-path'), message);
+                    isValid = false;
+                } else if (!sslConfig.key_path.startsWith('/')) {
+                    const message = i18n ? i18n.t('setup.ssl.key_path_must_be_absolute') : 'Private key path must be an absolute path (starting with /)';
                     showFieldError(document.getElementById('ssl-key-path'), message);
                     isValid = false;
                 }
