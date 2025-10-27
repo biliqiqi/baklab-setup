@@ -31,10 +31,9 @@ jobs:
         node-version: '20'
 
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
+      uses: golangci/golangci-lint-action@v8
       with:
-        version: latest
-        args: --timeout=5m
+        version: v2.2
 
     - name: Run Go tests
       run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
