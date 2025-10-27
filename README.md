@@ -25,7 +25,7 @@ mv baklab-setup-darwin-arm64 baklab-setup
 ```
 
 **Windows**
-- Download [baklab-setup-windows-amd64.exe](https://github.com/biliqiqi/baklab-setup/releases/latest)
+- Download [baklab-setup-windows-amd64.exe](https://github.com/biliqiqi/baklab-setup/releases/latest/download/baklab-setup-windows-amd64.exe)
 
 Or visit the [Releases page](https://github.com/biliqiqi/baklab-setup/releases) for all versions and platforms.
 

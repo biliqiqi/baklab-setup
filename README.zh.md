@@ -1,4 +1,4 @@
-# BakLab Setup Tool
+# BakLab 设置程序
 
 [English](README.md) | 中文
 
@@ -25,7 +25,7 @@ mv baklab-setup-darwin-arm64 baklab-setup
 ```
 
 **Windows**
-- 下载 [baklab-setup-windows-amd64.exe](https://github.com/biliqiqi/baklab-setup/releases/latest)
+- 下载 [baklab-setup-windows-amd64.exe](https://github.com/biliqiqi/baklab-setup/releases/latest/download/baklab-setup-windows-amd64.exe)
 
 或访问 [Releases 页面](https://github.com/biliqiqi/baklab-setup/releases) 查看所有版本和平台。
 
