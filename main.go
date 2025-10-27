@@ -83,8 +83,15 @@ func main() {
 			log.Fatalf("Failed to create autocert export directory: %v", err)
 		}
 
-		exportedCertPath = filepath.Join(exportDir, "fullchain.pem")
-		exportedKeyPath = filepath.Join(exportDir, "privkey.pem")
+		var err error
+		exportedCertPath, err = filepath.Abs(filepath.Join(exportDir, "fullchain.pem"))
+		if err != nil {
+			log.Fatalf("Failed to get absolute path for exported certificate: %v", err)
+		}
+		exportedKeyPath, err = filepath.Abs(filepath.Join(exportDir, "privkey.pem"))
+		if err != nil {
+			log.Fatalf("Failed to get absolute path for exported key: %v", err)
+		}
 
 		log.Printf("Auto-cert mode enabled for domain: %s", *domain)
 		log.Printf("Certificate cache directory: %s", *cacheDir)
