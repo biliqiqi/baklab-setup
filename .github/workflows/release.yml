@@ -55,10 +55,6 @@ jobs:
         # Windows amd64
         GOOS=windows GOARCH=amd64 go build -o baklab-setup-windows-amd64.exe -ldflags="-s -w"
 
-    - name: Create checksums
-      run: |
-        sha256sum baklab-setup-* > checksums.txt
-
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
@@ -68,7 +64,6 @@ jobs:
           baklab-setup-darwin-amd64
           baklab-setup-darwin-arm64
           baklab-setup-windows-amd64.exe
-          checksums.txt
         body: |
           ## Installation
 
@@ -90,11 +85,6 @@ jobs:
           ### Using go install
           ```bash
           go install github.com/biliqiqi/baklab-setup@${{ github.ref_name }}
-          ```
-
-          ## Checksums
-          ```
-          $(cat checksums.txt)
           ```
         draft: false
         prerelease: false
