@@ -264,7 +264,7 @@ MIGRATION_FILE_DIR=./config/db/migrations
 DEFAULT_DATA_DIR=./config/defaults
 
 # Development Configuration
-HOST_PROXY=http://127.0.0.1:1008
+HOST_PROXY=
 APP_LOCAL_HOST=172.17.0.1
 
 # Setup Status
@@ -546,10 +546,6 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile.pg
-      args:
-        - HTTP_PROXY=${HOST_PROXY}
-        - HTTPS_PROXY=${HOST_PROXY}
-        - NO_PROXY=localhost,127.0.0.1
     container_name: "baklab-db"
     restart: always
     volumes:
