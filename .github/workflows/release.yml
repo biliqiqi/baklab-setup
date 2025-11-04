@@ -41,19 +41,19 @@ jobs:
     - name: Build binaries
       run: |
         # Linux amd64
-        GOOS=linux GOARCH=amd64 go build -o baklab-setup-linux-amd64 -ldflags="-s -w"
+        GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o baklab-setup-linux-amd64 -ldflags="-s -w"
 
         # Linux arm64
-        GOOS=linux GOARCH=arm64 go build -o baklab-setup-linux-arm64 -ldflags="-s -w"
+        GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o baklab-setup-linux-arm64 -ldflags="-s -w"
 
         # macOS amd64
-        GOOS=darwin GOARCH=amd64 go build -o baklab-setup-darwin-amd64 -ldflags="-s -w"
+        GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -o baklab-setup-darwin-amd64 -ldflags="-s -w"
 
         # macOS arm64 (Apple Silicon)
-        GOOS=darwin GOARCH=arm64 go build -o baklab-setup-darwin-arm64 -ldflags="-s -w"
+        GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -o baklab-setup-darwin-arm64 -ldflags="-s -w"
 
         # Windows amd64
-        GOOS=windows GOARCH=amd64 go build -o baklab-setup-windows-amd64.exe -ldflags="-s -w"
+        GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o baklab-setup-windows-amd64.exe -ldflags="-s -w"
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
