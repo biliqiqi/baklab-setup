@@ -564,6 +564,7 @@ services:
       - APP_DB_USER=${APP_DB_USER}
       - APP_DB_PASSWORD=${APP_DB_PASSWORD}
       - PGTZ=UTC
+      - DEBUG=${DEBUG:-false}
     ports:
       - ${DB_PORT}:5432
     healthcheck:
