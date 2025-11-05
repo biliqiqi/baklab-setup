@@ -10,7 +10,10 @@ else
     echo "Production mode: Setting log_statement to 'ddl'"
 fi
 
-# Update postgresql.conf with appropriate log level
-sed -i "s/log_statement = .*/log_statement = '$LOG_STATEMENT'/" /etc/postgresql/custom/postgresql.conf
+# Use ALTER SYSTEM to change log_statement (persists across restarts)
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres <<-EOSQL
+    ALTER SYSTEM SET log_statement = '$LOG_STATEMENT';
+    SELECT pg_reload_conf();
+EOSQL
 
 echo "PostgreSQL log configuration applied: log_statement=$LOG_STATEMENT"
