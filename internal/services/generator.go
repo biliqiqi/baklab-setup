@@ -257,7 +257,7 @@ SUPER_PASSWORD='{{ .AdminUser.Password }}'
 SUPER_USER_EMAIL='{{ .AdminUser.Email }}'
 
 # File Paths
-{{ if hasGeoFile . }}GEOIP_ENABLED=true
+{{ if hasGeoFile .SetupConfig }}GEOIP_ENABLED=true
 GEOIP_FILE=./geoip/GeoLite2-City.mmdb{{ else }}GEOIP_ENABLED=false
 GEOIP_FILE=./geoip/Country.mmdb{{ end }}
 I18N_FILE_DIR=./i18n
