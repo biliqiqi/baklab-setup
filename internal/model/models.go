@@ -121,6 +121,10 @@ type SetupConfig struct {
 	RevisionMode RevisionMode    `json:"revision_mode,omitempty"`
 }
 
+func (sc *SetupConfig) HasGeoFile() bool {
+	return sc.GoAccess.HasGeoFile
+}
+
 type SetupToken struct {
 	Token     string    `json:"token"`
 	ExpiresAt time.Time `json:"expires_at"`

@@ -257,8 +257,9 @@ SUPER_PASSWORD='{{ .AdminUser.Password }}'
 SUPER_USER_EMAIL='{{ .AdminUser.Email }}'
 
 # File Paths
-GEOIP_ENABLED=false
-GEOIP_FILE=./geoip/Country.mmdb
+{{ if hasGeoFile . }}GEOIP_ENABLED=true
+GEOIP_FILE=./geoip/GeoLite2-City.mmdb{{ else }}GEOIP_ENABLED=false
+GEOIP_FILE=./geoip/Country.mmdb{{ end }}
 I18N_FILE_DIR=./i18n
 MIGRATION_FILE_DIR=./config/db/migrations
 DEFAULT_DATA_DIR=./config/defaults
@@ -296,6 +297,9 @@ GID={{ .GroupID }}
 			return strings.Join(slice, sep)
 		},
 		"oauthProviders": g.buildOAuthProviders,
+		"hasGeoFile": func(cfg *model.SetupConfig) bool {
+			return cfg.HasGeoFile()
+		},
 	}
 
 	tmpl, err := template.New("env").Funcs(funcMap).Parse(envTemplate)
@@ -495,7 +499,8 @@ services:
       - ./keys:/app/keys
       {{- end }}
       - ./frontend_dist:/frontend:ro
-      - ./manage_static:/app/manage_static:ro
+      - ./manage_static:/app/manage_static:ro{{ if hasGeoFile . }}
+      - ./geoip:/app/geoip:ro{{ end }}
     command: >
       sh -c "
         if [ -f /frontend/.frontend-manifest.json ]; then
@@ -701,6 +706,9 @@ volumes:
 
 	dockerFuncMap := template.FuncMap{
 		"oauthProviders": g.buildOAuthProviders,
+		"hasGeoFile": func(cfg *model.SetupConfig) bool {
+			return cfg.HasGeoFile()
+		},
 	}
 
 	tmpl, err := template.New("docker").Funcs(dockerFuncMap).Parse(dockerComposeTemplate)
