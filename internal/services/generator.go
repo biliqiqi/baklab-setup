@@ -210,6 +210,9 @@ DEBUG={{ .App.Debug }}
 TEST=false
 APP_VERSION={{ if .App.Version }}{{ .App.Version }}{{ else }}latest{{ end }}
 
+# Go Runtime Configuration
+GOMAXPROCS=1
+
 # HTTPS Configuration
 # Set to true when using HTTPS (nginx SSL configuration)
 USE_HTTPS={{ .SSL.Enabled }}
@@ -434,7 +437,7 @@ services:
   app:
     image: ghcr.io/biliqiqi/baklab:$APP_VERSION
     container_name: "baklab-app"
-    restart: always
+    restart: on-failure:5
     environment:
       {{- if eq .Database.ServiceType "docker" }}
       DB_CONTAINER_NAME: "baklab-db"
@@ -492,6 +495,7 @@ services:
       SUPER_USER_EMAIL: $SUPER_USER_EMAIL
       USE_HTTPS: $USE_HTTPS
       FRONTEND_ORIGIN: $FRONTEND_ORIGIN
+      GOMAXPROCS: $GOMAXPROCS
     volumes:
       {{ if .App.JWTKeyFromFile -}}
       - {{ .App.JWTKeyFilePath }}:/app/keys/jwt-private.pem
