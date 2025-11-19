@@ -434,6 +434,29 @@ services:
         condition: service_completed_successfully
     restart: "no"
 
+  db-migrator:
+    image: ghcr.io/biliqiqi/baklab:$APP_VERSION
+    container_name: "baklab-db-migrator"
+    environment:
+      {{- if eq .Database.ServiceType "docker" }}
+      DB_HOST: "db"
+      DB_PORT: 5432
+      {{- else }}
+      DB_HOST: "{{.Database.Host}}"
+      DB_PORT: {{.Database.Port}}
+      {{- end }}
+      PG_USER: $PG_USER
+      PG_PASSWORD: $PG_PASSWORD
+      APP_DB_NAME: $APP_DB_NAME
+      MIGRATION_FILE_DIR: $MIGRATION_FILE_DIR
+    command: ["./baklab", "migrate"]
+    depends_on:
+      {{- if eq .Database.ServiceType "docker" }}
+      db:
+        condition: service_healthy
+      {{- end }}
+    restart: "no"
+
   app:
     image: ghcr.io/biliqiqi/baklab:$APP_VERSION
     container_name: "baklab-app"
@@ -525,6 +548,8 @@ services:
       "
     depends_on:
       static-initializer:
+        condition: service_completed_successfully
+      db-migrator:
         condition: service_completed_successfully
       {{- if eq .Database.ServiceType "docker" }}
       db:
