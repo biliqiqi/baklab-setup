@@ -266,10 +266,9 @@ class SetupApp {
 
                 const configResponse = await this.apiClient.getConfig();
                 if (configResponse.success && configResponse.data) {
-                    this.config.update(configResponse.data);
+                    this.configStore.clearLocalCache();
+                    this.configStore.setAll(configResponse.data);
                     this.config.saveToLocalCache();
-
-                    console.log('Imported configuration loaded and cached:', statusResponse.data.revision_mode);
                 }
             }
         } catch (error) {

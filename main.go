@@ -523,13 +523,16 @@ func runRegenMode() error {
 		return fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
+	outputDir := findAvailableOutputDir(absInputDir)
+
 	log.Printf("Starting regeneration mode...")
-	log.Printf("Directory: %s", absInputDir)
+	log.Printf("Input directory: %s", absInputDir)
+	log.Printf("Output directory: %s", outputDir)
 
 	jsonStorage := storage.NewJSONStorage(*dataDir)
 	setupService := services.NewSetupService(jsonStorage)
 	setupService.SetTemplatesFS(templatesFS)
-	setupService.SetOutputDir(absInputDir)
+	setupService.SetOutputDir(outputDir)
 
 	cfg, err := setupService.ImportFromOutputDir(absInputDir)
 	if err != nil {
@@ -544,8 +547,27 @@ func runRegenMode() error {
 		return fmt.Errorf("failed to generate config files: %w", err)
 	}
 
+	log.Printf("========================================")
 	log.Printf("Regeneration completed successfully!")
-	log.Printf("Files updated at: %s", absInputDir)
+	log.Printf("Input:  %s", absInputDir)
+	log.Printf("Output: %s", outputDir)
+	if absInputDir != outputDir {
+		log.Printf("NOTE: Output directory differs from input to avoid file conflicts")
+	}
+	log.Printf("========================================")
 
 	return nil
+}
+
+func findAvailableOutputDir(inputDir string) string {
+	suffix := 1
+	outputDir := fmt.Sprintf("%s-%d", inputDir, suffix)
+
+	for {
+		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+			return outputDir
+		}
+		suffix++
+		outputDir = fmt.Sprintf("%s-%d", inputDir, suffix)
+	}
 }

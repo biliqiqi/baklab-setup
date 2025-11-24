@@ -432,6 +432,31 @@ func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig
 		cfg.App.JWTKeyFilePath = ""
 	}
 
+	// SSL certificate paths - update to current output directory if files exist
+	// Note: SSL.Enabled and SSL.UseSetupCert are already loaded from config.json
+	if cfg.SSL.Enabled {
+		sslCertPath := fmt.Sprintf("%s/ssl/fullchain.pem", outputDir)
+		sslKeyPath := fmt.Sprintf("%s/ssl/privkey.pem", outputDir)
+
+		certExists := fileExists(sslCertPath)
+		keyExists := fileExists(sslKeyPath)
+
+		if certExists && keyExists {
+			cfg.SSL.CertPath = sslCertPath
+			cfg.SSL.KeyPath = sslKeyPath
+			log.Printf("Found SSL certificate at: %s", sslCertPath)
+			log.Printf("Found SSL key at: %s", sslKeyPath)
+		} else {
+			if !certExists {
+				log.Printf("Warning: SSL certificate not found at %s", sslCertPath)
+			}
+			if !keyExists {
+				log.Printf("Warning: SSL key not found at %s", sslKeyPath)
+			}
+		}
+
+	}
+
 	cfg.RevisionMode.ModifiedSteps = []string{
 		"Imported from previous output directory with full configuration",
 	}
@@ -493,4 +518,9 @@ func copyFile(src, dst string) error {
 
 	_, err = destFile.ReadFrom(sourceFile)
 	return err
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
