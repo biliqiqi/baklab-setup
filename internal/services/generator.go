@@ -712,7 +712,7 @@ services:
       app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      test: ["CMD-SHELL", "curl -H 'Host: $ROOT_DOMAIN_NAME' -f http://localhost:80/health"]
       interval: 30s
       timeout: 10s
       retries: 3

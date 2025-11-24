@@ -10,7 +10,12 @@ upstream backend{
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
-    server_name _;
+    server_name _ localhost 127.0.0.1 [::1];
+    location = /health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok";
+    }
     return 403;
 }
 
@@ -18,7 +23,7 @@ server {
 server {
     listen 443 ssl default_server;
     listen [::]:443 ssl default_server;
-    server_name _;
+    server_name _ localhost 127.0.0.1 [::1];
     ssl_certificate /etc/ssl/certs/server.crt;
     ssl_certificate_key /etc/ssl/private/server.key;
     ssl_reject_handshake on;
@@ -56,8 +61,9 @@ server {
 
 {{if .SSL.Enabled}}
     location /health {
-        proxy_pass http://backend;
         access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok";
     }
 
     location / {
@@ -69,6 +75,12 @@ server {
     #     root /var/www/certbot;
     # }
 {{else}}
+    location /health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok";
+    }
+
     location / {
         limit_req zone=one burst=20 nodelay;
         proxy_pass http://backend;
@@ -149,6 +161,12 @@ server {
         proxy_send_timeout 86400s;
     }
 
+    location = /health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok";
+    }
+
     location / {
         limit_req zone=one burst=20 nodelay;
         proxy_pass http://backend;
@@ -187,4 +205,3 @@ server {
     }
 }
 {{end}}
-
