@@ -39,6 +39,10 @@ func (s *SetupService) SetTemplatesFS(templatesFS embed.FS) {
 	s.generator.SetTemplatesFS(templatesSubFS)
 }
 
+func (s *SetupService) SetOutputDir(dir string) {
+	s.generator.SetOutputDir(dir)
+}
+
 func (s *SetupService) InitializeSetup(ipAddress string) (*model.SetupToken, error) {
 	// completed, err := s.storage.IsSetupCompleted()
 	// if err != nil {

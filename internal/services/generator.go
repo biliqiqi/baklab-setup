@@ -260,6 +260,16 @@ SUPER_USER='{{ .AdminUser.Username }}'
 SUPER_PASSWORD='{{ .AdminUser.Password }}'
 SUPER_USER_EMAIL='{{ .AdminUser.Email }}'
 
+# SMS Configuration (optional)
+SMS_PROVIDER=
+SMS_ENDPOINT=
+SMS_API_KEY=
+SMS_API_SECRET=
+SMS_SIGN_NAME=
+SMS_TEMPLATE_REGISTER=
+SMS_TEMPLATE_RESET=
+SMS_FROM=
+
 # File Paths
 {{ if hasGeoFile .SetupConfig }}GEOIP_ENABLED=true
 GEOIP_FILE=./geoip/GeoLite2-City.mmdb{{ else }}GEOIP_ENABLED=false

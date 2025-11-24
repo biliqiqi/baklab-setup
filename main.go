@@ -49,10 +49,18 @@ var (
 	timeout    = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
 	port       = flag.String("port", "8443", "HTTPS port to run the setup server on")
 	dataDir    = flag.String("data", "./data", "Directory to store setup data")
+	regen = flag.Bool("regen", false, "Regenerate all config files in-place from existing configuration (requires -input)")
 )
 
 func main() {
 	flag.Parse()
+
+	if *regen {
+		if err := runRegenMode(); err != nil {
+			log.Fatalf("Regeneration failed: %v", err)
+		}
+		return
+	}
 
 	devMode := os.Getenv("BAKLAB_DEV_MODE") == "true" || os.Getenv("BAKLAB_DEV") == "1"
 	if devMode {
@@ -502,5 +510,42 @@ func exportAutocertCertificate(manager *autocert.Manager, domain, certPath, keyP
 
 	log.Printf("Successfully exported certificate to: %s", certPath)
 	log.Printf("Successfully exported private key to: %s", keyPath)
+	return nil
+}
+
+func runRegenMode() error {
+	if *inputDir == "" {
+		return fmt.Errorf("-input flag is required when using -regen mode")
+	}
+
+	absInputDir, err := filepath.Abs(*inputDir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	log.Printf("Starting regeneration mode...")
+	log.Printf("Directory: %s", absInputDir)
+
+	jsonStorage := storage.NewJSONStorage(*dataDir)
+	setupService := services.NewSetupService(jsonStorage)
+	setupService.SetTemplatesFS(templatesFS)
+	setupService.SetOutputDir(absInputDir)
+
+	cfg, err := setupService.ImportFromOutputDir(absInputDir)
+	if err != nil {
+		return fmt.Errorf("failed to import configuration: %w", err)
+	}
+
+	log.Printf("Configuration imported successfully")
+	log.Printf("Domain: %s", cfg.App.DomainName)
+	log.Printf("SSL Enabled: %v", cfg.SSL.Enabled)
+
+	if err := setupService.GenerateConfigFiles(cfg); err != nil {
+		return fmt.Errorf("failed to generate config files: %w", err)
+	}
+
+	log.Printf("Regeneration completed successfully!")
+	log.Printf("Files updated at: %s", absInputDir)
+
 	return nil
 }
