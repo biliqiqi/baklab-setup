@@ -77,6 +77,11 @@ func (g *GeneratorService) ClearOutputDir() error {
 			continue
 		}
 
+		if entry.Name() == "ssl" {
+			log.Printf("Preserving existing SSL directory: %s", entryPath)
+			continue
+		}
+
 		if entry.Name() == "frontend_dist" {
 			if err := g.clearFrontendDistDir(entryPath); err != nil {
 				return fmt.Errorf("failed to clear frontend_dist directory: %w", err)
@@ -889,7 +894,6 @@ func (g *GeneratorService) generateRedisConfig(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to write redis.conf: %w", err)
 	}
 
-
 	return nil
 }
 
@@ -1132,7 +1136,6 @@ func (g *GeneratorService) HandleJWTKeyFile(cfg *model.SetupConfig) error {
 
 	return nil
 }
-
 
 // SaveSetupConfiguration saves the complete setup configuration to .baklab-setup directory
 func (g *GeneratorService) SaveSetupConfiguration(cfg *model.SetupConfig) error {

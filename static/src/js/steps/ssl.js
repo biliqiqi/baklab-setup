@@ -15,6 +15,7 @@ export function handleDomainSSLIntegration(config, i18n) {
         sslUseSetupCertCheckbox.checked = true;
         sslUseSetupCertCheckbox.readOnly = true;
         sslUseSetupCertCheckbox.disabled = true;
+        sslUseSetupCertCheckbox.dataset.autoSelected = 'true';
 
         const event = new Event('change');
         sslUseSetupCertCheckbox.dispatchEvent(event);
@@ -46,7 +47,7 @@ export function handleDomainSSLIntegration(config, i18n) {
                 'Automatically selected because you are using the setup program domain';
             autoNote.textContent = ` (${noteText})`;
         }
-    } else if (!appConfig.use_setup_domain) {
+    } else if (!appConfig.use_setup_domain && sslUseSetupCertCheckbox.dataset.autoSelected === 'true') {
         clearSSLAutoSelection(config);
     }
 }
@@ -57,6 +58,7 @@ export function clearSSLAutoSelection(config) {
         sslUseSetupCertCheckbox.checked = false;
         sslUseSetupCertCheckbox.readOnly = false;
         sslUseSetupCertCheckbox.disabled = false;
+        delete sslUseSetupCertCheckbox.dataset.autoSelected;
 
         const certPath = document.getElementById('ssl-cert-path');
         const keyPath = document.getElementById('ssl-key-path');
@@ -242,4 +244,3 @@ export function render(container, { config, navigation, apiClient, i18n }) {
 
         addFieldTouchListeners(container);
     }
-

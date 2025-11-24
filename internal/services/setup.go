@@ -96,7 +96,6 @@ func (s *SetupService) ValidateSetupToken(tokenStr string, ipAddress string) err
 		return fmt.Errorf("setup token has expired")
 	}
 
-
 	if token.IPAddress == "0.0.0.0" {
 		token.IPAddress = ipAddress
 		if err := s.storage.SaveSetupToken(token); err != nil {
@@ -301,7 +300,6 @@ func (s *SetupService) ResetSetup() error {
 	return nil
 }
 
-
 func (s *SetupService) ImportConfiguration(configData []byte) (*model.SetupConfig, error) {
 	var cfg model.SetupConfig
 	if err := json.Unmarshal(configData, &cfg); err != nil {
@@ -350,8 +348,8 @@ func (s *SetupService) isSanitizedConfig(cfg *model.SetupConfig) bool {
 
 	// Check if critical passwords are empty (likely sanitized)
 	return cfg.Database.AppPassword == "" &&
-		   cfg.Redis.Password == "" &&
-		   cfg.AdminUser.Password == ""
+		cfg.Redis.Password == "" &&
+		cfg.AdminUser.Password == ""
 }
 
 func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig, error) {
@@ -455,6 +453,10 @@ func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig
 			}
 		}
 
+		if cfg.SSL.UseSetupCert {
+			log.Printf("Disabling 'Use Setup Certificate' for imported configuration; manual paths will be preserved")
+			cfg.SSL.UseSetupCert = false
+		}
 	}
 
 	cfg.RevisionMode.ModifiedSteps = []string{
