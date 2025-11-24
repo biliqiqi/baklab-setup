@@ -55,6 +55,11 @@ server {
     server_name ${ROOT_DOMAIN_NAME};
 
 {{if .SSL.Enabled}}
+    location /health {
+        proxy_pass http://backend;
+        access_log off;
+    }
+
     location / {
         limit_req zone=one burst=20 nodelay;
         return 301 https://$host$request_uri;
