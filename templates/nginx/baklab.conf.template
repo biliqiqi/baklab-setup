@@ -81,7 +81,20 @@ server {
         return 200 "ok";
     }
 
+    # Dali service proxy - only when RANKING_HOST_NAME is set
+    if ($host = ${RANKING_HOST_NAME}) {
+        set $dali_proxy 1;
+    }
+
     location / {
+        if ($dali_proxy = 1) {
+            proxy_pass http://dali:80;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            break;
+        }
         limit_req zone=one burst=20 nodelay;
         proxy_pass http://backend;
         proxy_set_header Host $host;
@@ -202,6 +215,28 @@ server {
         add_header Pragma "no-cache";
         add_header Expires "0";
         add_header Service-Worker-Allowed "/";
+    }
+
+    # Dali service proxy - only when RANKING_HOST_NAME is set
+    if ($host = ${RANKING_HOST_NAME}) {
+        set $dali_proxy 1;
+    }
+
+    location / {
+        if ($dali_proxy = 1) {
+            proxy_pass http://dali:80;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            break;
+        }
+        limit_req zone=one burst=20 nodelay;
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 {{end}}

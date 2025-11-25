@@ -742,6 +742,21 @@ services:
     depends_on:
       nginx:
         condition: service_healthy{{ end }}
+  dali:
+    image: ghcr.io/biliqiqi/dali-web:latest
+    container_name: "baklab-dali"
+    restart: always
+    environment:
+      - STATIC_HOST={{ if .SSL.Enabled }}https{{ else }}http{{ end }}://$STATIC_HOST_NAME
+      - API_HOST={{ if .SSL.Enabled }}https{{ else }}http{{ end }}://$SERVER_DOMAIN_NAME
+      - API_PATH_PREFIX=
+      - BAKLAB_WEB_HOST={{ if .SSL.Enabled }}https{{ else }}http{{ end }}://$SERVER_DOMAIN_NAME
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 volumes:
   static-data:{{ if eq .Database.ServiceType "docker" }}
