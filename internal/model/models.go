@@ -49,6 +49,17 @@ type SMTPConfig struct {
 	Sender   string `json:"sender" validate:"required,email"`
 }
 
+type SMSConfig struct {
+	Provider         string `json:"provider"`
+	Endpoint         string `json:"endpoint"`
+	APIKey           string `json:"api_key"`
+	APISecret        string `json:"api_secret"`
+	SignName         string `json:"sign_name"`
+	TemplateRegister string `json:"template_register"`
+	TemplateReset    string `json:"template_reset"`
+	From             string `json:"from"`
+}
+
 type GoAccessConfig struct {
 	Enabled          bool   `json:"enabled"`
 	GeoDBPath        string `json:"geo_db_path"`
@@ -78,6 +89,7 @@ type OAuthConfig struct {
 type AppConfig struct {
 	DomainName        string      `json:"domain_name" validate:"required"`
 	StaticHostName    string      `json:"static_host_name" validate:"required"`
+	RankingHostName   string      `json:"ranking_host_name"`
 	BrandName         string      `json:"brand_name" validate:"required"`
 	DefaultLang       string      `json:"default_lang" validate:"required"`
 	Version           string      `json:"version"`
@@ -112,6 +124,7 @@ type SetupConfig struct {
 	Database     DatabaseConfig  `json:"database"`
 	Redis        RedisConfig     `json:"redis"`
 	SMTP         SMTPConfig      `json:"smtp"`
+	SMS          SMSConfig       `json:"sms"`
 	App          AppConfig       `json:"app"`
 	OAuth        OAuthConfig     `json:"oauth"`
 	AdminUser    AdminUserConfig `json:"admin_user"`

@@ -241,7 +241,7 @@ NGINX_SSL_PORT=443
 
 # Service Configuration
 STATIC_HOST_NAME='{{ .App.StaticHostName }}'
-RANKING_HOST_NAME=''
+{{ if .App.RankingHostName }}RANKING_HOST_NAME='{{ .App.RankingHostName }}'{{ else }}RANKING_HOST_NAME=''{{ end }}
 
 # OAuth Configuration (optional)
 {{ if .OAuth.GoogleClientID }}GOOGLE_CLIENT_ID='{{ .OAuth.GoogleClientID }}'{{ else }}GOOGLE_CLIENT_ID={{ end }}
@@ -266,14 +266,14 @@ SUPER_PASSWORD='{{ .AdminUser.Password }}'
 SUPER_USER_EMAIL='{{ .AdminUser.Email }}'
 
 # SMS Configuration (optional)
-SMS_PROVIDER=
-SMS_ENDPOINT=
-SMS_API_KEY=
-SMS_API_SECRET=
-SMS_SIGN_NAME=
-SMS_TEMPLATE_REGISTER=
-SMS_TEMPLATE_RESET=
-SMS_FROM=
+{{ if .SMS.Provider }}SMS_PROVIDER='{{ .SMS.Provider }}'{{ else }}SMS_PROVIDER={{ end }}
+{{ if .SMS.Endpoint }}SMS_ENDPOINT='{{ .SMS.Endpoint }}'{{ else }}SMS_ENDPOINT={{ end }}
+{{ if .SMS.APIKey }}SMS_API_KEY='{{ .SMS.APIKey }}'{{ else }}SMS_API_KEY={{ end }}
+{{ if .SMS.APISecret }}SMS_API_SECRET='{{ .SMS.APISecret }}'{{ else }}SMS_API_SECRET={{ end }}
+{{ if .SMS.SignName }}SMS_SIGN_NAME='{{ .SMS.SignName }}'{{ else }}SMS_SIGN_NAME={{ end }}
+{{ if .SMS.TemplateRegister }}SMS_TEMPLATE_REGISTER='{{ .SMS.TemplateRegister }}'{{ else }}SMS_TEMPLATE_REGISTER={{ end }}
+{{ if .SMS.TemplateReset }}SMS_TEMPLATE_RESET='{{ .SMS.TemplateReset }}'{{ else }}SMS_TEMPLATE_RESET={{ end }}
+{{ if .SMS.From }}SMS_FROM='{{ .SMS.From }}'{{ else }}SMS_FROM={{ end }}
 
 # File Paths
 {{ if hasGeoFile .SetupConfig }}GEOIP_ENABLED=true

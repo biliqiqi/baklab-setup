@@ -204,7 +204,8 @@ server {
         add_header Service-Worker-Allowed "/";
     }
 }
-
+{{end}}
+{{if .App.RankingHostName}}
 # Dali service - only when RANKING_HOST_NAME is set
 server {
     listen 80;

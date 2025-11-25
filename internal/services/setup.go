@@ -387,6 +387,19 @@ func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig
 	cfg.App.OAuth.GithubSecret = envVars["GITHUB_CLIENT_SECRET"]
 	cfg.App.CloudflareSecret = envVars["CLOUDFLARE_SECRET"]
 
+	if rankingHost := envVars["RANKING_HOST_NAME"]; rankingHost != "" {
+		cfg.App.RankingHostName = rankingHost
+	}
+
+	cfg.SMS.Provider = envVars["SMS_PROVIDER"]
+	cfg.SMS.Endpoint = envVars["SMS_ENDPOINT"]
+	cfg.SMS.APIKey = envVars["SMS_API_KEY"]
+	cfg.SMS.APISecret = envVars["SMS_API_SECRET"]
+	cfg.SMS.SignName = envVars["SMS_SIGN_NAME"]
+	cfg.SMS.TemplateRegister = envVars["SMS_TEMPLATE_REGISTER"]
+	cfg.SMS.TemplateReset = envVars["SMS_TEMPLATE_RESET"]
+	cfg.SMS.From = envVars["SMS_FROM"]
+
 	log.Printf("Populated passwords: DB_App=%v, Redis=%v, Admin=%v",
 		cfg.Database.AppPassword != "",
 		cfg.Redis.Password != "",
