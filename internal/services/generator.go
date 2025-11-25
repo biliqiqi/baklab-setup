@@ -696,7 +696,9 @@ services:
     environment:
       - APP_LOCAL_HOST=app
       - APP_PORT=$APP_PORT
+      - SERVER_DOMAIN_NAME=$SERVER_DOMAIN_NAME
       - ROOT_DOMAIN_NAME=$ROOT_DOMAIN_NAME
+      - RANKING_HOST_NAME=$RANKING_HOST_NAME
     volumes:
       - static-data:/data/static
       - ./frontend_dist:/data/static/frontend:ro
