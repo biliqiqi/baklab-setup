@@ -386,34 +386,22 @@ func (g *GeneratorService) handleSSLCertificates(cfg *model.SetupConfig) error {
 	certDest := filepath.Join(sslDir, "fullchain.pem")
 	keyDest := filepath.Join(sslDir, "privkey.pem")
 
-	if err := copyFile(cfg.SSL.CertPath, certDest); err != nil {
+	if err := g.copyFile(cfg.SSL.CertPath, certDest); err != nil {
 		return fmt.Errorf("failed to copy certificate: %w", err)
 	}
-	if err := copyFile(cfg.SSL.KeyPath, keyDest); err != nil {
+	if err := g.copyFile(cfg.SSL.KeyPath, keyDest); err != nil {
 		return fmt.Errorf("failed to copy key: %w", err)
 	}
 
 	log.Printf("Copied SSL certificates to output/ssl/")
-
-	// Get absolute path of output directory
-	absOutputDir, err := filepath.Abs(g.outputDir)
-	if err != nil {
-		return fmt.Errorf("failed to get absolute output path: %w", err)
-	}
-
-	// Update config to use absolute paths
-	cfg.SSL.CertPath = filepath.Join(absOutputDir, "ssl", "fullchain.pem")
-	cfg.SSL.KeyPath = filepath.Join(absOutputDir, "ssl", "privkey.pem")
-
-	log.Printf("Updated SSL paths to absolute:")
-	log.Printf("  Cert: %s", cfg.SSL.CertPath)
-	log.Printf("  Key:  %s", cfg.SSL.KeyPath)
+	log.Printf("  Cert: %s -> ./ssl/fullchain.pem", cfg.SSL.CertPath)
+	log.Printf("  Key:  %s -> ./ssl/privkey.pem", cfg.SSL.KeyPath)
 
 	return nil
 }
 
 func (g *GeneratorService) GenerateDockerConfig(cfg *model.SetupConfig) error {
-	// Handle SSL certificates - copy to output and update paths to absolute
+	// Handle SSL certificates - copy to output/ssl directory
 	if cfg.SSL.Enabled {
 		if err := g.handleSSLCertificates(cfg); err != nil {
 			return fmt.Errorf("failed to handle SSL certificates: %w", err)
@@ -705,8 +693,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates/baklab.conf.template:/etc/nginx/templates/baklab.conf.template:ro
       - ./nginx/logs:/etc/nginx/logs{{if .SSL.Enabled}}
-      - {{.SSL.CertPath}}:/etc/ssl/certs/server.crt:ro
-      - {{.SSL.KeyPath}}:/etc/ssl/private/server.key:ro{{end}}
+      - ./ssl/fullchain.pem:/etc/ssl/certs/server.crt:ro
+      - ./ssl/privkey.pem:/etc/ssl/private/server.key:ro{{end}}
     ports:{{if .SSL.Enabled}}
       - $NGINX_SSL_PORT:443{{end}}
       - $NGINX_PORT:80
@@ -734,8 +722,8 @@ services:
     volumes:
       - /var/www/goaccess:/var/www/goaccess:rw{{ if .GoAccess.HasGeoFile }}
       - ./geoip:/data/geoip:ro{{ end }}{{if .SSL.Enabled}}
-      - {{.SSL.CertPath}}:/etc/ssl/certs/server.crt:ro
-      - {{.SSL.KeyPath}}:/etc/ssl/private/server.key:ro{{end}}
+      - ./ssl/fullchain.pem:/etc/ssl/certs/server.crt:ro
+      - ./ssl/privkey.pem:/etc/ssl/private/server.key:ro{{end}}
       - ./goaccess.conf:/etc/goaccess/goaccess.conf
       - ./nginx/logs:/data/logs
       - ./manage_static:/data/static
