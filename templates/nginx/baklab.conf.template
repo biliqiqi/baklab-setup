@@ -203,15 +203,6 @@ server {
         add_header Expires "0";
         add_header Service-Worker-Allowed "/";
     }
-
-    location / {
-        limit_req zone=one burst=20 nodelay;
-        proxy_pass http://backend;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
 }
 
 # Dali service - only when RANKING_HOST_NAME is set
