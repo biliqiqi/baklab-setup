@@ -43,6 +43,7 @@ function loadConfigReview(config, i18n) {
                 ${configData.app.jwt_key_from_file ? `
                     <p><strong data-i18n="setup.review.fields.jwt_file_path"></strong>: ${configData.app.jwt_key_file_path}</p>
                 ` : ''}
+                <p><strong data-i18n="setup.review.fields.reverse_proxy"></strong>: ${configData.reverse_proxy?.type || 'caddy'}</p>
 
                 <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.ssl"></h4>
                 <p><strong data-i18n="setup.review.fields.ssl_enabled"></strong>: ${configData.ssl.enabled ? (i18n ? i18n.t('common.yes') : 'Yes') : (i18n ? i18n.t('common.no') : 'No')}</p>

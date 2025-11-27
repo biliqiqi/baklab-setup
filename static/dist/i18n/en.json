@@ -436,6 +436,7 @@
         "cors_origins": "CORS Origins",
         "jwt_mode": "JWT Key Mode",
         "jwt_file_path": "JWT Key File Path",
+        "reverse_proxy": "Reverse Proxy",
         "google_oauth": "Google OAuth",
         "github_oauth": "GitHub OAuth",
         "oauth_enabled": "Enabled",

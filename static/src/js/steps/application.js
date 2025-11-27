@@ -102,8 +102,8 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
                         id="reverse-proxy-type"
                         name="reverse_proxy_type"
                     >
-                        <option value="caddy" ${!config.get('reverse_proxy')?.type || config.get('reverse_proxy')?.type === 'caddy' ? 'selected' : ''}>Caddy (推荐)</option>
-                        <option value="nginx" ${config.get('reverse_proxy')?.type === 'nginx' ? 'selected' : ''}>Nginx (兼容)</option>
+                        <option value="caddy" ${!config.get('reverse_proxy')?.type || config.get('reverse_proxy')?.type === 'caddy' ? 'selected' : ''}>Caddy</option>
+                        <option value="nginx" ${config.get('reverse_proxy')?.type === 'nginx' ? 'selected' : ''}>Nginx</option>
                     </select>
                     <div class="form-help" data-i18n="setup.app.reverse_proxy_help"></div>
                 </div>

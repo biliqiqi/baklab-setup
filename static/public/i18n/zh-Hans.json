@@ -436,6 +436,7 @@
         "cors_origins": "CORS 来源",
         "jwt_mode": "JWT 密钥模式",
         "jwt_file_path": "JWT 密钥文件路径",
+        "reverse_proxy": "反向代理",
         "google_oauth": "Google OAuth",
         "github_oauth": "GitHub OAuth",
         "oauth_enabled": "已启用",
