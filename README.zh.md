@@ -98,15 +98,20 @@ output/
 ├── redis/                       # Redis 配置（如使用 Docker 模式）
 │   ├── redis.conf
 │   └── users.acl                # ACL 用户配置
-├── nginx/                       # Nginx 反向代理配置
+├── caddy/                       # Caddy 反向代理配置（默认）
+│   ├── Caddyfile
+│   └── logs/
+├── nginx/                       # Nginx 反向代理配置（可选）
 │   ├── nginx.conf
 │   └── templates/
-│       └── webapp.conf.template
+│       └── baklab.conf.template
 ├── keys/                        # 应用密钥文件
 ├── geoip/                       # GeoIP 数据目录
 ├── manage_static/               # 静态文件管理
-└── static/                      # 静态资源目录
+└── frontend_dist/               # 前端静态资源目录
 ```
+
+**注意**：setup 工具默认使用 Caddy 作为反向代理。您可以通过配置界面切换到 Nginx，或使用 `-reverse-proxy` 参数配合 `-regen` 进行切换。
 
 ## 部署流程
 
@@ -136,22 +141,52 @@ curl -I https://your-domain.com
 ## 命令行选项
 
 ```bash
-./setup -h
+./baklab-setup -h
 ```
 
-必需选项：
+**必需选项：**
 - `-domain string`: HTTPS 访问域名（必需）
 
-证书选项（二选一）：
+**证书选项**（二选一）：
 - `-auto-cert`: 自动从 Let's Encrypt 获取证书
 - `-cert string` + `-key string`: 使用现有证书和私钥文件
 
-可选选项：
-- `-cache-dir string`: 自动证书缓存目录（默认 "./cert-cache"）
+**可选选项：**
 - `-port string`: HTTPS 端口（默认 "8443"）
+- `-timeout duration`: 最大会话时长（默认 "30m"）
 - `-data string`: 数据目录（默认 "./data"）
-- `-static string`: 静态文件目录（默认 "./static"）
-- `-timeout duration`: 最大会话时长（默认 30m）
+- `-cache-dir string`: 自动证书缓存目录（默认 "./cert-cache"）
+
+**导入/导出选项：**
+- `-config string`: 导入已清理的 config.json 文件（密码已移除，可安全分享）
+- `-input string`: 从之前的 output 目录导入（包含密码和敏感数据）
+- `-output string`: 指定生成文件的输出目录（可选，默认为自动生成的路径）
+
+**重新生成选项：**
+- `-regen`: 从现有配置重新生成所有配置文件（需要配合 `-input`）
+- `-reverse-proxy string`: 覆盖反向代理类型：'caddy' 或 'nginx'（仅与 `-regen` 一起使用）
+
+### 示例
+
+**使用自动证书进行基本设置：**
+```bash
+./baklab-setup -auto-cert -domain=example.com
+```
+
+**使用现有证书设置：**
+```bash
+./baklab-setup -cert=/path/to/cert.pem -key=/path/to/key.pem -domain=example.com
+```
+
+**使用不同的反向代理重新生成配置：**
+```bash
+./baklab-setup -regen -input=./output -reverse-proxy=nginx
+```
+
+**导入之前的配置进行编辑：**
+```bash
+./baklab-setup -input=./output -domain=example.com -auto-cert
+```
 
 ## 开发说明
 

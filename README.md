@@ -98,15 +98,20 @@ output/
 ├── redis/                       # Redis configuration (if using Docker mode)
 │   ├── redis.conf
 │   └── users.acl                # ACL user configuration
-├── nginx/                       # Nginx reverse proxy configuration
+├── caddy/                       # Caddy reverse proxy configuration (default)
+│   ├── Caddyfile
+│   └── logs/
+├── nginx/                       # Nginx reverse proxy configuration (alternative)
 │   ├── nginx.conf
 │   └── templates/
-│       └── webapp.conf.template
+│       └── baklab.conf.template
 ├── keys/                        # Application key files
 ├── geoip/                       # GeoIP data directory
 ├── manage_static/               # Static file management
-└── static/                      # Static resources directory
+└── frontend_dist/               # Frontend static resources directory
 ```
+
+**Note**: The setup tool defaults to Caddy as the reverse proxy. You can switch to Nginx through the configuration interface or use the `-reverse-proxy` flag with `-regen`.
 
 ## Deployment Process
 
@@ -136,24 +141,52 @@ curl -I https://your-domain.com
 ## Command Line Options
 
 ```bash
-./setup -h
+./baklab-setup -h
 ```
 
-Required options:
+**Required options:**
 - `-domain string`: Domain name for HTTPS access (REQUIRED)
 
-Certificate options (choose one):
+**Certificate options** (choose one):
 - `-auto-cert`: Automatically obtain certificate from Let's Encrypt
 - `-cert string` + `-key string`: Use existing certificate and private key files
 
-Optional options:
-- `-cache-dir string`: Auto certificate cache directory (default "./cert-cache")
+**Optional options:**
 - `-port string`: HTTPS port (default "8443")
+- `-timeout duration`: Maximum session duration (default "30m")
 - `-data string`: Data directory (default "./data")
-- `-static string`: Static files directory (default "./static")
-- `-timeout duration`: Maximum session duration (default 30m)
-- `-config string`: Import existing config.json file for revision
+- `-cache-dir string`: Auto certificate cache directory (default "./cert-cache")
+
+**Import/Export options:**
+- `-config string`: Import sanitized config.json file (passwords removed, safe to share)
 - `-input string`: Import from previous output directory (includes passwords and sensitive data)
+- `-output string`: Specify output directory for generated files (optional, defaults to auto-generated path)
+
+**Regeneration options:**
+- `-regen`: Regenerate all config files in-place from existing configuration (requires `-input`)
+- `-reverse-proxy string`: Override reverse proxy type: 'caddy' or 'nginx' (only used with `-regen`)
+
+### Examples
+
+**Basic setup with auto certificate:**
+```bash
+./baklab-setup -auto-cert -domain=example.com
+```
+
+**Setup with existing certificates:**
+```bash
+./baklab-setup -cert=/path/to/cert.pem -key=/path/to/key.pem -domain=example.com
+```
+
+**Regenerate config with different reverse proxy:**
+```bash
+./baklab-setup -regen -input=./output -reverse-proxy=nginx
+```
+
+**Import previous configuration for editing:**
+```bash
+./baklab-setup -input=./output -domain=example.com -auto-cert
+```
 
 ## Development Notes
 

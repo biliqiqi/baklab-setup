@@ -214,7 +214,10 @@
       
       "version_label": "Application Version",
       "version_help": "Select BakLab application version",
-      
+
+      "reverse_proxy_label": "Reverse Proxy",
+      "reverse_proxy_help": "Choose reverse proxy server. Caddy is recommended for simpler configuration and modern features. Nginx is available for compatibility with existing setups.",
+
       "cors_label": "CORS Allow Origins",
       "cors_placeholder": "https://app.example.com\nhttps://admin.example.com",
       "cors_help": "Frontend URLs allowed to access your API. One per line. Format: https://domain.com or http://localhost:3000",

@@ -76,6 +76,10 @@ type SSLConfig struct {
 	UseSetupCert bool   `json:"use_setup_cert"`
 }
 
+type ReverseProxyConfig struct {
+	Type string `json:"type" validate:"required,oneof=caddy nginx"`
+}
+
 type OAuthConfig struct {
 	GoogleEnabled  bool   `json:"google_enabled"`
 	GoogleClientID string `json:"google_client_id" validate:"required_if=GoogleEnabled true"`
@@ -121,17 +125,18 @@ type RevisionMode struct {
 }
 
 type SetupConfig struct {
-	Database     DatabaseConfig  `json:"database"`
-	Redis        RedisConfig     `json:"redis"`
-	SMTP         SMTPConfig      `json:"smtp"`
-	SMS          SMSConfig       `json:"sms"`
-	App          AppConfig       `json:"app"`
-	OAuth        OAuthConfig     `json:"oauth"`
-	AdminUser    AdminUserConfig `json:"admin_user"`
-	GoAccess     GoAccessConfig  `json:"goaccess"`
-	SSL          SSLConfig       `json:"ssl"`
-	CurrentStep  string          `json:"current_step,omitempty"`
-	RevisionMode RevisionMode    `json:"revision_mode,omitempty"`
+	Database     DatabaseConfig     `json:"database"`
+	Redis        RedisConfig        `json:"redis"`
+	SMTP         SMTPConfig         `json:"smtp"`
+	SMS          SMSConfig          `json:"sms"`
+	App          AppConfig          `json:"app"`
+	OAuth        OAuthConfig        `json:"oauth"`
+	AdminUser    AdminUserConfig    `json:"admin_user"`
+	GoAccess     GoAccessConfig     `json:"goaccess"`
+	SSL          SSLConfig          `json:"ssl"`
+	ReverseProxy ReverseProxyConfig `json:"reverse_proxy"`
+	CurrentStep  string             `json:"current_step,omitempty"`
+	RevisionMode RevisionMode       `json:"revision_mode,omitempty"`
 }
 
 func (sc *SetupConfig) HasGeoFile() bool {

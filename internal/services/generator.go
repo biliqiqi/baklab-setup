@@ -77,6 +77,13 @@ func (g *GeneratorService) ClearOutputDir() error {
 			continue
 		}
 
+		if entry.Name() == "caddy" {
+			if err := g.clearCaddyDir(entryPath); err != nil {
+				return fmt.Errorf("failed to clear caddy directory: %w", err)
+			}
+			continue
+		}
+
 		if entry.Name() == "ssl" {
 			log.Printf("Preserving existing SSL directory: %s", entryPath)
 			continue
@@ -111,6 +118,31 @@ func (g *GeneratorService) clearNginxDir(nginxPath string) error {
 
 		if entry.Name() == "logs" {
 			log.Printf("Skipping nginx/logs directory to avoid permission issues")
+			continue
+		}
+
+		if err := os.RemoveAll(entryPath); err != nil {
+			return fmt.Errorf("failed to remove %s: %w", entryPath, err)
+		}
+	}
+
+	return nil
+}
+
+func (g *GeneratorService) clearCaddyDir(caddyPath string) error {
+	entries, err := os.ReadDir(caddyPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	for _, entry := range entries {
+		entryPath := filepath.Join(caddyPath, entry.Name())
+
+		if entry.Name() == "data" || entry.Name() == "config" || entry.Name() == "logs" {
+			log.Printf("Skipping caddy/%s directory to avoid permission issues", entry.Name())
 			continue
 		}
 
@@ -685,6 +717,11 @@ services:
     volumes:
       - ./frontend_dist:/output
     restart: "no"
+{{- $proxyType := .ReverseProxy.Type }}
+{{- if eq $proxyType "" }}
+{{- $proxyType = "caddy" }}
+{{- end }}
+{{- if eq $proxyType "nginx" }}
   nginx:
     image: nginx:1.25.2-alpine
     container_name: "baklab-nginx"
@@ -714,7 +751,39 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s{{ if .GoAccess.Enabled }}
+      start_period: 10s
+{{- else }}
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: "baklab-caddy"
+    restart: always
+    environment:
+      - APP_PORT=$APP_PORT
+      - SERVER_DOMAIN_NAME=$SERVER_DOMAIN_NAME
+      - ROOT_DOMAIN_NAME=$ROOT_DOMAIN_NAME
+      - RANKING_HOST_NAME=$RANKING_HOST_NAME
+    volumes:
+      - static-data:/data/static
+      - ./frontend_dist:/data/static/frontend:ro
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      - ./caddy/logs:/var/log/caddy{{if .SSL.Enabled}}
+      - ./ssl/fullchain.pem:/etc/ssl/certs/server.crt:ro
+      - ./ssl/privkey.pem:/etc/ssl/private/server.key:ro{{end}}
+    ports:{{if .SSL.Enabled}}
+      - $NGINX_SSL_PORT:443{{end}}
+      - $NGINX_PORT:80
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+{{- end }}{{ if .GoAccess.Enabled }}
   goaccess:
     image: allinurl/goaccess:1.7.2
     container_name: "baklab-goaccess"
@@ -733,13 +802,22 @@ services:
       - ./ssl/fullchain.pem:/etc/ssl/certs/server.crt:ro
       - ./ssl/privkey.pem:/etc/ssl/private/server.key:ro{{end}}
       - ./goaccess.conf:/etc/goaccess/goaccess.conf
+{{- if eq $proxyType "nginx" }}
       - ./nginx/logs:/data/logs
+{{- else }}
+      - ./caddy/logs:/data/logs
+{{- end }}
       - ./manage_static:/data/static
     ports:
       - "9880:9880"
     depends_on:
+{{- if eq $proxyType "nginx" }}
       nginx:
-        condition: service_healthy{{ end }}
+        condition: service_healthy
+{{- else }}
+      caddy:
+        condition: service_healthy
+{{- end }}{{ end }}
   dali:
     image: ghcr.io/biliqiqi/dali-web:latest
     container_name: "baklab-dali"
@@ -761,6 +839,10 @@ volumes:
   db-data:{{ end }}{{ if eq .Redis.ServiceType "docker" }}
   redis-data:
   redis-config:{{ end }}
+{{- if ne $proxyType "nginx" }}
+  caddy-data:
+  caddy-config:
+{{- end }}
 `
 
 	dockerFuncMap := template.FuncMap{
@@ -796,8 +878,22 @@ volumes:
 		}
 	}
 
-	if err := g.GenerateNginxConfig(cfg); err != nil {
-		return fmt.Errorf("failed to generate nginx config: %w", err)
+	proxyType := cfg.ReverseProxy.Type
+	if proxyType == "" {
+		proxyType = "caddy"
+	}
+
+	switch proxyType {
+	case "nginx":
+		if err := g.GenerateNginxConfig(cfg); err != nil {
+			return fmt.Errorf("failed to generate nginx config: %w", err)
+		}
+	case "caddy":
+		if err := g.GenerateCaddyConfig(cfg); err != nil {
+			return fmt.Errorf("failed to generate caddy config: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported reverse proxy type: %s", proxyType)
 	}
 
 	if err := g.generateAdditionalConfigs(cfg); err != nil {
@@ -952,6 +1048,64 @@ func (g *GeneratorService) GenerateNginxConfig(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to execute baklab.conf template: %w", err)
 	}
 
+	return nil
+}
+
+func (g *GeneratorService) GenerateCaddyConfig(cfg *model.SetupConfig) error {
+	caddyDir := filepath.Join(g.outputDir, "caddy")
+	if err := os.MkdirAll(caddyDir, 0755); err != nil {
+		return fmt.Errorf("failed to create caddy directory: %w", err)
+	}
+
+	logsDir := filepath.Join(caddyDir, "logs")
+	if err := os.MkdirAll(logsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create caddy logs directory: %w", err)
+	}
+
+	caddyfileTemplateContent, err := fs.ReadFile(g.templatesFS, "caddy/Caddyfile.template")
+	if err != nil {
+		return fmt.Errorf("failed to read Caddyfile.template: %w", err)
+	}
+
+	funcMap := template.FuncMap{
+		"rootDomain": func(domain string) string {
+			domain = strings.TrimSuffix(domain, ".")
+
+			if domain == "" {
+				return domain
+			}
+
+			parts := strings.Split(domain, ".")
+
+			if len(parts) < 2 {
+				return domain
+			}
+
+			return strings.Join(parts[len(parts)-2:], ".")
+		},
+	}
+
+	tmpl, err := template.New("caddyfile").Funcs(funcMap).Parse(string(caddyfileTemplateContent))
+	if err != nil {
+		return fmt.Errorf("failed to parse Caddyfile template: %w", err)
+	}
+
+	caddyfilePath := filepath.Join(caddyDir, "Caddyfile")
+	file, err := os.Create(caddyfilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create Caddyfile: %w", err)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("Warning: failed to close Caddyfile: %v", err)
+		}
+	}()
+
+	if err := tmpl.Execute(file, cfg); err != nil {
+		return fmt.Errorf("failed to execute Caddyfile template: %w", err)
+	}
+
+	log.Printf("Generated Caddyfile at %s", caddyfilePath)
 	return nil
 }
 

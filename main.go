@@ -44,12 +44,14 @@ var (
 	autoCert   = flag.Bool("auto-cert", false, "Automatically obtain and renew SSL certificates from Let's Encrypt")
 	cacheDir   = flag.String("cache-dir", "./cert-cache", "Directory to cache auto-generated certificates")
 
-	configFile = flag.String("config", "", "Import sanitized config.json file (passwords removed, safe to share)")
-	inputDir   = flag.String("input", "", "Import from previous output directory (includes passwords and sensitive data)")
-	timeout    = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
-	port       = flag.String("port", "8443", "HTTPS port to run the setup server on")
-	dataDir    = flag.String("data", "./data", "Directory to store setup data")
-	regen = flag.Bool("regen", false, "Regenerate all config files in-place from existing configuration (requires -input)")
+	configFile    = flag.String("config", "", "Import sanitized config.json file (passwords removed, safe to share)")
+	inputDir      = flag.String("input", "", "Import from previous output directory (includes passwords and sensitive data)")
+	outputDir     = flag.String("output", "", "Specify output directory for generated files (optional, defaults to auto-generated path)")
+	timeout       = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
+	port          = flag.String("port", "8443", "HTTPS port to run the setup server on")
+	dataDir       = flag.String("data", "./data", "Directory to store setup data")
+	regen         = flag.Bool("regen", false, "Regenerate all config files in-place from existing configuration (requires -input)")
+	reverseProxy  = flag.String("reverse-proxy", "", "Override reverse proxy type: 'caddy' or 'nginx' (optional, only used with -regen)")
 )
 
 func main() {
@@ -518,30 +520,52 @@ func runRegenMode() error {
 		return fmt.Errorf("-input flag is required when using -regen mode")
 	}
 
+	if *reverseProxy != "" && *reverseProxy != "caddy" && *reverseProxy != "nginx" {
+		return fmt.Errorf("invalid -reverse-proxy value: %s (must be 'caddy' or 'nginx')", *reverseProxy)
+	}
+
 	absInputDir, err := filepath.Abs(*inputDir)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	outputDir := findAvailableOutputDir(absInputDir)
+	var absOutputDir string
+	if *outputDir != "" {
+		absOutputDir, err = filepath.Abs(*outputDir)
+		if err != nil {
+			return fmt.Errorf("failed to get absolute path for output: %w", err)
+		}
+
+		if _, err := os.Stat(absOutputDir); err == nil {
+			return fmt.Errorf("output directory already exists: %s (choose a different path or remove it first)", absOutputDir)
+		}
+	} else {
+		absOutputDir = findAvailableOutputDir(absInputDir)
+	}
 
 	log.Printf("Starting regeneration mode...")
 	log.Printf("Input directory: %s", absInputDir)
-	log.Printf("Output directory: %s", outputDir)
+	log.Printf("Output directory: %s", absOutputDir)
 
 	jsonStorage := storage.NewJSONStorage(*dataDir)
 	setupService := services.NewSetupService(jsonStorage)
 	setupService.SetTemplatesFS(templatesFS)
-	setupService.SetOutputDir(outputDir)
+	setupService.SetOutputDir(absOutputDir)
 
 	cfg, err := setupService.ImportFromOutputDir(absInputDir)
 	if err != nil {
 		return fmt.Errorf("failed to import configuration: %w", err)
 	}
 
+	if *reverseProxy != "" {
+		log.Printf("Overriding reverse proxy type: %s -> %s", cfg.ReverseProxy.Type, *reverseProxy)
+		cfg.ReverseProxy.Type = *reverseProxy
+	}
+
 	log.Printf("Configuration imported successfully")
 	log.Printf("Domain: %s", cfg.App.DomainName)
 	log.Printf("SSL Enabled: %v", cfg.SSL.Enabled)
+	log.Printf("Reverse Proxy: %s", cfg.ReverseProxy.Type)
 
 	if err := setupService.GenerateConfigFiles(cfg); err != nil {
 		return fmt.Errorf("failed to generate config files: %w", err)
@@ -550,8 +574,8 @@ func runRegenMode() error {
 	log.Printf("========================================")
 	log.Printf("Regeneration completed successfully!")
 	log.Printf("Input:  %s", absInputDir)
-	log.Printf("Output: %s", outputDir)
-	if absInputDir != outputDir {
+	log.Printf("Output: %s", absOutputDir)
+	if absInputDir != absOutputDir {
 		log.Printf("NOTE: Output directory differs from input to avoid file conflicts")
 	}
 	log.Printf("========================================")

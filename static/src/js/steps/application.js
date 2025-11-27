@@ -96,6 +96,17 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
                     <div class="form-help" data-i18n="setup.app.version_help"></div>
                 </div>
 
+                <div class="form-group">
+                    <label for="reverse-proxy-type" data-i18n="setup.app.reverse_proxy_label"></label>
+                    <select
+                        id="reverse-proxy-type"
+                        name="reverse_proxy_type"
+                    >
+                        <option value="caddy" ${!config.get('reverse_proxy')?.type || config.get('reverse_proxy')?.type === 'caddy' ? 'selected' : ''}>Caddy (推荐)</option>
+                        <option value="nginx" ${config.get('reverse_proxy')?.type === 'nginx' ? 'selected' : ''}>Nginx (兼容)</option>
+                    </select>
+                    <div class="form-help" data-i18n="setup.app.reverse_proxy_help"></div>
+                </div>
 
                 <div class="form-group">
                     <label for="app-cors" data-i18n="setup.app.cors_label"></label>
@@ -240,6 +251,9 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
                         jwt_key_from_file: jwtKeyFromFile,
                         jwt_key_file_path: jwtKeyFilePath,
                         use_setup_domain: document.getElementById('use-setup-domain').checked
+                    },
+                    reverse_proxy: {
+                        type: document.getElementById('reverse-proxy-type').value
                     }
                 });
 

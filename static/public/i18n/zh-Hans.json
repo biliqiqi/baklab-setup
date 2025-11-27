@@ -214,7 +214,10 @@
       
       "version_label": "应用程序版本",
       "version_help": "选择 BakLab 应用版本",
-      
+
+      "reverse_proxy_label": "反向代理",
+      "reverse_proxy_help": "选择反向代理服务器。推荐使用 Caddy，配置更简洁，功能更现代。Nginx 提供兼容性支持。",
+
       "cors_label": "CORS 允许来源",
       "cors_placeholder": "https://app.example.com\nhttps://admin.example.com", 
       "cors_help": "允许访问您API的前端URL。每行一个。格式：https://domain.com 或 http://localhost:3000",
