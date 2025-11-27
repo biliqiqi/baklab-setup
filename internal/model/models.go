@@ -94,6 +94,8 @@ type AppConfig struct {
 	DomainName        string      `json:"domain_name" validate:"required"`
 	StaticHostName    string      `json:"static_host_name" validate:"required"`
 	RankingHostName   string      `json:"ranking_host_name"`
+	DizkazDomainName  string      `json:"dizkaz_domain_name"`
+	DizkazSitePath    string      `json:"dizkaz_site_path"`
 	BrandName         string      `json:"brand_name" validate:"required"`
 	DefaultLang       string      `json:"default_lang" validate:"required"`
 	Version           string      `json:"version"`

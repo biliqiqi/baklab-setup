@@ -274,6 +274,8 @@ NGINX_SSL_PORT=443
 # Service Configuration
 STATIC_HOST_NAME='{{ .App.StaticHostName }}'
 {{ if .App.RankingHostName }}RANKING_HOST_NAME='{{ .App.RankingHostName }}'{{ else }}RANKING_HOST_NAME=''{{ end }}
+{{ if .App.DizkazDomainName }}DIZKAZ_DOMAIN_NAME='{{ .App.DizkazDomainName }}'{{ else }}DIZKAZ_DOMAIN_NAME=''{{ end }}
+{{ if .App.DizkazSitePath }}DIZKAZ_SITE_PATH='{{ .App.DizkazSitePath }}'{{ else }}DIZKAZ_SITE_PATH=''{{ end }}
 
 # OAuth Configuration (optional)
 {{ if .OAuth.GoogleClientID }}GOOGLE_CLIENT_ID='{{ .OAuth.GoogleClientID }}'{{ else }}GOOGLE_CLIENT_ID={{ end }}
@@ -406,12 +408,21 @@ func (g *GeneratorService) handleSSLCertificates(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to create ssl directory: %w", err)
 	}
 
-	// Check if certificate files exist
-	if _, err := os.Stat(cfg.SSL.CertPath); err != nil {
+	// Check if certificate files exist and are not empty
+	certInfo, err := os.Stat(cfg.SSL.CertPath)
+	if err != nil {
 		return fmt.Errorf("certificate file not found at %s: %w", cfg.SSL.CertPath, err)
 	}
-	if _, err := os.Stat(cfg.SSL.KeyPath); err != nil {
+	if certInfo.Size() == 0 {
+		return fmt.Errorf("certificate file is empty: %s", cfg.SSL.CertPath)
+	}
+
+	keyInfo, err := os.Stat(cfg.SSL.KeyPath)
+	if err != nil {
 		return fmt.Errorf("key file not found at %s: %w", cfg.SSL.KeyPath, err)
+	}
+	if keyInfo.Size() == 0 {
+		return fmt.Errorf("key file is empty: %s", cfg.SSL.KeyPath)
 	}
 
 	// Copy certificate files to output/ssl
@@ -425,9 +436,26 @@ func (g *GeneratorService) handleSSLCertificates(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to copy key: %w", err)
 	}
 
+	// Verify copied files are not empty
+	certDestInfo, err := os.Stat(certDest)
+	if err != nil {
+		return fmt.Errorf("failed to verify copied certificate: %w", err)
+	}
+	if certDestInfo.Size() == 0 {
+		return fmt.Errorf("copied certificate file is empty: %s", certDest)
+	}
+
+	keyDestInfo, err := os.Stat(keyDest)
+	if err != nil {
+		return fmt.Errorf("failed to verify copied key: %w", err)
+	}
+	if keyDestInfo.Size() == 0 {
+		return fmt.Errorf("copied key file is empty: %s", keyDest)
+	}
+
 	log.Printf("Copied SSL certificates to output/ssl/")
-	log.Printf("  Cert: %s -> ./ssl/fullchain.pem", cfg.SSL.CertPath)
-	log.Printf("  Key:  %s -> ./ssl/privkey.pem", cfg.SSL.KeyPath)
+	log.Printf("  Cert: %s (%d bytes) -> ./ssl/fullchain.pem", cfg.SSL.CertPath, certInfo.Size())
+	log.Printf("  Key:  %s (%d bytes) -> ./ssl/privkey.pem", cfg.SSL.KeyPath, keyInfo.Size())
 
 	return nil
 }
@@ -762,10 +790,13 @@ services:
       - SERVER_DOMAIN_NAME=$SERVER_DOMAIN_NAME
       - ROOT_DOMAIN_NAME=$ROOT_DOMAIN_NAME
       - RANKING_HOST_NAME=$RANKING_HOST_NAME
+      - DIZKAZ_DOMAIN_NAME=$DIZKAZ_DOMAIN_NAME
+      - DIZKAZ_SITE_PATH=$DIZKAZ_SITE_PATH
     volumes:
       - static-data:/data/static
       - ./frontend_dist:/data/static/frontend:ro
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/optional:/etc/caddy/optional:rw
       - caddy-data:/data
       - caddy-config:/config
       - ./caddy/logs:/var/log/caddy{{if .SSL.Enabled}}
@@ -774,6 +805,17 @@ services:
     ports:{{if .SSL.Enabled}}
       - $NGINX_SSL_PORT:443{{end}}
       - $NGINX_PORT:80
+    entrypoint: >
+      sh -c '
+        if [ -n "$$DIZKAZ_DOMAIN_NAME" ] && [ "$$DIZKAZ_DOMAIN_NAME" != "" ]; then
+          echo "Enabling DIZKAZ domain configuration for: $$DIZKAZ_DOMAIN_NAME"
+          cp /etc/caddy/optional/dizkaz.caddy.template /etc/caddy/optional/dizkaz.caddy
+        else
+          echo "DIZKAZ domain not configured, skipping"
+          rm -f /etc/caddy/optional/dizkaz.caddy
+        fi &&
+        caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+      '
     depends_on:
       app:
         condition: service_healthy
@@ -1062,6 +1104,11 @@ func (g *GeneratorService) GenerateCaddyConfig(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to create caddy logs directory: %w", err)
 	}
 
+	optionalDir := filepath.Join(caddyDir, "optional")
+	if err := os.MkdirAll(optionalDir, 0755); err != nil {
+		return fmt.Errorf("failed to create caddy optional directory: %w", err)
+	}
+
 	caddyfileTemplateContent, err := fs.ReadFile(g.templatesFS, "caddy/Caddyfile.template")
 	if err != nil {
 		return fmt.Errorf("failed to read Caddyfile.template: %w", err)
@@ -1106,6 +1153,34 @@ func (g *GeneratorService) GenerateCaddyConfig(cfg *model.SetupConfig) error {
 	}
 
 	log.Printf("Generated Caddyfile at %s", caddyfilePath)
+
+	dizkazTemplateContent, err := fs.ReadFile(g.templatesFS, "caddy/dizkaz.caddy.template")
+	if err != nil {
+		return fmt.Errorf("failed to read dizkaz.caddy.template: %w", err)
+	}
+
+	dizkazTmpl, err := template.New("dizkaz").Parse(string(dizkazTemplateContent))
+	if err != nil {
+		return fmt.Errorf("failed to parse dizkaz.caddy template: %w", err)
+	}
+
+	dizkazPath := filepath.Join(optionalDir, "dizkaz.caddy.template")
+	dizkazFile, err := os.Create(dizkazPath)
+	if err != nil {
+		return fmt.Errorf("failed to create dizkaz.caddy.template: %w", err)
+	}
+	defer func() {
+		if err := dizkazFile.Close(); err != nil {
+			log.Printf("Warning: failed to close dizkaz.caddy.template: %v", err)
+		}
+	}()
+
+	if err := dizkazTmpl.Execute(dizkazFile, cfg); err != nil {
+		return fmt.Errorf("failed to execute dizkaz.caddy template: %w", err)
+	}
+
+	log.Printf("Generated dizkaz.caddy.template at %s", dizkazPath)
+
 	return nil
 }
 

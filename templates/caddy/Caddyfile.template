@@ -4,7 +4,6 @@
 
 {
 	admin off
-	auto_https off
 }
 {{if .SSL.Enabled}}
 # HTTP server for health check
@@ -124,3 +123,5 @@ www.{{rootDomain .App.DomainName}} {
 	}
 }
 {{end}}
+
+import /etc/caddy/optional/*.caddy

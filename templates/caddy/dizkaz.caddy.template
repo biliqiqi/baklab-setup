@@ -1,0 +1,72 @@
+# Dizkaz dedicated domain
+{$DIZKAZ_DOMAIN_NAME} {
+	encode gzip zstd
+
+	log {
+		output file /var/log/caddy/dizkaz-access.log {
+			roll_size 100mb
+			roll_keep 10
+		}
+		format json
+	}
+
+	@health path /health
+	handle @health {
+		respond "ok" 200
+	}
+
+	handle_path /static/* {
+		root * /data/static
+		file_server
+		header Cache-Control "public, immutable, max-age=31536000"
+	}
+
+	handle /favicon.ico {
+		root * /data/static
+		rewrite * /favicon.ico
+		file_server
+		header Cache-Control "public, immutable, max-age=31536000"
+	}
+
+	handle /robots.txt {
+		root * /data/static
+		rewrite * /robots.txt
+		file_server
+		header Cache-Control "public, max-age=604800"
+	}
+
+	handle_path /sw.js {
+		root * /data/static/frontend
+		file_server
+		header Cache-Control "no-cache, no-store, must-revalidate"
+		header Pragma "no-cache"
+		header Expires "0"
+		header Service-Worker-Allowed "/"
+	}
+
+	@sse {
+		path /api/events*
+	}
+	handle @sse {
+		rewrite * /z/{$DIZKAZ_SITE_PATH}{uri}
+		reverse_proxy app:3000 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+
+			flush_interval -1
+
+			transport http {
+				read_timeout 24h
+				write_timeout 24h
+			}
+		}
+	}
+
+	handle {
+		rewrite * /z/{$DIZKAZ_SITE_PATH}{uri}
+		reverse_proxy app:3000 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+}
