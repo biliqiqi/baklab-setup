@@ -391,6 +391,14 @@ func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig
 		cfg.App.RankingHostName = rankingHost
 	}
 
+	if dizkazDomain := envVars["DIZKAZ_DOMAIN_NAME"]; dizkazDomain != "" {
+		cfg.App.DizkazDomainName = dizkazDomain
+	}
+
+	if dizkazPath := envVars["DIZKAZ_SITE_PATH"]; dizkazPath != "" {
+		cfg.App.DizkazSitePath = dizkazPath
+	}
+
 	cfg.SMS.Provider = envVars["SMS_PROVIDER"]
 	cfg.SMS.Endpoint = envVars["SMS_ENDPOINT"]
 	cfg.SMS.APIKey = envVars["SMS_API_KEY"]
