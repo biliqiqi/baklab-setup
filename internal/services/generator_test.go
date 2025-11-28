@@ -25,6 +25,7 @@ func TestGenerateCaddyConfig(t *testing.T) {
 		App: model.AppConfig{
 			DomainName:      "app.example.com",
 			RankingHostName: "ranking.example.com",
+			HandleWWW:       true,
 		},
 		SSL: model.SSLConfig{
 			Enabled: false,
@@ -101,7 +102,7 @@ func TestGenerateCaddyConfigWithSSL(t *testing.T) {
 		t.Errorf("Generated Caddyfile should contain SSL/TLS configuration")
 	}
 
-	if !strings.Contains(contentStr, "redir https://example.com") {
+	if !strings.Contains(contentStr, "redir https://{host}{uri}") {
 		t.Errorf("Generated Caddyfile should contain HTTPS redirect")
 	}
 }
