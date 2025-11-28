@@ -654,7 +654,7 @@ services:
       context: .
       dockerfile: ./Dockerfile.pg
     container_name: "baklab-db"
-    restart: always
+    restart: unless-stopped
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./db/initdb:/docker-entrypoint-initdb.d/
@@ -753,7 +753,7 @@ services:
   nginx:
     image: nginx:1.25.2-alpine
     container_name: "baklab-nginx"
-    restart: always
+    restart: unless-stopped
     environment:
       - APP_LOCAL_HOST=app
       - APP_PORT=$APP_PORT
@@ -784,7 +784,11 @@ services:
   caddy:
     image: caddy:2.8-alpine
     container_name: "baklab-caddy"
-    restart: always
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+      - 223.5.5.5
     environment:
       - APP_PORT=$APP_PORT
       - SERVER_DOMAIN_NAME=$SERVER_DOMAIN_NAME
@@ -802,9 +806,10 @@ services:
       - ./caddy/logs:/var/log/caddy{{if .SSL.Enabled}}
       - ./ssl/fullchain.pem:/etc/ssl/certs/server.crt:ro
       - ./ssl/privkey.pem:/etc/ssl/private/server.key:ro{{end}}
-    ports:{{if .SSL.Enabled}}
-      - $NGINX_SSL_PORT:443{{end}}
-      - $NGINX_PORT:80
+    ports:
+      - $NGINX_PORT:80{{if .SSL.Enabled}}
+      - $NGINX_SSL_PORT:443
+      - $NGINX_SSL_PORT:443/udp{{end}}
     entrypoint: >
       sh -c '
         if [ -n "$$DIZKAZ_DOMAIN_NAME" ] && [ "$$DIZKAZ_DOMAIN_NAME" != "" ]; then
@@ -829,7 +834,7 @@ services:
   goaccess:
     image: allinurl/goaccess:1.7.2
     container_name: "baklab-goaccess"
-    restart: always{{if .SSL.Enabled}}
+    restart: unless-stopped{{if .SSL.Enabled}}
     entrypoint: 'sh -c "/bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880 --ssl-cert=$$SSL_CERT --ssl-key=$$SSL_KEY"'
     environment:
       - TZ="China/Shanghai"
@@ -863,7 +868,7 @@ services:
   dali:
     image: ghcr.io/biliqiqi/dali-web:latest
     container_name: "baklab-dali"
-    restart: always
+    restart: unless-stopped
     environment:
       - STATIC_HOST={{ if .SSL.Enabled }}https{{ else }}http{{ end }}://$STATIC_HOST_NAME
       - API_HOST={{ if .SSL.Enabled }}https{{ else }}http{{ end }}://$SERVER_DOMAIN_NAME
