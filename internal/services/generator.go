@@ -814,6 +814,8 @@ services:
       - $NGINX_SSL_PORT:443/udp{{end}}
     entrypoint: >
       sh -c '
+        mkdir -p /var/log/caddy &&
+        touch /var/log/caddy/access.log &&
         if [ -n "$$DIZKAZ_DOMAIN_NAME" ] && [ "$$DIZKAZ_DOMAIN_NAME" != "" ]; then
           echo "Enabling DIZKAZ domain configuration for: $$DIZKAZ_DOMAIN_NAME"
           cp /etc/caddy/optional/dizkaz.caddy.template /etc/caddy/optional/dizkaz.caddy
@@ -837,13 +839,15 @@ services:
     image: allinurl/goaccess:1.7.2
     container_name: "baklab-goaccess"
     restart: unless-stopped{{if .SSL.Enabled}}
-    entrypoint: 'sh -c "/bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880 --ssl-cert=$$SSL_CERT --ssl-key=$$SSL_KEY"'
+    entrypoint: 'sh -c "/bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880 --ssl-cert=$$SSL_CERT --ssl-key=$$SSL_KEY --log-format=$$LOG_FORMAT"'
     environment:
+      - LOG_FORMAT={{- if eq $proxyType "nginx" }}COMMON{{- else }}CADDY{{- end }}
       - TZ="China/Shanghai"
       - SSL_CERT=/etc/ssl/certs/server.crt
       - SSL_KEY=/etc/ssl/private/server.key{{else}}
-    entrypoint: 'sh -c "/bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880"'
+    entrypoint: 'sh -c "/bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880 --log-format=$$LOG_FORMAT"'
     environment:
+      - LOG_FORMAT={{- if eq $proxyType "nginx" }}COMMON{{- else }}CADDY{{- end }}
       - TZ="China/Shanghai"{{end}}
     volumes:
       - /var/www/goaccess:/var/www/goaccess:rw{{ if .GoAccess.HasGeoFile }}
@@ -866,7 +870,13 @@ services:
 {{- else }}
       caddy:
         condition: service_healthy
-{{- end }}{{ end }}
+{{- end }}
+    healthcheck:
+      test: ["CMD", "sh", "-c", "pgrep -f goaccess && test -s /data/static/report.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s{{ end }}
   dali:
     image: ghcr.io/biliqiqi/dali-web:latest
     container_name: "baklab-dali"
@@ -1212,7 +1222,7 @@ func (g *GeneratorService) GenerateJWTKey() ([]byte, error) {
 
 func (g *GeneratorService) generateAdditionalConfigs(cfg *model.SetupConfig) error {
 	if cfg.GoAccess.Enabled {
-		if err := g.generateGoAccessConfig(); err != nil {
+		if err := g.generateGoAccessConfig(cfg); err != nil {
 			return fmt.Errorf("failed to generate goaccess config: %w", err)
 		}
 	}
@@ -1228,11 +1238,24 @@ func (g *GeneratorService) generateAdditionalConfigs(cfg *model.SetupConfig) err
 	return nil
 }
 
-func (g *GeneratorService) generateGoAccessConfig() error {
-	goAccessConfig := `time-format %T
+func (g *GeneratorService) generateGoAccessConfig(cfg *model.SetupConfig) error {
+	proxyType := cfg.ReverseProxy.Type
+	if proxyType == "" {
+		proxyType = "caddy"
+	}
+
+	var goAccessConfig string
+	if proxyType == "caddy" {
+		goAccessConfig = `time-format %H:%M:%S
+date-format %d/%b/%Y
+log-format %h %^ %^ [%d:%t %^] "%r" %s %b
+geoip-database /data/geoip/GeoLite2-City.mmdb`
+	} else {
+		goAccessConfig = `time-format %T
 date-format %d/%b/%Y
 log_format %h - %^ [%d:%t %^]  %s "%r" %b "%R" "%u" "%^"
 geoip-database /data/geoip/GeoLite2-City.mmdb`
+	}
 
 	filePath := filepath.Join(g.outputDir, "goaccess.conf")
 	if err := os.WriteFile(filePath, []byte(goAccessConfig), 0644); err != nil {
