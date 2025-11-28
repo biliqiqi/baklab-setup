@@ -103,7 +103,7 @@ server {
     }
 
     location /robots.txt {
-        alias /data/static/robots.txt;
+        alias /data/custom_static/robots.txt;
         expires 7d;
         add_header Cache-Control "public";
     }
@@ -191,7 +191,7 @@ server {
     }
 
     location /robots.txt {
-        alias /data/static/robots.txt;
+        alias /data/custom_static/robots.txt;
         expires 7d;
         add_header Cache-Control "public";
     }

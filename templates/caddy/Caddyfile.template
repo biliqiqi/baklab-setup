@@ -71,7 +71,7 @@ www.{{rootDomain .App.DomainName}} {
 	}
 
 	handle /robots.txt {
-		root * /data/static
+		root * /data/custom_static
 		rewrite * /robots.txt
 		file_server
 		header Cache-Control "public, max-age=604800"

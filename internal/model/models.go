@@ -106,6 +106,8 @@ type AppConfig struct {
 	JWTKeyFromFile    bool        `json:"jwt_key_from_file"`
 	HasJWTKeyFile     bool        `json:"has_jwt_key_file"`
 	JWTKeyTempPath    string      `json:"jwt_key_temp_path"`
+	RobotsTxtPath     string      `json:"robots_txt_path"`
+	HasCustomRobotsTxt bool       `json:"has_custom_robots_txt"`
 	OAuth             OAuthConfig `json:"oauth"`
 	CloudflareSiteKey string      `json:"cloudflare_site_key"`
 	CloudflareSecret  string      `json:"cloudflare_secret"`

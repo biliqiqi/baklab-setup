@@ -451,6 +451,17 @@ func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig
 		cfg.App.JWTKeyFilePath = ""
 	}
 
+	robotsTxtPath := fmt.Sprintf("%s/static/robots.txt", outputDir)
+	if fileInfo, err := os.Stat(robotsTxtPath); err == nil && !fileInfo.IsDir() {
+		cfg.App.RobotsTxtPath = robotsTxtPath
+		cfg.App.HasCustomRobotsTxt = true
+		log.Printf("Found custom robots.txt at: %s", robotsTxtPath)
+	} else {
+		cfg.App.RobotsTxtPath = ""
+		cfg.App.HasCustomRobotsTxt = false
+		log.Printf("Custom robots.txt not found at %s, will use template", robotsTxtPath)
+	}
+
 	// SSL certificate paths - update to current output directory if files exist
 	// Note: SSL.Enabled and SSL.UseSetupCert are already loaded from config.json
 	if cfg.SSL.Enabled {

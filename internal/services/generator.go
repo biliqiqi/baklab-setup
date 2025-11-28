@@ -763,6 +763,7 @@ services:
     volumes:
       - static-data:/data/static
       - ./frontend_dist:/data/static/frontend:ro
+      - ./static:/data/custom_static:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates/baklab.conf.template:/etc/nginx/templates/baklab.conf.template:ro
       - ./nginx/logs:/etc/nginx/logs{{if .SSL.Enabled}}
@@ -799,6 +800,7 @@ services:
     volumes:
       - static-data:/data/static
       - ./frontend_dist:/data/static/frontend:ro
+      - ./static:/data/custom_static:ro
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/optional:/etc/caddy/optional:rw
       - caddy-data:/data
@@ -1297,6 +1299,26 @@ func (g *GeneratorService) createRequiredDirectories(cfg *model.SetupConfig) err
 		return fmt.Errorf("failed to create frontend_dist directory: %w", err)
 	}
 
+	staticDir := filepath.Join(g.outputDir, "static")
+	if err := os.MkdirAll(staticDir, 0755); err != nil {
+		return fmt.Errorf("failed to create static directory: %w", err)
+	}
+
+	robotsTxtPath := filepath.Join(staticDir, "robots.txt")
+	if _, err := os.Stat(robotsTxtPath); os.IsNotExist(err) {
+		if cfg.App.HasCustomRobotsTxt && cfg.App.RobotsTxtPath != "" {
+			if err := g.copyFile(cfg.App.RobotsTxtPath, robotsTxtPath); err != nil {
+				return fmt.Errorf("failed to copy custom robots.txt: %w", err)
+			}
+			log.Printf("Copied custom robots.txt from %s to %s", cfg.App.RobotsTxtPath, robotsTxtPath)
+		} else {
+			if err := g.copyFileFromFS("static/robots.txt", robotsTxtPath); err != nil {
+				return fmt.Errorf("failed to copy robots.txt template: %w", err)
+			}
+			log.Printf("Copied robots.txt template to %s", robotsTxtPath)
+		}
+	}
+
 	gitkeepPath := filepath.Join(manageStaticDir, ".gitkeep")
 	if err := os.WriteFile(gitkeepPath, []byte{}, 0644); err != nil {
 		return fmt.Errorf("failed to create .gitkeep: %w", err)
@@ -1458,6 +1480,7 @@ func (g *GeneratorService) sanitizeConfigForSaving(cfg model.SetupConfig) model.
 	// Clear temporary file paths that may contain sensitive data
 	sanitized.GoAccess.GeoTempPath = ""
 	sanitized.App.JWTKeyTempPath = ""
+	sanitized.App.RobotsTxtPath = ""
 
 	// Add security notice to revision mode
 	sanitized.RevisionMode.ModifiedSteps = append(sanitized.RevisionMode.ModifiedSteps,
