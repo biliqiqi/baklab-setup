@@ -96,6 +96,7 @@ type AppConfig struct {
 	RankingHostName   string      `json:"ranking_host_name"`
 	DizkazDomainName  string      `json:"dizkaz_domain_name"`
 	DizkazSitePath    string      `json:"dizkaz_site_path"`
+	HandleWWW         bool        `json:"handle_www"`
 	BrandName         string      `json:"brand_name" validate:"required"`
 	DefaultLang       string      `json:"default_lang" validate:"required"`
 	Version           string      `json:"version"`

@@ -52,6 +52,7 @@ var (
 	dataDir       = flag.String("data", "./data", "Directory to store setup data")
 	regen         = flag.Bool("regen", false, "Regenerate all config files in-place from existing configuration (requires -input)")
 	reverseProxy  = flag.String("reverse-proxy", "", "Override reverse proxy type: 'caddy' or 'nginx' (optional, only used with -regen)")
+	withWWW       = flag.Bool("with-www", false, "Enable www to non-www redirect handling")
 )
 
 func main() {
@@ -560,6 +561,11 @@ func runRegenMode() error {
 	if *reverseProxy != "" {
 		log.Printf("Overriding reverse proxy type: %s -> %s", cfg.ReverseProxy.Type, *reverseProxy)
 		cfg.ReverseProxy.Type = *reverseProxy
+	}
+
+	if *withWWW {
+		log.Printf("Enabling www redirect handling")
+		cfg.App.HandleWWW = true
 	}
 
 	log.Printf("Configuration imported successfully")

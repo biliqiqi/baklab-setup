@@ -19,20 +19,24 @@
 	}
 }
 
+{{if .App.HandleWWW}}
 # Redirect www to non-www
 www.{{rootDomain .App.DomainName}}:443 {
 	tls /etc/ssl/certs/server.crt /etc/ssl/private/server.key
-	redir https://{{rootDomain .App.DomainName}}{uri} permanent
+	redir https://{{.App.DomainName}}{uri} permanent
 }
+{{end}}
 
 # Main application server
 {{.App.DomainName}}:443 {
 	tls /etc/ssl/certs/server.crt /etc/ssl/private/server.key
 {{else}}
+{{if .App.HandleWWW}}
 # Redirect www to non-www
 www.{{rootDomain .App.DomainName}} {
-	redir http://{{rootDomain .App.DomainName}}{uri} permanent
+	redir http://{{.App.DomainName}}{uri} permanent
 }
+{{end}}
 
 # Main application server
 {{.App.DomainName}} {
@@ -90,12 +94,15 @@ www.{{rootDomain .App.DomainName}} {
 		reverse_proxy app:3000 {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
+			header_up Connection "upgrade"
 
 			flush_interval -1
 
 			transport http {
 				read_timeout 24h
 				write_timeout 24h
+				read_buffer 0
+				write_buffer 0
 			}
 		}
 	}
