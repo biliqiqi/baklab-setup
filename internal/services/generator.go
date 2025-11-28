@@ -524,7 +524,7 @@ services:
   app:
     image: ghcr.io/biliqiqi/baklab:$APP_VERSION
     container_name: "baklab-app"
-    restart: on-failure:5
+    restart: unless-stopped
     environment:
       {{- if eq .Database.ServiceType "docker" }}
       DB_CONTAINER_NAME: "baklab-db"
