@@ -51,21 +51,20 @@
 		reverse_proxy app:3000 {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
-			header_up X-Forwarded-Uri /z/{$DIZKAZ_SITE_PATH}{uri}
-
-			rewrite /z/{$DIZKAZ_SITE_PATH}{uri}
+			header_up Connection "upgrade"
 
 			flush_interval -1
 
 			transport http {
 				read_timeout 24h
 				write_timeout 24h
+				read_buffer 0
+				write_buffer 0
 			}
 		}
 	}
 
 	handle {
-		rewrite * /z/{$DIZKAZ_SITE_PATH}{uri}
 		reverse_proxy app:3000 {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
