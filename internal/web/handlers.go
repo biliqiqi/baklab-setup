@@ -549,7 +549,6 @@ func (h *SetupHandlers) CheckGeoFileStatusHandler(w http.ResponseWriter, r *http
 	}, http.StatusOK)
 }
 
-
 func (h *SetupHandlers) GetCurrentCertPathsHandler(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"success": true,
@@ -594,18 +593,17 @@ func (h *SetupHandlers) renderSetupPage(w http.ResponseWriter, r *http.Request) 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="icon" type="image/png" href="/static/logo-icon.png">
-    <link rel="stylesheet" href="/static/styles.css?v=1.2">
+    <link rel="stylesheet" href="/static/styles.css?v=1.5">
 </head>
 <body>
     <div id="app">
         <h1>BakLab Setup</h1>
         <p>%s</p>
     </div>
-    <script type="module" src="/static/app.js?v=1.4"></script>
+    <script type="module" src="/static/app.js?v=1.5"></script>
 </body>
 </html>`, pageTitle, loadingMessage)
 	if err != nil {
 		log.Printf("Warning: failed to write setup page: %v", err)
 	}
 }
-

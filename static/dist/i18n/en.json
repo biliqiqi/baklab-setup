@@ -230,6 +230,9 @@
       "debug_label": "Enable Debug Mode",
       "debug_help": "Only enable for development environments",
 
+      "frontend_separation_label": "Enable Frontend/Backend Separation",
+      "frontend_separation_help": "Keep disabled when server-side rendering is required.",
+
       "ssr_section_title": "Server-Side Rendering",
       "ssr_section_description": "Configure frontend resources for server-side rendering. When enabled, the server will inject frontend JavaScript and CSS files into rendered HTML pages for hydration.",
 
@@ -434,6 +437,7 @@
         "version": "Version",
         "language": "Language",
         "cors_origins": "CORS Origins",
+        "frontend_separation": "Frontend/Backend Separation",
         "jwt_mode": "JWT Key Mode",
         "jwt_file_path": "JWT Key File Path",
         "reverse_proxy": "Reverse Proxy",

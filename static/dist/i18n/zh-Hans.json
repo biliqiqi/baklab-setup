@@ -230,6 +230,9 @@
       "debug_label": "启用调试模式",
       "debug_help": "仅在开发环境中启用",
 
+      "frontend_separation_label": "启用前后端分离",
+      "frontend_separation_help": "如果有服务端渲染需求则需要保持关闭",
+
       "ssr_section_title": "服务端渲染",
       "ssr_section_description": "配置用于服务端渲染的前端资源。启用后，服务器将在渲染的 HTML 页面中注入前端 JavaScript 和 CSS 文件以便水合。",
 
@@ -434,6 +437,7 @@
         "version": "版本",
         "language": "语言",
         "cors_origins": "CORS 来源",
+        "frontend_separation": "前后端分离",
         "jwt_mode": "JWT 密钥模式",
         "jwt_file_path": "JWT 密钥文件路径",
         "reverse_proxy": "反向代理",

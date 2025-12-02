@@ -37,25 +37,35 @@ var staticFS embed.FS
 //go:embed templates
 var templatesFS embed.FS
 
-var (
-	certFile   = flag.String("cert", "", "TLS certificate file path (required unless -auto-cert is used)")
-	keyFile    = flag.String("key", "", "TLS private key file path (required unless -auto-cert is used)")
-	domain     = flag.String("domain", "", "Domain name for HTTPS access (REQUIRED)")
-	autoCert   = flag.Bool("auto-cert", false, "Automatically obtain and renew SSL certificates from Let's Encrypt")
-	cacheDir   = flag.String("cache-dir", "./cert-cache", "Directory to cache auto-generated certificates")
+const defaultOutputDir = "./output"
 
-	configFile    = flag.String("config", "", "Import sanitized config.json file (passwords removed, safe to share)")
-	inputDir      = flag.String("input", "", "Import from previous output directory (includes passwords and sensitive data)")
-	outputDir     = flag.String("output", "", "Specify output directory for generated files (optional, defaults to auto-generated path)")
-	timeout       = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
-	port          = flag.String("port", "8443", "HTTPS port to run the setup server on")
-	dataDir       = flag.String("data", "./data", "Directory to store setup data")
-	regen         = flag.Bool("regen", false, "Regenerate all config files in-place from existing configuration (requires -input)")
-	reverseProxy  = flag.String("reverse-proxy", "", "Override reverse proxy type: 'caddy' or 'nginx' (optional, only used with -regen)")
-	withWWW       = flag.Bool("with-www", false, "Enable www to non-www redirect handling")
+var (
+	certFile = flag.String("cert", "", "TLS certificate file path (required unless -auto-cert is used)")
+	keyFile  = flag.String("key", "", "TLS private key file path (required unless -auto-cert is used)")
+	domain   = flag.String("domain", "", "Domain name for HTTPS access (REQUIRED)")
+	autoCert = flag.Bool("auto-cert", false, "Automatically obtain and renew SSL certificates from Let's Encrypt")
+	cacheDir = flag.String("cache-dir", "./cert-cache", "Directory to cache auto-generated certificates")
+
+	configFile   = flag.String("config", "", "Import sanitized config.json file (passwords removed, safe to share)")
+	inputDir     = flag.String("input", "", "Import from previous output directory (includes passwords and sensitive data)")
+	outputDir    = flag.String("output", "", "Specify output directory for generated files (optional, defaults to auto-generated path)")
+	timeout      = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
+	port         = flag.String("port", "8443", "HTTPS port to run the setup server on")
+	dataDir      = flag.String("data", "./data", "Directory to store setup data")
+	regen        = flag.Bool("regen", false, "Regenerate all config files in-place from existing configuration (requires -input)")
+	reverseProxy = flag.String("reverse-proxy", "", "Override reverse proxy type: 'caddy' or 'nginx' (optional, only used with -regen)")
+	withWWW      = flag.Bool("with-www", false, "Enable www to non-www redirect handling")
+	cleanOnStart = flag.Bool("clean", false, "Clean cached setup data before starting the server")
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "clean" {
+		if err := runCleanCommand(os.Args[2:]); err != nil {
+			log.Fatalf("Clean command failed: %v", err)
+		}
+		return
+	}
+
 	flag.Parse()
 
 	if *regen {
@@ -68,6 +78,12 @@ func main() {
 	devMode := os.Getenv("BAKLAB_DEV_MODE") == "true" || os.Getenv("BAKLAB_DEV") == "1"
 	if devMode {
 		log.Printf("Development mode enabled (environment variable detected)")
+	}
+
+	if *cleanOnStart {
+		if err := cleanSetupCache(*dataDir, resolveOutputDir(*outputDir)); err != nil {
+			log.Fatalf("Failed to clean cached data: %v", err)
+		}
 	}
 
 	if *domain == "" {
@@ -84,9 +100,9 @@ func main() {
 		}
 
 		certManager = &autocert.Manager{
-			Prompt:      autocert.AcceptTOS,
-			HostPolicy:  autocert.HostWhitelist(*domain),
-			Cache:       autocert.DirCache(*cacheDir),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(*domain),
+			Cache:      autocert.DirCache(*cacheDir),
 		}
 
 		exportDir := filepath.Join(*dataDir, "autocert-export")
@@ -134,7 +150,6 @@ func main() {
 			log.Fatalf("Private key file not found: %s", keyPath)
 		}
 	}
-
 
 	jsonStorage := storage.NewJSONStorage(*dataDir)
 
@@ -209,7 +224,6 @@ func main() {
 
 		r.Post("/upload/geo-file", handlers.UploadGeoFileHandler)
 		r.Get("/geo-file/status", handlers.CheckGeoFileStatusHandler)
-
 
 		r.Post("/complete", handlers.CompleteSetupHandler)
 	})
@@ -600,4 +614,72 @@ func findAvailableOutputDir(inputDir string) string {
 		suffix++
 		outputDir = fmt.Sprintf("%s-%d", inputDir, suffix)
 	}
+}
+
+func resolveOutputDir(flagValue string) string {
+	if flagValue != "" {
+		return flagValue
+	}
+	return defaultOutputDir
+}
+
+func cleanSetupCache(dataDirPath, outputPath string) error {
+	absDataDir, err := filepath.Abs(dataDirPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve data directory: %w", err)
+	}
+
+	log.Printf("Cleaning setup data directory: %s", absDataDir)
+	if err := os.RemoveAll(absDataDir); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to remove data directory: %w", err)
+	}
+	if err := os.MkdirAll(absDataDir, 0755); err != nil {
+		return fmt.Errorf("failed to recreate data directory: %w", err)
+	}
+	log.Printf("Setup data directory reset")
+
+	outputTarget := outputPath
+	if outputTarget == "" {
+		outputTarget = defaultOutputDir
+	}
+	if err := removePath(outputTarget); err != nil {
+		return err
+	}
+
+	tempDir := "./temp"
+	if err := removePath(tempDir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func removePath(path string) error {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("failed to resolve path %s: %w", path, err)
+	}
+
+	log.Printf("Removing %s", absPath)
+	if err := os.RemoveAll(absPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to remove %s: %w", absPath, err)
+	}
+	return nil
+}
+
+func runCleanCommand(args []string) error {
+	cleanFlags := flag.NewFlagSet("clean", flag.ExitOnError)
+	dataPath := cleanFlags.String("data", "./data", "Directory to store setup data")
+	outputPath := cleanFlags.String("output", defaultOutputDir, "Directory for generated files to clean")
+
+	if err := cleanFlags.Parse(args); err != nil {
+		return err
+	}
+
+	if err := cleanSetupCache(*dataPath, *outputPath); err != nil {
+		return err
+	}
+
+	log.Println("Cache cleaned successfully.")
+	return nil
 }

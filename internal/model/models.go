@@ -22,22 +22,22 @@ type SetupState struct {
 }
 
 type DatabaseConfig struct {
-	ServiceType string `json:"service_type" validate:"required,oneof=docker external"` // "docker" for docker compose, "external" for external service
-	Host        string `json:"host" validate:"required"`
-	Port        int    `json:"port" validate:"required,min=1,max=65535"`
-	Name        string `json:"name" validate:"required"`
+	ServiceType   string `json:"service_type" validate:"required,oneof=docker external"` // "docker" for docker compose, "external" for external service
+	Host          string `json:"host" validate:"required"`
+	Port          int    `json:"port" validate:"required,min=1,max=65535"`
+	Name          string `json:"name" validate:"required"`
 	SuperUser     string `json:"super_user"`
 	SuperPassword string `json:"super_password"`
-	AppUser     string `json:"app_user" validate:"required"`
-	AppPassword string `json:"app_password" validate:"required"`
+	AppUser       string `json:"app_user" validate:"required"`
+	AppPassword   string `json:"app_password" validate:"required"`
 }
 
 type RedisConfig struct {
-	ServiceType string `json:"service_type" validate:"required,oneof=docker external"` // "docker" for docker compose, "external" for external service
-	Host        string `json:"host" validate:"required"`
-	Port        int    `json:"port" validate:"required,min=1,max=65535"`
-	User        string `json:"user"`
-	Password    string `json:"password" validate:"required"`
+	ServiceType   string `json:"service_type" validate:"required,oneof=docker external"` // "docker" for docker compose, "external" for external service
+	Host          string `json:"host" validate:"required"`
+	Port          int    `json:"port" validate:"required,min=1,max=65535"`
+	User          string `json:"user"`
+	Password      string `json:"password" validate:"required"`
 	AdminPassword string `json:"admin_password"`
 }
 
@@ -91,30 +91,31 @@ type OAuthConfig struct {
 }
 
 type AppConfig struct {
-	DomainName        string      `json:"domain_name" validate:"required"`
-	StaticHostName    string      `json:"static_host_name" validate:"required"`
-	RankingHostName   string      `json:"ranking_host_name"`
-	DizkazDomainName  string      `json:"dizkaz_domain_name"`
-	DizkazSitePath    string      `json:"dizkaz_site_path"`
-	HandleWWW         bool        `json:"handle_www"`
-	BrandName         string      `json:"brand_name" validate:"required"`
-	DefaultLang       string      `json:"default_lang" validate:"required"`
-	Version           string      `json:"version"`
-	Debug             bool        `json:"debug"`
-	CORSAllowOrigins  []string    `json:"cors_allow_origins"`
-	JWTKeyFilePath    string      `json:"jwt_key_file_path"`
-	JWTKeyFromFile    bool        `json:"jwt_key_from_file"`
-	HasJWTKeyFile     bool        `json:"has_jwt_key_file"`
-	JWTKeyTempPath    string      `json:"jwt_key_temp_path"`
-	RobotsTxtPath     string      `json:"robots_txt_path"`
-	HasCustomRobotsTxt bool       `json:"has_custom_robots_txt"`
-	OAuth             OAuthConfig `json:"oauth"`
-	CloudflareSiteKey string      `json:"cloudflare_site_key"`
-	CloudflareSecret  string      `json:"cloudflare_secret"`
-	SSREnabled          bool     `json:"ssr_enabled"`
-	FrontendScripts     []string `json:"frontend_scripts"`
-	FrontendStyles      []string `json:"frontend_styles"`
-	FrontendContainerId string   `json:"frontend_container_id" validate:"required_if=SSREnabled true"`
+	DomainName          string      `json:"domain_name" validate:"required"`
+	StaticHostName      string      `json:"static_host_name" validate:"required"`
+	RankingHostName     string      `json:"ranking_host_name"`
+	DizkazDomainName    string      `json:"dizkaz_domain_name"`
+	DizkazSitePath      string      `json:"dizkaz_site_path"`
+	HandleWWW           bool        `json:"handle_www"`
+	BrandName           string      `json:"brand_name" validate:"required"`
+	DefaultLang         string      `json:"default_lang" validate:"required"`
+	Version             string      `json:"version"`
+	Debug               bool        `json:"debug"`
+	FrontendDecoupled   bool        `json:"frontend_decoupled"`
+	CORSAllowOrigins    []string    `json:"cors_allow_origins"`
+	JWTKeyFilePath      string      `json:"jwt_key_file_path"`
+	JWTKeyFromFile      bool        `json:"jwt_key_from_file"`
+	HasJWTKeyFile       bool        `json:"has_jwt_key_file"`
+	JWTKeyTempPath      string      `json:"jwt_key_temp_path"`
+	RobotsTxtPath       string      `json:"robots_txt_path"`
+	HasCustomRobotsTxt  bool        `json:"has_custom_robots_txt"`
+	OAuth               OAuthConfig `json:"oauth"`
+	CloudflareSiteKey   string      `json:"cloudflare_site_key"`
+	CloudflareSecret    string      `json:"cloudflare_secret"`
+	SSREnabled          bool        `json:"ssr_enabled"`
+	FrontendScripts     []string    `json:"frontend_scripts"`
+	FrontendStyles      []string    `json:"frontend_styles"`
+	FrontendContainerId string      `json:"frontend_container_id" validate:"required_if=SSREnabled true"`
 }
 
 type AdminUserConfig struct {

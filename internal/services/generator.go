@@ -731,12 +731,19 @@ services:
     environment:
       {{- if .SSL.Enabled }}
       - STATIC_HOST=https://$STATIC_HOST_NAME
-      - API_HOST=https://$SERVER_DOMAIN_NAME
       - FRONTEND_HOST=https://$SERVER_DOMAIN_NAME
       {{- else }}
       - STATIC_HOST=http://$STATIC_HOST_NAME
-      - API_HOST=http://$SERVER_DOMAIN_NAME
       - FRONTEND_HOST=http://$SERVER_DOMAIN_NAME
+      {{- end }}
+      {{- if .App.FrontendDecoupled }}
+      {{- if .SSL.Enabled }}
+      - API_HOST=https://$SERVER_DOMAIN_NAME
+      {{- else }}
+      - API_HOST=http://$SERVER_DOMAIN_NAME
+      {{- end }}
+      {{- else }}
+      - API_HOST=
       {{- end }}
       - BASE_URL=/static/frontend/
       - API_PATH_PREFIX=/api/

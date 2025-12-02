@@ -67,7 +67,8 @@ class SetupApp {
                 file_size: 0,
                 cloudflare_site_key: '',
                 cloudflare_secret: '',
-                use_setup_domain: false
+                use_setup_domain: false,
+                frontend_decoupled: false
             },
             oauth: {
                 google_enabled: false,

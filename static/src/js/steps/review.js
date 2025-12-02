@@ -39,6 +39,7 @@ function loadConfigReview(config, i18n) {
                 <p><strong data-i18n="setup.review.fields.version"></strong>: ${configData.app.version || 'latest'}</p>
                 <p><strong data-i18n="setup.review.fields.language"></strong>: ${configData.app.default_lang}</p>
                 <p><strong data-i18n="setup.review.fields.cors_origins"></strong>: ${corsText}</p>
+                <p><strong data-i18n="setup.review.fields.frontend_separation"></strong>: ${configData.app.frontend_decoupled ? (i18n ? i18n.t('common.yes') : 'Yes') : (i18n ? i18n.t('common.no') : 'No')}</p>
                 <p><strong data-i18n="setup.review.fields.jwt_mode"></strong>: ${configData.app.jwt_key_from_file ? (i18n ? i18n.t('setup.review.jwt_from_file') : 'From File') : (i18n ? i18n.t('setup.review.jwt_auto_generate') : 'Auto Generate')}</p>
                 ${configData.app.jwt_key_from_file ? `
                     <p><strong data-i18n="setup.review.fields.jwt_file_path"></strong>: ${configData.app.jwt_key_file_path}</p>

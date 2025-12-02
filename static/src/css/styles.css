@@ -600,9 +600,31 @@ a:hover {
 
 /* Alerts */
 .alert {
-    padding: 1rem;
+    position: relative;
+    padding: 1rem 2.5rem 1rem 1rem;
     border-radius: 6px;
     margin-bottom: 1rem;
+}
+
+.alert-message {
+    margin: 0;
+}
+
+.alert-close {
+    position: absolute;
+    right: 0.75rem;
+    top: 0.75rem;
+    background: transparent;
+    border: none;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--gray-500);
+    padding: 0;
+}
+
+.alert-close:hover {
+    opacity: 0.7;
 }
 
 .alert-success {

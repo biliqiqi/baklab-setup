@@ -146,6 +146,14 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label for="frontend-decoupled">
+                        <input type="checkbox" id="frontend-decoupled" name="frontend_decoupled" ${appConfig.frontend_decoupled ? 'checked' : ''}>
+                        <span data-i18n="setup.app.frontend_separation_label"></span>
+                    </label>
+                    <div class="form-help" data-i18n="setup.app.frontend_separation_help"></div>
+                </div>
+
                 <h4 style="margin: 2rem 0 1rem 0; color: var(--gray-700);" data-i18n="setup.app.jwt_section_title"></h4>
                 <p style="margin-bottom: 1rem; color: var(--gray-600);" data-i18n="setup.app.jwt_section_description"></p>
                 
@@ -250,7 +258,8 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
                         debug: document.getElementById('app-debug').checked,
                         jwt_key_from_file: jwtKeyFromFile,
                         jwt_key_file_path: jwtKeyFilePath,
-                        use_setup_domain: document.getElementById('use-setup-domain').checked
+                        use_setup_domain: document.getElementById('use-setup-domain').checked,
+                        frontend_decoupled: document.getElementById('frontend-decoupled').checked
                     },
                     reverse_proxy: {
                         type: document.getElementById('reverse-proxy-type').value
@@ -314,4 +323,3 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
 
         addFieldTouchListeners(container);
     }
-
