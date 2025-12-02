@@ -36,10 +36,11 @@
 		}
 
 		handle /robots.txt {
-			root * /data/static
-			rewrite * /robots.txt
-			file_server
-			header Cache-Control "public, max-age=604800"
+			rewrite * /api/sites/domains/robots.txt
+			reverse_proxy app:3000 {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+			}
 		}
 
 		handle_path /sw.js {
