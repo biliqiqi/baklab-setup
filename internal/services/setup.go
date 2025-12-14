@@ -387,6 +387,7 @@ func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig
 	cfg.App.OAuth.GoogleSecret = envVars["GOOGLE_CLIENT_SECRET"]
 	cfg.App.OAuth.GithubSecret = envVars["GITHUB_CLIENT_SECRET"]
 	cfg.App.CloudflareSecret = envVars["CLOUDFLARE_SECRET"]
+	cfg.App.CORSAllowOrigins = strings.Split(envVars["CORS_ALLOW_ORIGINS"], ",")
 
 	if rankingHost := envVars["RANKING_HOST_NAME"]; rankingHost != "" {
 		cfg.App.RankingHostName = rankingHost
