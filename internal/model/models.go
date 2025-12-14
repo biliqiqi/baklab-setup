@@ -116,6 +116,7 @@ type AppConfig struct {
 	FrontendScripts     []string    `json:"frontend_scripts"`
 	FrontendStyles      []string    `json:"frontend_styles"`
 	FrontendContainerId string      `json:"frontend_container_id" validate:"required_if=SSREnabled true"`
+	RateLimitReqPerMin  int         `json:"rate_limit_req_per_min"`
 }
 
 type AdminUserConfig struct {

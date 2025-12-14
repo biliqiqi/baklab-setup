@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -397,6 +398,12 @@ func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig
 
 	if dizkazPath := envVars["DIZKAZ_SITE_PATH"]; dizkazPath != "" {
 		cfg.App.DizkazSitePath = dizkazPath
+	}
+
+	if rateLimitStr := envVars["RATE_LIMIT_REQ_PER_MIN"]; rateLimitStr != "" {
+		if rateLimit, err := strconv.Atoi(rateLimitStr); err == nil {
+			cfg.App.RateLimitReqPerMin = rateLimit
+		}
 	}
 
 	cfg.SMS.Provider = envVars["SMS_PROVIDER"]

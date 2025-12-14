@@ -287,6 +287,11 @@ STATIC_HOST_NAME='{{ .App.StaticHostName }}'
 {{ if .App.CloudflareSiteKey }}CLOUDFLARE_SITE_KEY='{{ .App.CloudflareSiteKey }}'{{ else }}CLOUDFLARE_SITE_KEY={{ end }}
 {{ if .App.CloudflareSecret }}CLOUDFLARE_SECRET='{{ .App.CloudflareSecret }}'{{ else }}CLOUDFLARE_SECRET={{ end }}
 
+# Global Rate Limiting (requests per minute per IP)
+# Protects against crawler/bot abuse and DDoS attacks
+# Default: 100 requests per minute per IP
+RATE_LIMIT_REQ_PER_MIN={{ if .App.RateLimitReqPerMin }}{{ .App.RateLimitReqPerMin }}{{ else }}100{{ end }}
+
 # SMTP Configuration (optional)
 {{ if .SMTP.Server }}SMTP_SERVER='{{ .SMTP.Server }}'{{ else }}SMTP_SERVER={{ end }}
 SMTP_SERVER_PORT={{ if .SMTP.Port }}{{ .SMTP.Port }}{{ else }}587{{ end }}
@@ -696,7 +701,7 @@ services:
         cp /src/redis.conf /config/
         echo "user default +@all ~* on >$$REDISCLI_AUTH" > /config/users.acl
         echo "user $$REDIS_USER +@read +@write +@list +@hash +@set +@string +@connection +@scripting +scan +del +exists +type +ttl +expire ~* -@admin -@dangerous on >$$REDIS_PASSWORD" >> /config/users.acl
-        echo "Rate limiter keys will use prefix: global_ip_*, role_*, site_*" >> /config/users.acl
+        echo "# Rate limiter keys will use prefix: global_ip_*, role_*, site_*" >> /config/users.acl
         echo "ACL file generated successfully"
         echo "Users configured: default (admin access), $$REDIS_USER (app access)"
         echo "ACL file location: /config/users.acl"
