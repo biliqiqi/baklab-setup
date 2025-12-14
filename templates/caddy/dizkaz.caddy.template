@@ -11,10 +11,16 @@
 	}
 
 	route {
-		forward_auth app:3000 {
-			uri /api/verify
-			header_up Host {http.request.host}
-			header_up X-Forwarded-Host {http.request.host}
+		# Skip forward_auth for static resources and health check to reduce load
+		@skip_auth path /static/* /favicon.ico /sw.js /health
+
+		@need_auth not path /static/* /favicon.ico /sw.js /health
+		handle @need_auth {
+			forward_auth app:3000 {
+				uri /api/verify
+				header_up Host {http.request.host}
+				header_up X-Forwarded-Host {http.request.host}
+			}
 		}
 
 		@health path /health
