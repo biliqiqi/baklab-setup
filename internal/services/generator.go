@@ -699,9 +699,8 @@ services:
     command: |
       sh -c '
         cp /src/redis.conf /config/
-        echo "user default +@all ~* on >$$REDISCLI_AUTH" > /config/users.acl
-        echo "user $$REDIS_USER +@read +@write +@list +@hash +@set +@string +@connection +@scripting +scan +del +exists +type +ttl +expire ~* -@admin -@dangerous on >$$REDIS_PASSWORD" >> /config/users.acl
-        echo "# Rate limiter keys will use prefix: global_ip_*, role_*, site_*" >> /config/users.acl
+        echo "user default on >$$REDISCLI_AUTH ~* +@all" > /config/users.acl
+        echo "user $$REDIS_USER on >$$REDIS_PASSWORD ~* resetchannels -@all +@read +@write +@list +@hash +@set +@string +@connection +@scripting +scan +del +exists +type +ttl +expire" >> /config/users.acl
         echo "ACL file generated successfully"
         echo "Users configured: default (admin access), $$REDIS_USER (app access)"
         echo "ACL file location: /config/users.acl"
