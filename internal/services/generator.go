@@ -597,6 +597,7 @@ services:
       USE_HTTPS: $USE_HTTPS
       FRONTEND_ORIGIN: $FRONTEND_ORIGIN
       GOMAXPROCS: $GOMAXPROCS
+      RATE_LIMIT_REQ_PER_MIN: $RATE_LIMIT_REQ_PER_MIN
     volumes:
       {{ if .App.JWTKeyFromFile -}}
       - {{ .App.JWTKeyFilePath }}:/app/keys/jwt-private.pem
