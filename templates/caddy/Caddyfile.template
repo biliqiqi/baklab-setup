@@ -6,30 +6,15 @@
 	admin off
 }
 {{if .SSL.Enabled}}
-# HTTP server for health check
-:80 {
-	@health path /health
-	handle @health {
-		respond "ok" 200
-	}
-
-	# Redirect all other traffic to HTTPS
-	handle {
-		redir https://{host}{uri} permanent
-	}
-}
-
 {{if .App.HandleWWW}}
 # Redirect www to non-www
-www.{{rootDomain .App.DomainName}}:443 {
-	tls /etc/ssl/certs/server.crt /etc/ssl/private/server.key
+www.{{rootDomain .App.DomainName}} {
 	redir https://{{.App.DomainName}}{uri} permanent
 }
 {{end}}
 
 # Main application server
-{{.App.DomainName}}:443 {
-	tls /etc/ssl/certs/server.crt /etc/ssl/private/server.key
+{{.App.DomainName}} {
 {{else}}
 {{if .App.HandleWWW}}
 # Redirect www to non-www
@@ -117,10 +102,7 @@ www.{{rootDomain .App.DomainName}} {
 
 {{if .App.RankingHostName}}
 # Dali ranking service
-{{if .SSL.Enabled}}{{.App.RankingHostName}}:443{{else}}{{.App.RankingHostName}}{{end}} {
-	{{if .SSL.Enabled}}
-	tls /etc/ssl/certs/server.crt /etc/ssl/private/server.key
-	{{end}}
+{{.App.RankingHostName}} {
 
 	encode gzip zstd
 

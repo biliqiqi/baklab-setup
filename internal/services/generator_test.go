@@ -98,12 +98,16 @@ func TestGenerateCaddyConfigWithSSL(t *testing.T) {
 
 	contentStr := string(content)
 
-	if !strings.Contains(contentStr, "tls /etc/ssl/certs/server.crt /etc/ssl/private/server.key") {
-		t.Errorf("Generated Caddyfile should contain SSL/TLS configuration")
+	if strings.Contains(contentStr, "/etc/letsencrypt/live/") {
+		t.Errorf("Generated Caddyfile should not hardcode certbot certificate file paths")
 	}
 
-	if !strings.Contains(contentStr, "redir https://{host}{uri}") {
-		t.Errorf("Generated Caddyfile should contain HTTPS redirect")
+	if !strings.Contains(contentStr, "secure.example.com {") {
+		t.Errorf("Generated Caddyfile should contain site block for secure.example.com")
+	}
+
+	if strings.Contains(contentStr, "/.well-known/acme-challenge/*") {
+		t.Errorf("Generated Caddyfile should not contain manual ACME challenge handler for native Caddy ACME")
 	}
 }
 
@@ -163,5 +167,93 @@ func TestRootDomainFunction(t *testing.T) {
 				t.Errorf("rootDomain(%q) = %q, expected %q", tt.domain, result, tt.expected)
 			}
 		})
+	}
+}
+
+func TestGenerateDockerConfigWithCaddyNativeACME(t *testing.T) {
+	tempDir := t.TempDir()
+
+	templatesDir, err := filepath.Abs("../../templates")
+	if err != nil {
+		t.Fatalf("Failed to get templates directory path: %v", err)
+	}
+
+	certPath := filepath.Join(tempDir, "input-fullchain.pem")
+	keyPath := filepath.Join(tempDir, "input-privkey.pem")
+	if err := os.WriteFile(certPath, []byte("dummy cert"), 0644); err != nil {
+		t.Fatalf("Failed to write test cert file: %v", err)
+	}
+	if err := os.WriteFile(keyPath, []byte("dummy key"), 0644); err != nil {
+		t.Fatalf("Failed to write test key file: %v", err)
+	}
+
+	g := NewGeneratorService()
+	g.SetOutputDir(tempDir)
+	g.SetTemplatesFS(os.DirFS(templatesDir))
+
+	cfg := &model.SetupConfig{
+		Database: model.DatabaseConfig{
+			ServiceType:   "external",
+			Host:          "127.0.0.1",
+			Port:          5432,
+			Name:          "baklab",
+			AppUser:       "baklab",
+			AppPassword:   "Password123!",
+			SuperUser:     "postgres",
+			SuperPassword: "Password123!",
+		},
+		Redis: model.RedisConfig{
+			ServiceType:   "external",
+			Host:          "127.0.0.1",
+			Port:          6379,
+			User:          "",
+			Password:      "Password123!",
+			AdminPassword: "Password123!",
+		},
+		App: model.AppConfig{
+			DomainName:     "app.example.com",
+			StaticHostName: "static.example.com",
+			BrandName:      "BakLab",
+			DefaultLang:    "en",
+		},
+		SSL: model.SSLConfig{
+			Enabled:  true,
+			CertPath: certPath,
+			KeyPath:  keyPath,
+		},
+		ReverseProxy: model.ReverseProxyConfig{
+			Type: "caddy",
+		},
+	}
+
+	if err := g.GenerateDockerConfig(cfg); err != nil {
+		t.Fatalf("GenerateDockerConfig() failed: %v", err)
+	}
+
+	composePath := filepath.Join(tempDir, "docker-compose.production.yml")
+	content, err := os.ReadFile(composePath)
+	if err != nil {
+		t.Fatalf("Failed to read generated docker-compose.production.yml: %v", err)
+	}
+
+	contentStr := string(content)
+	if strings.Contains(contentStr, "certbot:") {
+		t.Errorf("Generated docker compose should not contain certbot service in native Caddy ACME mode")
+	}
+
+	sslCertPath := filepath.Join(tempDir, "ssl", "fullchain.pem")
+	sslKeyPath := filepath.Join(tempDir, "ssl", "privkey.pem")
+	if _, err := os.Stat(sslCertPath); err != nil {
+		t.Errorf("Expected compatibility SSL cert at %s, err: %v", sslCertPath, err)
+	}
+	if _, err := os.Stat(sslKeyPath); err != nil {
+		t.Errorf("Expected compatibility SSL key at %s, err: %v", sslKeyPath, err)
+	}
+
+	if strings.Contains(contentStr, "./caddy/certbot/conf:/etc/letsencrypt") {
+		t.Errorf("Generated docker compose should not mount certbot letsencrypt directory")
+	}
+	if strings.Contains(contentStr, "./caddy/certbot/www:/var/www/certbot") {
+		t.Errorf("Generated docker compose should not mount certbot webroot directory")
 	}
 }

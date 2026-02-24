@@ -24,6 +24,21 @@ type GeneratorService struct {
 	templatesFS fs.FS
 }
 
+func rootDomain(domain string) string {
+	domain = strings.TrimSuffix(domain, ".")
+
+	if domain == "" {
+		return domain
+	}
+
+	parts := strings.Split(domain, ".")
+	if len(parts) < 2 {
+		return domain
+	}
+
+	return strings.Join(parts[len(parts)-2:], ".")
+}
+
 func (g *GeneratorService) buildOAuthProviders(oauth model.OAuthConfig) string {
 	var providers []string
 	if oauth.GoogleEnabled && oauth.GoogleClientID != "" && oauth.GoogleSecret != "" {
@@ -141,7 +156,7 @@ func (g *GeneratorService) clearCaddyDir(caddyPath string) error {
 	for _, entry := range entries {
 		entryPath := filepath.Join(caddyPath, entry.Name())
 
-		if entry.Name() == "data" || entry.Name() == "config" || entry.Name() == "logs" {
+		if entry.Name() == "data" || entry.Name() == "config" || entry.Name() == "logs" || entry.Name() == "certbot" {
 			log.Printf("Skipping caddy/%s directory to avoid permission issues", entry.Name())
 			continue
 		}
@@ -336,21 +351,7 @@ GID={{ .GroupID }}
 `
 
 	funcMap := template.FuncMap{
-		"rootDomain": func(domain string) string {
-			domain = strings.TrimSuffix(domain, ".")
-
-			if domain == "" {
-				return domain
-			}
-
-			parts := strings.Split(domain, ".")
-
-			if len(parts) < 2 {
-				return domain
-			}
-
-			return strings.Join(parts[len(parts)-2:], ".")
-		},
+		"rootDomain": rootDomain,
 		"join": func(slice []string, sep string) string {
 			return strings.Join(slice, sep)
 		},
@@ -842,22 +843,45 @@ services:
       app:
         condition: service_healthy
     healthcheck:
+      {{- if .SSL.Enabled }}
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider --header='Host: $$SERVER_DOMAIN_NAME' --no-check-certificate https://localhost/health"]
+      {{- else }}
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      {{- end }}
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
-{{- end }}{{ if .GoAccess.Enabled }}
+{{- end }}
+{{ if .GoAccess.Enabled }}
   goaccess:
     image: allinurl/goaccess:1.7.2
     container_name: "baklab-goaccess"
     restart: unless-stopped{{if .SSL.Enabled}}
+    {{- if eq $proxyType "nginx" }}
     entrypoint: 'sh -c "/bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880 --ssl-cert=$$SSL_CERT --ssl-key=$$SSL_KEY --log-format=$$LOG_FORMAT"'
     environment:
       - LOG_FORMAT={{- if eq $proxyType "nginx" }}COMMON{{- else }}CADDY{{- end }}
       - TZ="China/Shanghai"
       - SSL_CERT=/etc/ssl/certs/server.crt
-      - SSL_KEY=/etc/ssl/private/server.key{{else}}
+      - SSL_KEY=/etc/ssl/private/server.key
+    {{- else }}
+    entrypoint: >
+      sh -c '
+        SSL_CERT=$$(find /data/caddy/certificates -type f -path "*/$$SERVER_DOMAIN_NAME/$$SERVER_DOMAIN_NAME.crt" | head -n1) &&
+        SSL_KEY=$$(find /data/caddy/certificates -type f -path "*/$$SERVER_DOMAIN_NAME/$$SERVER_DOMAIN_NAME.key" | head -n1) &&
+        if [ -z "$$SSL_CERT" ] || [ -z "$$SSL_KEY" ]; then
+          echo "Failed to locate Caddy-managed certificate for $$SERVER_DOMAIN_NAME in /data/caddy/certificates" &&
+          exit 1
+        fi &&
+        /bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880 --ssl-cert=$$SSL_CERT --ssl-key=$$SSL_KEY --log-format=$$LOG_FORMAT
+      '
+    environment:
+      - LOG_FORMAT=CADDY
+      - TZ="China/Shanghai"
+      - SERVER_DOMAIN_NAME=$SERVER_DOMAIN_NAME
+    {{- end }}
+      {{- else}}
     entrypoint: 'sh -c "/bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880 --log-format=$$LOG_FORMAT"'
     environment:
       - LOG_FORMAT={{- if eq $proxyType "nginx" }}COMMON{{- else }}CADDY{{- end }}
@@ -865,8 +889,12 @@ services:
     volumes:
       - /var/www/goaccess:/var/www/goaccess:rw{{ if .GoAccess.HasGeoFile }}
       - ./geoip:/data/geoip:ro{{ end }}{{if .SSL.Enabled}}
+{{- if eq $proxyType "nginx" }}
       - ./ssl/fullchain.pem:/etc/ssl/certs/server.crt:ro
-      - ./ssl/privkey.pem:/etc/ssl/private/server.key:ro{{end}}
+      - ./ssl/privkey.pem:/etc/ssl/private/server.key:ro
+{{- else }}
+      - caddy-data:/data/caddy:ro
+{{- end }}{{end}}
       - ./goaccess.conf:/etc/goaccess/goaccess.conf
 {{- if eq $proxyType "nginx" }}
       - ./nginx/logs:/data/logs
@@ -1145,21 +1173,7 @@ func (g *GeneratorService) GenerateCaddyConfig(cfg *model.SetupConfig) error {
 	}
 
 	funcMap := template.FuncMap{
-		"rootDomain": func(domain string) string {
-			domain = strings.TrimSuffix(domain, ".")
-
-			if domain == "" {
-				return domain
-			}
-
-			parts := strings.Split(domain, ".")
-
-			if len(parts) < 2 {
-				return domain
-			}
-
-			return strings.Join(parts[len(parts)-2:], ".")
-		},
+		"rootDomain": rootDomain,
 	}
 
 	tmpl, err := template.New("caddyfile").Funcs(funcMap).Parse(string(caddyfileTemplateContent))

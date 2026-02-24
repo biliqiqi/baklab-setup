@@ -491,6 +491,26 @@ func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig
 			if !keyExists {
 				log.Printf("Warning: SSL key not found at %s", sslKeyPath)
 			}
+
+			certbotDomain := rootDomain(cfg.App.DomainName)
+			certbotCertPath := fmt.Sprintf("%s/caddy/certbot/conf/live/%s/fullchain.pem", outputDir, certbotDomain)
+			certbotKeyPath := fmt.Sprintf("%s/caddy/certbot/conf/live/%s/privkey.pem", outputDir, certbotDomain)
+			certbotCertExists := fileExists(certbotCertPath)
+			certbotKeyExists := fileExists(certbotKeyPath)
+
+			if certbotCertExists && certbotKeyExists {
+				cfg.SSL.CertPath = certbotCertPath
+				cfg.SSL.KeyPath = certbotKeyPath
+				log.Printf("Found certbot SSL certificate at: %s", certbotCertPath)
+				log.Printf("Found certbot SSL key at: %s", certbotKeyPath)
+			} else {
+				if !certbotCertExists {
+					log.Printf("Warning: certbot SSL certificate not found at %s", certbotCertPath)
+				}
+				if !certbotKeyExists {
+					log.Printf("Warning: certbot SSL key not found at %s", certbotKeyPath)
+				}
+			}
 		}
 
 		if cfg.SSL.UseSetupCert {
