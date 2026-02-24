@@ -176,16 +176,16 @@ func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to generate .env file: %w", err)
 	}
 
+	if err := s.generator.HandleJWTKeyFile(cfg); err != nil {
+		return fmt.Errorf("failed to handle JWT key file: %w", err)
+	}
+
 	if err := s.generator.GenerateDockerConfig(cfg); err != nil {
 		return fmt.Errorf("failed to generate docker config: %w", err)
 	}
 
 	if err := s.generator.SaveSetupConfiguration(cfg); err != nil {
 		return fmt.Errorf("failed to save setup configuration: %w", err)
-	}
-
-	if err := s.generator.HandleJWTKeyFile(cfg); err != nil {
-		return fmt.Errorf("failed to handle JWT key file: %w", err)
 	}
 
 	return nil

@@ -257,3 +257,177 @@ func TestGenerateDockerConfigWithCaddyNativeACME(t *testing.T) {
 		t.Errorf("Generated docker compose should not mount certbot webroot directory")
 	}
 }
+
+func TestGenerateDockerConfigFallbackWhenJWTKeyPathIsDirectory(t *testing.T) {
+	tempDir := t.TempDir()
+
+	templatesDir, err := filepath.Abs("../../templates")
+	if err != nil {
+		t.Fatalf("Failed to get templates directory path: %v", err)
+	}
+
+	certPath := filepath.Join(tempDir, "input-fullchain.pem")
+	keyPath := filepath.Join(tempDir, "input-privkey.pem")
+	if err := os.WriteFile(certPath, []byte("dummy cert"), 0644); err != nil {
+		t.Fatalf("Failed to write test cert file: %v", err)
+	}
+	if err := os.WriteFile(keyPath, []byte("dummy key"), 0644); err != nil {
+		t.Fatalf("Failed to write test key file: %v", err)
+	}
+
+	jwtDirPath := filepath.Join(tempDir, "jwt-dir-path")
+	if err := os.MkdirAll(jwtDirPath, 0755); err != nil {
+		t.Fatalf("Failed to create jwt directory path: %v", err)
+	}
+
+	g := NewGeneratorService()
+	g.SetOutputDir(tempDir)
+	g.SetTemplatesFS(os.DirFS(templatesDir))
+
+	cfg := &model.SetupConfig{
+		Database: model.DatabaseConfig{
+			ServiceType: "external",
+			Host:        "127.0.0.1",
+			Port:        5432,
+			Name:        "baklab",
+			AppUser:     "baklab",
+			AppPassword: "Password123!",
+		},
+		Redis: model.RedisConfig{
+			ServiceType: "external",
+			Host:        "127.0.0.1",
+			Port:        6379,
+			Password:    "Password123!",
+		},
+		App: model.AppConfig{
+			DomainName:     "app.example.com",
+			StaticHostName: "static.example.com",
+			BrandName:      "BakLab",
+			DefaultLang:    "en",
+			JWTKeyFromFile: true,
+			JWTKeyFilePath: jwtDirPath,
+		},
+		SSL: model.SSLConfig{
+			Enabled:  true,
+			CertPath: certPath,
+			KeyPath:  keyPath,
+		},
+		ReverseProxy: model.ReverseProxyConfig{
+			Type: "caddy",
+		},
+	}
+
+	if err := g.GenerateDockerConfig(cfg); err != nil {
+		t.Fatalf("GenerateDockerConfig() failed: %v", err)
+	}
+
+	composePath := filepath.Join(tempDir, "docker-compose.production.yml")
+	content, err := os.ReadFile(composePath)
+	if err != nil {
+		t.Fatalf("Failed to read generated docker-compose.production.yml: %v", err)
+	}
+
+	contentStr := string(content)
+	if strings.Contains(contentStr, jwtDirPath+":/app/keys/jwt-private.pem") {
+		t.Errorf("Compose should not use directory path as JWT file bind mount")
+	}
+	if !strings.Contains(contentStr, "- ./keys:/app/keys") {
+		t.Errorf("Compose should fallback to keys directory mount")
+	}
+}
+
+func TestGenerateDockerConfigCopiesJWTKeyFileToOutput(t *testing.T) {
+	tempDir := t.TempDir()
+
+	templatesDir, err := filepath.Abs("../../templates")
+	if err != nil {
+		t.Fatalf("Failed to get templates directory path: %v", err)
+	}
+
+	certPath := filepath.Join(tempDir, "input-fullchain.pem")
+	keyPath := filepath.Join(tempDir, "input-privkey.pem")
+	if err := os.WriteFile(certPath, []byte("dummy cert"), 0644); err != nil {
+		t.Fatalf("Failed to write test cert file: %v", err)
+	}
+	if err := os.WriteFile(keyPath, []byte("dummy key"), 0644); err != nil {
+		t.Fatalf("Failed to write test key file: %v", err)
+	}
+
+	externalJWTPath := filepath.Join(tempDir, "external-jwt.pem")
+	jwtContent := []byte("jwt private key content")
+	if err := os.WriteFile(externalJWTPath, jwtContent, 0600); err != nil {
+		t.Fatalf("Failed to write external jwt file: %v", err)
+	}
+
+	g := NewGeneratorService()
+	g.SetOutputDir(tempDir)
+	g.SetTemplatesFS(os.DirFS(templatesDir))
+
+	cfg := &model.SetupConfig{
+		Database: model.DatabaseConfig{
+			ServiceType: "external",
+			Host:        "127.0.0.1",
+			Port:        5432,
+			Name:        "baklab",
+			AppUser:     "baklab",
+			AppPassword: "Password123!",
+		},
+		Redis: model.RedisConfig{
+			ServiceType: "external",
+			Host:        "127.0.0.1",
+			Port:        6379,
+			Password:    "Password123!",
+		},
+		App: model.AppConfig{
+			DomainName:     "app.example.com",
+			StaticHostName: "static.example.com",
+			BrandName:      "BakLab",
+			DefaultLang:    "en",
+			JWTKeyFromFile: true,
+			JWTKeyFilePath: externalJWTPath,
+		},
+		SSL: model.SSLConfig{
+			Enabled:  true,
+			CertPath: certPath,
+			KeyPath:  keyPath,
+		},
+		ReverseProxy: model.ReverseProxyConfig{
+			Type: "caddy",
+		},
+	}
+
+	if err := g.HandleJWTKeyFile(cfg); err != nil {
+		t.Fatalf("HandleJWTKeyFile() failed: %v", err)
+	}
+
+	if cfg.App.JWTKeyFromFile {
+		t.Errorf("JWTKeyFromFile should be false after copying into output keys directory")
+	}
+
+	copiedJWTPath := filepath.Join(tempDir, "keys", "jwt-private.pem")
+	copiedContent, err := os.ReadFile(copiedJWTPath)
+	if err != nil {
+		t.Fatalf("Failed to read copied jwt key file: %v", err)
+	}
+	if string(copiedContent) != string(jwtContent) {
+		t.Errorf("Copied jwt key file content mismatch")
+	}
+
+	if err := g.GenerateDockerConfig(cfg); err != nil {
+		t.Fatalf("GenerateDockerConfig() failed: %v", err)
+	}
+
+	composePath := filepath.Join(tempDir, "docker-compose.production.yml")
+	content, err := os.ReadFile(composePath)
+	if err != nil {
+		t.Fatalf("Failed to read generated docker-compose.production.yml: %v", err)
+	}
+
+	contentStr := string(content)
+	if strings.Contains(contentStr, externalJWTPath+":/app/keys/jwt-private.pem") {
+		t.Errorf("Compose should not use external JWT file bind mount after copy")
+	}
+	if !strings.Contains(contentStr, "- ./keys:/app/keys") {
+		t.Errorf("Compose should use keys directory mount after key copy")
+	}
+}

@@ -467,6 +467,8 @@ func (g *GeneratorService) handleSSLCertificates(cfg *model.SetupConfig) error {
 }
 
 func (g *GeneratorService) GenerateDockerConfig(cfg *model.SetupConfig) error {
+	g.normalizeJWTKeyConfig(cfg)
+
 	// Handle SSL certificates - copy to output/ssl directory
 	if cfg.SSL.Enabled {
 		if err := g.handleSSLCertificates(cfg); err != nil {
@@ -1003,6 +1005,31 @@ volumes:
 	return nil
 }
 
+func (g *GeneratorService) normalizeJWTKeyConfig(cfg *model.SetupConfig) {
+	if !cfg.App.JWTKeyFromFile {
+		return
+	}
+
+	if cfg.App.JWTKeyFilePath == "" {
+		log.Printf("JWTKeyFromFile is enabled but jwt_key_file_path is empty, fallback to generated key")
+		cfg.App.JWTKeyFromFile = false
+		return
+	}
+
+	fileInfo, err := os.Stat(cfg.App.JWTKeyFilePath)
+	if err != nil {
+		log.Printf("JWT key file path %s is invalid (%v), fallback to generated key", cfg.App.JWTKeyFilePath, err)
+		cfg.App.JWTKeyFromFile = false
+		return
+	}
+
+	if fileInfo.IsDir() {
+		log.Printf("JWT key file path %s is a directory, fallback to generated key", cfg.App.JWTKeyFilePath)
+		cfg.App.JWTKeyFromFile = false
+		return
+	}
+}
+
 func (g *GeneratorService) copyTemplateFiles(cfg *model.SetupConfig) error {
 	if cfg.Database.ServiceType == "docker" {
 		dbDir := filepath.Join(g.outputDir, "db")
@@ -1435,12 +1462,28 @@ func (g *GeneratorService) HandleJWTKeyFile(cfg *model.SetupConfig) error {
 		return fmt.Errorf("failed to create keys directory: %w", err)
 	}
 
-	if cfg.App.JWTKeyFromFile && cfg.App.JWTKeyFilePath != "" {
-		log.Printf("Using custom JWT key file path: %s", cfg.App.JWTKeyFilePath)
-		return nil
-	}
-
 	destPath := filepath.Join(keysDir, "jwt-private.pem")
+
+	if cfg.App.JWTKeyFromFile && cfg.App.JWTKeyFilePath != "" {
+		fileInfo, err := os.Stat(cfg.App.JWTKeyFilePath)
+		if err != nil {
+			log.Printf("JWT key file path %s is invalid (%v), fallback to generated key", cfg.App.JWTKeyFilePath, err)
+			cfg.App.JWTKeyFromFile = false
+		} else if fileInfo.IsDir() {
+			log.Printf("JWT key file path %s is a directory, fallback to generated key", cfg.App.JWTKeyFilePath)
+			cfg.App.JWTKeyFromFile = false
+		} else {
+			if err := g.copyFile(cfg.App.JWTKeyFilePath, destPath); err != nil {
+				return fmt.Errorf("failed to copy JWT key file from %s: %w", cfg.App.JWTKeyFilePath, err)
+			}
+
+			cfg.App.JWTKeyFromFile = false
+			cfg.App.JWTKeyFilePath = ""
+			cfg.App.HasJWTKeyFile = true
+			log.Printf("Copied JWT key file to output keys directory: %s", destPath)
+			return nil
+		}
+	}
 
 	jwtKeyPEM, err := g.GenerateJWTKey()
 	if err != nil {
@@ -1450,6 +1493,10 @@ func (g *GeneratorService) HandleJWTKeyFile(cfg *model.SetupConfig) error {
 	if err := os.WriteFile(destPath, jwtKeyPEM, 0600); err != nil {
 		return fmt.Errorf("failed to write JWT key file: %w", err)
 	}
+
+	cfg.App.JWTKeyFromFile = false
+	cfg.App.JWTKeyFilePath = ""
+	cfg.App.HasJWTKeyFile = true
 
 	log.Printf("JWT key file automatically generated: %s", destPath)
 
