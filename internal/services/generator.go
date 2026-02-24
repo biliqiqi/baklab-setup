@@ -845,11 +845,7 @@ services:
       app:
         condition: service_healthy
     healthcheck:
-      {{- if .SSL.Enabled }}
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider --header='Host: $$SERVER_DOMAIN_NAME' --no-check-certificate https://localhost/health"]
-      {{- else }}
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
-      {{- end }}
       interval: 30s
       timeout: 10s
       retries: 3
