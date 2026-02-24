@@ -845,7 +845,7 @@ services:
       app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider --header='Host: $$SERVER_DOMAIN_NAME' http://localhost:80/health"]
       interval: 30s
       timeout: 10s
       retries: 3

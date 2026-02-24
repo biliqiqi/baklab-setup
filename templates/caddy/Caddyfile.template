@@ -6,6 +6,19 @@
 	admin off
 }
 {{if .SSL.Enabled}}
+# Explicit HTTP health endpoint for container healthcheck.
+# Keep it on plain HTTP to avoid TLS/certificate timing and DNS hairpin issues.
+:80 {
+	@health path /health
+	handle @health {
+		respond "ok" 200
+	}
+
+	handle {
+		redir https://{host}{uri} permanent
+	}
+}
+
 {{if .App.HandleWWW}}
 # Redirect www to non-www
 www.{{rootDomain .App.DomainName}} {
