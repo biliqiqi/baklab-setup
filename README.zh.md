@@ -67,6 +67,9 @@ go build -o baklab-setup
 ### 2. 运行 setup 工具
 
 ```bash
+# 本地开发模式（HTTP、无需域名和证书）
+baklab-setup -dev
+
 # 方式一：自动获取 Let's Encrypt 证书
 baklab-setup -auto-cert -domain=your-domain.com
 
@@ -75,6 +78,11 @@ baklab-setup -cert=/etc/letsencrypt/live/your-domain.com/fullchain.pem \
              -key=/etc/letsencrypt/live/your-domain.com/privkey.pem \
              -domain=your-domain.com
 ```
+
+开发模式下，配置界面位于 `http://localhost:8443`。生成结果使用
+`.env.development` 和 `docker-compose.development.yml`，后端同时暴露在
+`http://localhost:3000`，反向代理位于 `http://localhost`。开发模式会设置
+`DEV=true`、关闭 TLS，并允许本地 Host 访问；不要在公网环境使用该模式。
 
 ### 3. 访问配置界面
 
@@ -152,7 +160,8 @@ curl -I https://your-domain.com
 - `-cert string` + `-key string`: 使用现有证书和私钥文件
 
 **可选选项：**
-- `-port string`: HTTPS 端口（默认 "8443"）
+- `-dev`: 启用本地开发模式，不要求域名或 TLS 证书
+- `-port string`: setup 服务端口（默认 "8443"）
 - `-timeout duration`: 最大会话时长（默认 "30m"）
 - `-data string`: 数据目录（默认 "./data"）
 - `-cache-dir string`: 自动证书缓存目录（默认 "./cert-cache"）
@@ -171,6 +180,13 @@ curl -I https://your-domain.com
 **使用自动证书进行基本设置：**
 ```bash
 ./baklab-setup -auto-cert -domain=example.com
+```
+
+**生成本地开发部署：**
+```bash
+./baklab-setup -dev
+cd output
+docker compose -f docker-compose.development.yml --env-file .env.development up -d
 ```
 
 **使用现有证书设置：**

@@ -67,6 +67,9 @@ Before running the setup tool, prepare the following:
 ### 2. Run Setup Tool
 
 ```bash
+# Local development mode (HTTP, no domain or certificate required)
+baklab-setup -dev
+
 # Option 1: Automatically obtain Let's Encrypt certificate
 baklab-setup -auto-cert -domain=your-domain.com
 
@@ -75,6 +78,12 @@ baklab-setup -cert=/etc/letsencrypt/live/your-domain.com/fullchain.pem \
              -key=/etc/letsencrypt/live/your-domain.com/privkey.pem \
              -domain=your-domain.com
 ```
+
+In development mode, open `http://localhost:8443`. The generated deployment uses
+`.env.development` and `docker-compose.development.yml`, exposes the backend at
+`http://localhost:3000`, and serves the reverse proxy at `http://localhost`.
+Development mode sets `DEV=true`, disables TLS, and accepts local Host headers.
+Do not use this mode on a public server.
 
 ### 3. Access Configuration Interface
 
@@ -152,7 +161,8 @@ curl -I https://your-domain.com
 - `-cert string` + `-key string`: Use existing certificate and private key files
 
 **Optional options:**
-- `-port string`: HTTPS port (default "8443")
+- `-dev`: Enable local development mode without requiring a domain or TLS certificate
+- `-port string`: Setup server port (default "8443")
 - `-timeout duration`: Maximum session duration (default "30m")
 - `-data string`: Data directory (default "./data")
 - `-cache-dir string`: Auto certificate cache directory (default "./cert-cache")
@@ -171,6 +181,13 @@ curl -I https://your-domain.com
 **Basic setup with auto certificate:**
 ```bash
 ./baklab-setup -auto-cert -domain=example.com
+```
+
+**Generate a local development deployment:**
+```bash
+./baklab-setup -dev
+cd output
+docker compose -f docker-compose.development.yml --env-file .env.development up -d
 ```
 
 **Setup with existing certificates:**

@@ -132,6 +132,7 @@ type RevisionMode struct {
 }
 
 type SetupConfig struct {
+	Development  bool               `json:"development"`
 	Database     DatabaseConfig     `json:"database"`
 	Redis        RedisConfig        `json:"redis"`
 	SMTP         SMTPConfig         `json:"smtp"`

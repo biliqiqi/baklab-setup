@@ -6,6 +6,7 @@ upstream backend{
 
 # base on https://ssl-config.mozilla.org/#server=nginx&version=1.25.2&config=intermediate&openssl=3.0.9&guideline=5.7
 
+{{if not .Development}}
 # Catch-all server block to reject requests with invalid Host header
 server {
     listen 80 default_server;
@@ -52,12 +53,22 @@ server {
     return 301 https://${ROOT_DOMAIN_NAME}$request_uri;
 }
 {{end}}
+{{end}}
 
 server {
+{{if .Development}}
+    listen 80 default_server;
+    listen [::]:80 default_server;
+{{else}}
     listen 80;
     listen [::]:80;
+{{end}}
 
+{{if .Development}}
+    server_name _;
+{{else}}
     server_name ${SERVER_DOMAIN_NAME};
+{{end}}
 
 {{if .SSL.Enabled}}
     location /health {

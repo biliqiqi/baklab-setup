@@ -26,12 +26,12 @@
       "gb": "GB"
     }
   },
-  
+
   "setup": {
     "title": "BakLab 设置",
     "subtitle": "配置您的 BakLab 应用程序用于生产",
     "page_title": "BakLab 设置",
-    
+
     "steps": {
       "welcome": "欢迎",
       "database": "数据库",
@@ -45,7 +45,7 @@
       "review": "检查配置",
       "config_complete": "配置完成"
     },
-    
+
     "init": {
       "welcome_title": "欢迎使用 BakLab 设置向导",
       "welcome_description_part1": "此设置向导将帮助您配置 BakLab 应用程序用于生产部署。本工具主要生成 Docker Compose 配置文件。请注意出于安全考虑，此设置会话将在",
@@ -70,30 +70,30 @@
 
       "prerequisites_note": "不用担心，如果您还没有准备好所有服务 - 您可以在设置过程中进行配置。"
     },
-    
+
     "database": {
       "title": "数据库配置",
       "description": "配置您的 PostgreSQL 数据库连接设置。连接将在 Docker 配置验证。",
-      
+
       "service_type_label": "服务类型",
       "service_type_docker": "Docker Compose",
       "service_type_external": "外部服务",
-      
+
       "host_label": "主机地址",
       "host_placeholder": "localhost",
       "host_help": "主机名或IP地址（例如：localhost、db.example.com、192.168.1.10）",
       "host_error": "请输入有效的主机名或IP地址",
-      
+
       "port_label": "端口",
       "port_placeholder": "5433",
-      "port_help": "PostgreSQL 端口号（默认：5433，范围：1-65535）", 
+      "port_help": "PostgreSQL 端口号（默认：5433，范围：1-65535）",
       "port_error": "端口必须在 1 到 65535 之间",
-      
+
       "name_label": "数据库名称",
       "name_placeholder": "baklab",
       "name_help": "以字母开头，只能包含字母/数字/下划线（例如：baklab、my_app_db）",
       "name_error": "数据库名称必须以字母开头，只能包含字母、数字和下划线（最大63个字符）",
-      
+
       "super_user_title": "PostgreSQL 超级用户配置（仅Docker模式）",
       "super_username_label": "超级用户名",
       "super_username_placeholder": "baklab_super",
@@ -123,22 +123,22 @@
 
       "test_connection": "测试连接"
     },
-    
+
     "redis": {
       "title": "Redis 配置",
       "description": "配置您的 Redis 缓存服务器设置。连接将在 Docker 配置验证。",
-      
+
       "service_type_label": "服务类型",
       "service_type_docker": "Docker Compose",
       "service_type_external": "外部服务",
-      
+
       "host_label": "主机地址",
       "host_placeholder": "localhost",
       "host_help": "Redis 服务器主机名或IP（例如：localhost、redis.example.com、192.168.1.20）",
       "host_error": "请输入有效的主机名或IP地址",
-      
+
       "port_label": "端口",
-      "port_placeholder": "6377", 
+      "port_placeholder": "6377",
       "port_help": "Redis 端口号（默认：6377，范围：1-65535）",
       "port_error": "端口必须在 1 到 65535 之间",
 
@@ -198,7 +198,7 @@
     "app": {
       "title": "应用程序配置",
       "description": "配置您的应用程序基本设置和安全选项。",
-      
+
       "domain_label": "域名",
       "domain_placeholder": "example.com",
       "domain_error": "请输入有效的域名（例如：example.com）或 localhost",
@@ -208,10 +208,10 @@
       "static_host_placeholder": "static.example.com",
       "static_host_help": "用于 CSP 安全策略的静态文件资源主机（例如：static.example.com、cdn.example.com）",
       "static_host_error": "请输入有效的主机名或主机名:端口格式",
-      
+
       "brand_label": "品牌名称",
       "brand_placeholder": "BakLab",
-      
+
       "version_label": "应用程序版本",
       "version_help": "选择 BakLab 应用版本",
 
@@ -219,14 +219,14 @@
       "reverse_proxy_help": "选择反向代理服务器。推荐使用 Caddy，配置更简洁，功能更现代。Nginx 提供兼容性支持。",
 
       "cors_label": "CORS 允许来源",
-      "cors_placeholder": "https://app.example.com\nhttps://admin.example.com", 
+      "cors_placeholder": "https://app.example.com\nhttps://admin.example.com",
       "cors_help": "允许访问您API的前端URL。每行一个。格式：https://domain.com 或 http://localhost:3000",
       "cors_error": "每行都应该是有效的 HTTP/HTTPS URL",
-      
+
       "language_label": "默认语言",
       "language_help": "应用程序界面的主要语言",
       "language_error": "请选择默认语言",
-      
+
       "debug_label": "启用调试模式",
       "debug_help": "仅在开发环境中启用",
 
@@ -265,14 +265,14 @@
       "jwt_method_path": "指定宿主机文件路径",
 
       "jwt_auto_description": "将自动生成一个安全的 Ed25519 私钥用于 JWT 签名。这是推荐且最安全的选项。",
-      
+
       "jwt_file_label": "JWT 密钥文件",
       "jwt_file_help": "将 JWT 私钥文件拖放到此处或点击选择（仅支持 .pem 格式）",
       "jwt_file_note": "要求：PEM 格式的私钥（RSA 或 Ed25519）",
       "select_jwt_file": "选择 JWT 密钥文件",
       "selected_file": "已选择文件",
       "file_size": "文件大小",
-      
+
       "jwt_path_label": "JWT 密钥文件路径（宿主机）",
       "jwt_path_placeholder": "/host/path/to/jwt.pem",
       "jwt_path_help": "宿主机上 JWT 私钥文件（.pem）的绝对路径",
@@ -282,7 +282,7 @@
       "jwt_upload_success": "上传成功！",
       "jwt_upload_failed": "上传失败",
       "jwt_upload_failed_alert": "JWT 密钥文件上传失败",
-      
+
       "jwt_generation_title": "如何生成 JWT 私钥",
       "jwt_generation_commands": "<strong>Ed25519（推荐）：</strong><br><code>openssl genpkey -algorithm Ed25519 -out jwt.pem</code><br><br><strong>RSA-3072：</strong><br><code>openssl genrsa -out jwt.pem 3072</code><br><br><strong>设置正确的文件权限：</strong><br><code>chmod 600 jwt.pem</code>"
     },
@@ -334,10 +334,10 @@
       "domain_match_warning_text": "您的 SSL 证书必须与应用程序的托管域名 ({{domain}}) 匹配，否则 nginx 将无法启动。",
 
       "enable_label": "启用 HTTPS",
-      
+
       "use_setup_cert_label": "使用与设置程序相同的证书",
       "use_setup_cert_help": "自动填入当前设置程序正在使用的证书路径",
-      
+
       "cert_path_label": "证书文件路径",
       "cert_path_help": "宿主机上 SSL 证书文件的绝对路径（例如：/etc/ssl/certs/domain.crt 或 /etc/letsencrypt/live/domain.com/fullchain.pem）",
       "cert_path_required": "启用 SSL 时证书路径为必填项",
@@ -350,7 +350,7 @@
 
       "auto_selected_due_to_domain": "因为您使用了设置程序域名而自动选择"
     },
-    
+
     "goaccess": {
       "title": "分析与监控",
       "description": "配置 GoAccess 实时网站分析。此服务提供详细的网站流量和访客行为分析。",
@@ -375,26 +375,26 @@
     "admin": {
       "title": "管理员用户",
       "description": "创建应用程序的初始管理员账户。邮箱默认为系统管理员邮箱，但您可以根据需要更改。",
-      
+
       "username_label": "用户名",
       "username_placeholder": "admin",
       "username_help": "4-20个字符，以字母/数字开头和结尾，可包含点、下划线、连字符",
       "username_error": "用户名必须是4-20个字符，以字母数字字符开头和结尾",
-      
+
       "email_label": "邮箱",
       "email_help": "管理员用户登录邮箱（默认为系统管理员邮箱，可以不同）",
       "email_error": "请输入有效的邮箱地址",
-      
-      "password_label": "密码", 
+
+      "password_label": "密码",
       "password_placeholder": "输入安全密码",
       "password_help": "12-64个字符，包含多种类型（字母、数字、符号）",
       "password_error": "密码必须是12-64个字符，包含小写、大写、数字和特殊字符（!@#$%^&*）",
-      
+
       "password_confirm_label": "确认密码",
-      "password_confirm_placeholder": "确认您的密码", 
+      "password_confirm_placeholder": "确认您的密码",
       "password_confirm_error": "密码必须匹配"
     },
-    
+
     "review": {
       "title": "检查配置",
       "description": "请在生成配置文件之前检查您的配置。",
@@ -402,7 +402,7 @@
       "generating": "生成中...",
       "generation_failed": "配置验证失败，请检查所有字段后重试。",
       "generation_error": "配置生成失败，请重试。",
-      
+
       "sections": {
         "database": "数据库",
         "redis": "Redis缓存",
@@ -413,7 +413,7 @@
         "application": "应用程序",
         "administrator": "管理员"
       },
-      
+
       "fields": {
         "host": "主机",
         "database": "数据库",
@@ -454,7 +454,7 @@
         "username": "用户名",
         "email": "邮箱"
       },
-      
+
       "cors_configured": {
         "zero": "未配置 CORS 来源",
         "one": "已配置 {{count}} 个 CORS 来源",
@@ -464,12 +464,12 @@
       "jwt_auto_generate": "自动生成",
       "jwt_from_file": "从文件加载"
     },
-    
+
     "config_complete": {
       "title": "配置完成！",
       "description": "您的 BakLab 应用程序已成功配置。您现在可以使用生成的配置文件手动部署。",
       "ready_notice": "配置文件已生成在 <code>{{outputPath}}</code>",
-      "ready_description": "手动部署命令: <code>cd {{outputPath}} && docker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
+      "ready_description": "手动部署命令：<code>cd {{outputPath}} && docker compose -f {{composeFile}} --env-file {{envFile}} up -d</code>",
       "complete_button": "完成设置"
     },
 
@@ -477,7 +477,7 @@
       "title": "设置完成！",
       "description": "您的 BakLab 应用程序已成功配置。",
       "congratulations": "恭喜！您的 BakLab 实例现在已准备就绪。设置服务仍可用于未来的配置更新。",
-      
+
       "next_steps": "下一步",
       "steps_list": [
         "访问您的应用程序：访问您的域名开始使用 BakLab",
@@ -489,9 +489,8 @@
 
       "run_again_button": "重新运行设置"
     }
-
   },
-  
+
   "messages": {
     "setup_initialized": "设置初始化成功",
     "config_saved": "配置保存成功",

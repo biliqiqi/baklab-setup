@@ -5,7 +5,10 @@
 {
 	admin off
 }
-{{if .SSL.Enabled}}
+{{if .Development}}
+# Local development accepts any Host header over plain HTTP.
+:80 {
+{{else if .SSL.Enabled}}
 # Explicit HTTP health endpoint for container healthcheck.
 # Keep it on plain HTTP to avoid TLS/certificate timing and DNS hairpin issues.
 :80 {

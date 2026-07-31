@@ -204,6 +204,7 @@ func (h *SetupHandlers) SaveConfigHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	h.setupService.PrepareConfiguration(&cfg)
 	validator := services.NewValidatorService()
 	errors := validator.ValidateConfig(&cfg)
 
@@ -408,6 +409,7 @@ func (h *SetupHandlers) ValidateConfigHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	h.setupService.PrepareConfiguration(&cfg)
 	validator := services.NewValidatorService()
 	errors := validator.ValidateConfig(&cfg)
 
@@ -600,9 +602,10 @@ func (h *SetupHandlers) renderSetupPage(w http.ResponseWriter, r *http.Request) 
         <h1>BakLab Setup</h1>
         <p>%s</p>
     </div>
-    <script type="module" src="/static/app.js?v=1.5"></script>
-</body>
-</html>`, pageTitle, loadingMessage)
+	    <script>window.__BAKLAB_SETUP__ = { development: %t };</script>
+	    <script type="module" src="/static/app.js?v=1.5"></script>
+	</body>
+	</html>`, pageTitle, loadingMessage, h.devMode)
 	if err != nil {
 		log.Printf("Warning: failed to write setup page: %v", err)
 	}

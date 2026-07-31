@@ -19,9 +19,10 @@ import (
 )
 
 type SetupService struct {
-	storage   *storage.JSONStorage
-	validator *ValidatorService
-	generator *GeneratorService
+	storage         *storage.JSONStorage
+	validator       *ValidatorService
+	generator       *GeneratorService
+	developmentMode bool
 }
 
 func NewSetupService(storage *storage.JSONStorage) *SetupService {
@@ -42,6 +43,29 @@ func (s *SetupService) SetTemplatesFS(templatesFS embed.FS) {
 
 func (s *SetupService) SetOutputDir(dir string) {
 	s.generator.SetOutputDir(dir)
+}
+
+func (s *SetupService) SetDevelopmentMode(enabled bool) {
+	s.developmentMode = enabled
+}
+
+func (s *SetupService) PrepareConfiguration(cfg *model.SetupConfig) {
+	if s.developmentMode {
+		cfg.Development = true
+	}
+
+	if !cfg.Development {
+		return
+	}
+
+	cfg.SSL = model.SSLConfig{}
+	cfg.App.Debug = true
+	if cfg.App.DomainName == "" {
+		cfg.App.DomainName = "localhost"
+	}
+	if cfg.App.StaticHostName == "" {
+		cfg.App.StaticHostName = "localhost"
+	}
 }
 
 func (s *SetupService) InitializeSetup(ipAddress string) (*model.SetupToken, error) {
@@ -124,6 +148,8 @@ func (s *SetupService) MarkTokenAsUsed(tokenStr string) error {
 }
 
 func (s *SetupService) SaveConfiguration(cfg *model.SetupConfig) error {
+	s.PrepareConfiguration(cfg)
+
 	if errors := s.validator.ValidateConfig(cfg); len(errors) > 0 {
 		return fmt.Errorf("configuration validation failed: %d errors", len(errors))
 	}
@@ -136,6 +162,8 @@ func (s *SetupService) SaveConfiguration(cfg *model.SetupConfig) error {
 }
 
 func (s *SetupService) TestConnections(cfg *model.SetupConfig) ([]model.ConnectionTestResult, error) {
+	s.PrepareConfiguration(cfg)
+
 	if err := s.updateSetupProgress("connection-test", 50, "Testing connections..."); err != nil {
 		return nil, err
 	}
@@ -164,6 +192,8 @@ func (s *SetupService) TestConnections(cfg *model.SetupConfig) ([]model.Connecti
 }
 
 func (s *SetupService) GenerateConfigFiles(cfg *model.SetupConfig) error {
+	s.PrepareConfiguration(cfg)
+
 	if err := s.generator.ClearOutputDir(); err != nil {
 		return fmt.Errorf("failed to clear output directory: %w", err)
 	}
@@ -355,7 +385,6 @@ func (s *SetupService) isSanitizedConfig(cfg *model.SetupConfig) bool {
 
 func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig, error) {
 	configPath := fmt.Sprintf("%s/.baklab-setup/config.json", outputDir)
-	envPath := fmt.Sprintf("%s/.env.production", outputDir)
 
 	log.Printf("Reading config from: %s", configPath)
 	configData, err := os.ReadFile(configPath)
@@ -368,6 +397,7 @@ func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig
 		return nil, fmt.Errorf("failed to import base configuration: %w", err)
 	}
 
+	envPath := fmt.Sprintf("%s/%s", outputDir, envFileName(cfg))
 	log.Printf("Reading .env from: %s", envPath)
 	envVars, err := parseEnvFile(envPath)
 	if err != nil {

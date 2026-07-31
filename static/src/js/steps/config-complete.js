@@ -1,5 +1,5 @@
-export function render(container, { setupService, i18n }) {
-        container.innerHTML = `
+export function render(container, { config, setupService, i18n }) {
+  container.innerHTML = `
             <div class="form-section">
                 <h3 style="text-align: center;">
                     <span style="color: var(--success-color); margin-right: 0.5rem;">✓</span>
@@ -15,29 +15,40 @@ export function render(container, { setupService, i18n }) {
             </div>
         `;
 
-        setTimeout(() => {
-            if (i18n) {
-                const outputPath = setupService.outputPath || './output';
-                const params = { outputPath: outputPath };
+  setTimeout(() => {
+    if (i18n) {
+      const outputPath = setupService.outputPath || "./output";
+      const development = config.get("development") === true;
+      const params = {
+        outputPath: outputPath,
+        composeFile: development
+          ? "docker-compose.development.yml"
+          : "docker-compose.production.yml",
+        envFile: development ? ".env.development" : ".env.production",
+      };
 
-                const readyNotice = document.getElementById('ready-notice');
-                const readyDescription = document.getElementById('ready-description');
+      const readyNotice = document.getElementById("ready-notice");
+      const readyDescription = document.getElementById("ready-description");
 
-                if (readyNotice) {
-                    const noticeText = i18n.t('setup.config_complete.ready_notice', params);
-                    readyNotice.innerHTML = noticeText;
-                    readyNotice.removeAttribute('data-i18n-html');
-                }
-                if (readyDescription) {
-                    const descText = i18n.t('setup.config_complete.ready_description', params);
-                    const processedText = descText.replace(/<code>([^<]*cd [^<]*)<\/code>/g, '<code class="complete-step-code">$1</code>');
-                    readyDescription.innerHTML = processedText;
-                    readyDescription.removeAttribute('data-i18n-html');
-                }
-
-            }
-        }, 50);
+      if (readyNotice) {
+        const noticeText = i18n.t("setup.config_complete.ready_notice", params);
+        readyNotice.innerHTML = noticeText;
+        readyNotice.removeAttribute("data-i18n-html");
+      }
+      if (readyDescription) {
+        const descText = i18n.t(
+          "setup.config_complete.ready_description",
+          params,
+        );
+        const processedText = descText.replace(
+          /<code>([^<]*cd [^<]*)<\/code>/g,
+          '<code class="complete-step-code">$1</code>',
+        );
+        readyDescription.innerHTML = processedText;
+        readyDescription.removeAttribute("data-i18n-html");
+      }
     }
-    
-    
-    // Step handlers
+  }, 50);
+}
+
+// Step handlers

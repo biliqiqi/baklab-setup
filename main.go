@@ -50,12 +50,13 @@ var (
 	inputDir     = flag.String("input", "", "Import from previous output directory (includes passwords and sensitive data)")
 	outputDir    = flag.String("output", "", "Specify output directory for generated files (optional, defaults to auto-generated path)")
 	timeout      = flag.Duration("timeout", 30*time.Minute, "Maximum setup session duration")
-	port         = flag.String("port", "8443", "HTTPS port to run the setup server on")
+	port         = flag.String("port", "8443", "Port to run the setup server on")
 	dataDir      = flag.String("data", "./data", "Directory to store setup data")
 	regen        = flag.Bool("regen", false, "Regenerate all config files in-place from existing configuration (requires -input)")
 	reverseProxy = flag.String("reverse-proxy", "", "Override reverse proxy type: 'caddy' or 'nginx' (optional, only used with -regen)")
 	withWWW      = flag.Bool("with-www", false, "Enable www to non-www redirect handling")
 	cleanOnStart = flag.Bool("clean", false, "Clean cached setup data before starting the server")
+	dev          = flag.Bool("dev", false, "Run the setup server over local HTTP and generate a development deployment")
 )
 
 func main() {
@@ -68,16 +69,16 @@ func main() {
 
 	flag.Parse()
 
+	devMode := *dev || os.Getenv("BAKLAB_DEV_MODE") == "true" || os.Getenv("BAKLAB_DEV") == "1"
+	if devMode {
+		log.Printf("Development mode enabled")
+	}
+
 	if *regen {
-		if err := runRegenMode(); err != nil {
+		if err := runRegenMode(devMode); err != nil {
 			log.Fatalf("Regeneration failed: %v", err)
 		}
 		return
-	}
-
-	devMode := os.Getenv("BAKLAB_DEV_MODE") == "true" || os.Getenv("BAKLAB_DEV") == "1"
-	if devMode {
-		log.Printf("Development mode enabled (environment variable detected)")
 	}
 
 	if *cleanOnStart {
@@ -86,6 +87,9 @@ func main() {
 		}
 	}
 
+	if devMode && *domain == "" {
+		*domain = "localhost"
+	}
 	if *domain == "" {
 		log.Fatal("Domain name is required. Use -domain flag.")
 	}
@@ -94,7 +98,11 @@ func main() {
 	var certManager *autocert.Manager
 	var exportedCertPath, exportedKeyPath string
 
-	if *autoCert {
+	if devMode {
+		if *autoCert || *certFile != "" || *keyFile != "" {
+			log.Printf("Development mode ignores TLS certificate options")
+		}
+	} else if *autoCert {
 		if err := os.MkdirAll(*cacheDir, 0700); err != nil {
 			log.Fatalf("Failed to create certificate cache directory: %v", err)
 		}
@@ -155,6 +163,7 @@ func main() {
 
 	setupService := services.NewSetupService(jsonStorage)
 	setupService.SetTemplatesFS(templatesFS)
+	setupService.SetDevelopmentMode(devMode)
 
 	if *configFile != "" && *inputDir != "" {
 		log.Fatal("Cannot use both -config and -input flags simultaneously. Use -config for sanitized config (no passwords) or -input for full output directory (with passwords)")
@@ -191,9 +200,13 @@ func main() {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 
-	r.Use(setupStrictCORS(*domain, *port))
+	if devMode {
+		r.Use(setupDevelopmentCORS())
+	} else {
+		r.Use(setupStrictCORS(*domain, *port))
+	}
 
-	r.Use(setupSecurityHeaders(*domain))
+	r.Use(setupSecurityHeaders(*domain, devMode))
 
 	r.Use(middleware.NoCache)
 
@@ -236,13 +249,19 @@ func main() {
 		log.Fatalf("Failed to initialize setup: %v", err)
 	}
 
-	accessURL := fmt.Sprintf("https://%s:%s?token=%s", *domain, *port, token.Token)
+	scheme := "https"
+	if devMode {
+		scheme = "http"
+	}
+	accessURL := fmt.Sprintf("%s://%s:%s?token=%s", scheme, *domain, *port, token.Token)
 
-	fmt.Printf("BakLab HTTPS-Only Setup Service Started\n")
+	fmt.Printf("BakLab Setup Service Started\n")
 	fmt.Printf("\nOne-time Access URL:\n")
 	fmt.Printf("   %s\n\n", accessURL)
 	fmt.Printf("Token expires at: %s\n", token.ExpiresAt.Format("2006-01-02 15:04:05"))
-	fmt.Printf("Authorized domain: %s\n", *domain)
+	if !devMode {
+		fmt.Printf("Authorized domain: %s\n", *domain)
+	}
 	fmt.Printf("WARNING: This URL can only be used ONCE!\n")
 	fmt.Printf("WARNING: Service will auto-close after setup completion\n")
 
@@ -263,8 +282,12 @@ func main() {
 		tlsConfig.GetCertificate = certManager.GetCertificate
 	}
 
+	serverAddr := fmt.Sprintf(":%s", *port)
+	if devMode {
+		serverAddr = fmt.Sprintf("127.0.0.1:%s", *port)
+	}
 	server := &http.Server{
-		Addr:      fmt.Sprintf(":%s", *port),
+		Addr:      serverAddr,
 		Handler:   r,
 		TLSConfig: tlsConfig,
 	}
@@ -296,7 +319,11 @@ func main() {
 	log.Printf("Press Ctrl+C to stop the server")
 
 	var httpServer *http.Server
-	if *autoCert && certManager != nil {
+	if devMode {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTP server failed to start: %v", err)
+		}
+	} else if *autoCert && certManager != nil {
 		httpServer = &http.Server{
 			Addr:    ":80",
 			Handler: certManager.HTTPHandler(nil),
@@ -390,12 +417,27 @@ func setupStrictCORS(domain, port string) func(http.Handler) http.Handler {
 	})
 }
 
-func setupSecurityHeaders(domain string) func(http.Handler) http.Handler {
+func setupDevelopmentCORS() func(http.Handler) http.Handler {
+	return cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		ExposedHeaders:   []string{"Setup-Token-Status"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	})
+}
+
+func setupSecurityHeaders(domain string, development bool) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			connectSource := "'self'"
+			if !development {
+				connectSource = fmt.Sprintf("'self' https://%s", domain)
+			}
 			cspDirectives := []string{
 				"default-src 'self'",
-				fmt.Sprintf("connect-src 'self' https://%s", domain),
+				fmt.Sprintf("connect-src %s", connectSource),
 				"script-src 'self' 'unsafe-inline'",
 				"style-src 'self' 'unsafe-inline'",
 				"img-src 'self' data:",
@@ -406,7 +448,9 @@ func setupSecurityHeaders(domain string) func(http.Handler) http.Handler {
 			}
 			w.Header().Set("Content-Security-Policy", strings.Join(cspDirectives, "; "))
 
-			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+			if !development {
+				w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+			}
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 			w.Header().Set("X-Frame-Options", "DENY")
 			w.Header().Set("X-XSS-Protection", "1; mode=block")
@@ -530,7 +574,7 @@ func exportAutocertCertificate(manager *autocert.Manager, domain, certPath, keyP
 	return nil
 }
 
-func runRegenMode() error {
+func runRegenMode(devMode bool) error {
 	if *inputDir == "" {
 		return fmt.Errorf("-input flag is required when using -regen mode")
 	}
@@ -565,6 +609,7 @@ func runRegenMode() error {
 	jsonStorage := storage.NewJSONStorage(*dataDir)
 	setupService := services.NewSetupService(jsonStorage)
 	setupService.SetTemplatesFS(templatesFS)
+	setupService.SetDevelopmentMode(devMode)
 	setupService.SetOutputDir(absOutputDir)
 
 	cfg, err := setupService.ImportFromOutputDir(absInputDir)

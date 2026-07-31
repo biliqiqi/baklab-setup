@@ -111,6 +111,93 @@ func TestGenerateCaddyConfigWithSSL(t *testing.T) {
 	}
 }
 
+func TestGenerateDevelopmentConfig(t *testing.T) {
+	tempDir := t.TempDir()
+
+	templatesDir, err := filepath.Abs("../../templates")
+	if err != nil {
+		t.Fatalf("Failed to get templates directory path: %v", err)
+	}
+
+	g := NewGeneratorService()
+	g.SetOutputDir(tempDir)
+	g.SetTemplatesFS(os.DirFS(templatesDir))
+
+	cfg := &model.SetupConfig{
+		Development: true,
+		Database: model.DatabaseConfig{
+			ServiceType: "external",
+			Host:        "127.0.0.1",
+			Port:        5432,
+		},
+		Redis: model.RedisConfig{
+			ServiceType: "external",
+			Host:        "127.0.0.1",
+			Port:        6379,
+		},
+		App: model.AppConfig{
+			DomainName:     "localhost",
+			StaticHostName: "localhost",
+			BrandName:      "BakLab",
+			DefaultLang:    "en",
+		},
+		ReverseProxy: model.ReverseProxyConfig{Type: "caddy"},
+	}
+
+	if err := g.GenerateEnvFile(cfg); err != nil {
+		t.Fatalf("GenerateEnvFile() failed: %v", err)
+	}
+	if err := g.GenerateDockerConfig(cfg); err != nil {
+		t.Fatalf("GenerateDockerConfig() failed: %v", err)
+	}
+
+	envContent, err := os.ReadFile(filepath.Join(tempDir, ".env.development"))
+	if err != nil {
+		t.Fatalf("Failed to read development env file: %v", err)
+	}
+	if !strings.Contains(string(envContent), "DEV=true") {
+		t.Error("Development env file should enable the backend development mode")
+	}
+	if !strings.Contains(string(envContent), "USE_HTTPS=false") {
+		t.Error("Development env file should disable HTTPS")
+	}
+
+	composeContent, err := os.ReadFile(filepath.Join(tempDir, "docker-compose.development.yml"))
+	if err != nil {
+		t.Fatalf("Failed to read development compose file: %v", err)
+	}
+	compose := string(composeContent)
+	if !strings.Contains(compose, `- "${APP_OUTER_PORT:-3000}:${APP_PORT:-3000}"`) {
+		t.Error("Development compose file should expose the backend port")
+	}
+	if strings.Contains(compose, "./ssl/") {
+		t.Error("Development compose file should not mount TLS certificates")
+	}
+
+	caddyContent, err := os.ReadFile(filepath.Join(tempDir, "caddy", "Caddyfile"))
+	if err != nil {
+		t.Fatalf("Failed to read development Caddyfile: %v", err)
+	}
+	if !strings.Contains(string(caddyContent), ":80 {") {
+		t.Error("Development Caddyfile should accept any local Host header over HTTP")
+	}
+
+	if err := g.GenerateNginxConfig(cfg); err != nil {
+		t.Fatalf("GenerateNginxConfig() failed: %v", err)
+	}
+	nginxContent, err := os.ReadFile(filepath.Join(tempDir, "nginx", "templates", "baklab.conf.template"))
+	if err != nil {
+		t.Fatalf("Failed to read development Nginx config: %v", err)
+	}
+	nginx := string(nginxContent)
+	if !strings.Contains(nginx, "listen 80 default_server;") || !strings.Contains(nginx, "server_name _;") {
+		t.Error("Development Nginx config should accept any Host header")
+	}
+	if strings.Contains(nginx, "return 403;") {
+		t.Error("Development Nginx config should not reject unmatched Host headers")
+	}
+}
+
 func TestRootDomainFunction(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -26,12 +26,12 @@
       "gb": "GB"
     }
   },
-  
+
   "setup": {
     "title": "BakLab Setup",
     "subtitle": "Configure your BakLab application for production",
     "page_title": "BakLab Setup",
-    
+
     "steps": {
       "welcome": "Welcome",
       "database": "Database",
@@ -45,7 +45,7 @@
       "review": "Review",
       "config_complete": "Configuration Complete"
     },
-    
+
     "init": {
       "welcome_title": "Welcome to BakLab Setup",
       "welcome_description_part1": "This setup wizard will help you configure your BakLab application for production. It generates Docker Compose configuration files for deployment. Please note that this setup session will automatically close after",
@@ -70,30 +70,30 @@
 
       "prerequisites_note": "Don't worry if you don't have all services ready - you can configure them during the setup process."
     },
-    
+
     "database": {
       "title": "Database Configuration",
       "description": "Configure your PostgreSQL database connection settings.",
-      
+
       "service_type_label": "Service Type",
       "service_type_docker": "Docker Compose",
       "service_type_external": "External Service",
-      
+
       "host_label": "Host",
-      "host_placeholder": "localhost", 
+      "host_placeholder": "localhost",
       "host_help": "Hostname or IP address (e.g., localhost, db.example.com, 192.168.1.10)",
       "host_error": "Please enter a valid hostname or IP address",
-      
+
       "port_label": "Port",
       "port_placeholder": "5433",
       "port_help": "PostgreSQL port number (default: 5433, range: 1-65535)",
       "port_error": "Port must be between 1 and 65535",
-      
+
       "name_label": "Database Name",
       "name_placeholder": "baklab",
       "name_help": "Start with letter, only letters/numbers/underscores (e.g., baklab, my_app_db)",
       "name_error": "Database name must start with a letter and contain only letters, numbers, and underscores (max 63 characters)",
-      
+
       "super_user_title": "PostgreSQL Super User Configuration (Docker Only)",
       "super_username_label": "Super User Name",
       "super_username_placeholder": "baklab_super",
@@ -123,21 +123,21 @@
 
       "test_connection": "Test Connection"
     },
-    
+
     "redis": {
       "title": "Redis Configuration",
       "description": "Configure your Redis cache server settings.",
-      
+
       "service_type_label": "Service Type",
       "service_type_docker": "Docker Compose",
       "service_type_external": "External Service",
-      
+
       "host_label": "Host",
       "host_placeholder": "localhost",
       "host_help": "Redis server hostname or IP (e.g., localhost, redis.example.com, 192.168.1.20)",
       "host_error": "Please enter a valid hostname or IP address",
-      
-      "port_label": "Port", 
+
+      "port_label": "Port",
       "port_placeholder": "6377",
       "port_help": "Redis port number (default: 6377, range: 1-65535)",
       "port_error": "Port must be between 1 and 65535",
@@ -198,7 +198,7 @@
     "app": {
       "title": "Application Configuration",
       "description": "Configure your application's basic settings and security options.",
-      
+
       "domain_label": "Domain Name",
       "domain_placeholder": "example.com",
       "domain_error": "Please enter a valid domain name (e.g., example.com) or localhost",
@@ -208,10 +208,10 @@
       "static_host_placeholder": "static.example.com",
       "static_host_help": "Host for static file resources used in CSP security policy (e.g., static.example.com, cdn.example.com)",
       "static_host_error": "Please enter a valid hostname or hostname:port format",
-      
+
       "brand_label": "Brand Name",
       "brand_placeholder": "BakLab",
-      
+
       "version_label": "Application Version",
       "version_help": "Select BakLab application version",
 
@@ -222,11 +222,11 @@
       "cors_placeholder": "https://app.example.com\nhttps://admin.example.com",
       "cors_help": "Frontend URLs allowed to access your API. One per line. Format: https://domain.com or http://localhost:3000",
       "cors_error": "Each line should be a valid HTTP/HTTPS URL",
-      
+
       "language_label": "Default Language",
       "language_help": "Primary language for the application interface",
       "language_error": "Please select a default language",
-      
+
       "debug_label": "Enable Debug Mode",
       "debug_help": "Only enable for development environments",
 
@@ -265,14 +265,14 @@
       "jwt_method_path": "Specify Host File Path",
 
       "jwt_auto_description": "A secure Ed25519 private key will be automatically generated for JWT signing. This is the recommended and most secure option.",
-      
+
       "jwt_file_label": "JWT Key File",
       "jwt_file_help": "Drop a JWT private key file here or click to select (.pem format only)",
       "jwt_file_note": "Required: PEM format private key (RSA or Ed25519)",
       "select_jwt_file": "Select JWT Key File",
       "selected_file": "Selected File",
       "file_size": "File Size",
-      
+
       "jwt_path_label": "JWT Key File Path (Host Machine)",
       "jwt_path_placeholder": "/host/path/to/jwt.pem",
       "jwt_path_help": "Absolute path to JWT private key file (.pem) on host machine",
@@ -282,7 +282,7 @@
       "jwt_upload_success": "Upload successful!",
       "jwt_upload_failed": "Upload failed",
       "jwt_upload_failed_alert": "JWT key file upload failed",
-      
+
       "jwt_generation_title": "How to Generate JWT Private Key",
       "jwt_generation_commands": "<strong>Ed25519 (Recommended):</strong><br><code>openssl genpkey -algorithm Ed25519 -out jwt.pem</code><br><br><strong>RSA-3072:</strong><br><code>openssl genrsa -out jwt.pem 3072</code><br><br><strong>Set proper permissions:</strong><br><code>chmod 600 jwt.pem</code>"
     },
@@ -334,10 +334,10 @@
       "domain_match_warning_text": "Your SSL certificate must match the application's hosting domain ({{domain}}), otherwise nginx will fail to start.",
 
       "enable_label": "Enable HTTPS",
-      
+
       "use_setup_cert_label": "Use same certificates as setup program",
       "use_setup_cert_help": "Automatically fill in the certificate paths currently used by this setup program",
-      
+
       "cert_path_label": "Certificate File Path",
       "cert_path_help": "Absolute path to the SSL certificate file on the host machine (e.g., /etc/ssl/certs/domain.crt or /etc/letsencrypt/live/domain.com/fullchain.pem)",
       "cert_path_required": "Certificate path is required when SSL is enabled",
@@ -350,7 +350,7 @@
 
       "auto_selected_due_to_domain": "Automatically selected because you are using the setup program domain"
     },
-    
+
     "goaccess": {
       "title": "Analytics & Monitoring",
       "description": "Configure GoAccess real-time web analytics. This service provides detailed analysis of your website traffic and visitor behavior.",
@@ -375,26 +375,26 @@
     "admin": {
       "title": "Administrator User",
       "description": "Create the initial administrator account for your application. The email defaults to the system admin email, but you can change it if needed.",
-      
+
       "username_label": "Username",
       "username_placeholder": "admin",
       "username_help": "4-20 characters, start/end with letters/numbers, can contain dots, underscores, hyphens",
       "username_error": "Username must be 4-20 characters, start and end with alphanumeric characters",
-      
+
       "email_label": "Email",
       "email_help": "Admin user login email (defaults to system admin email, can be different)",
       "email_error": "Please enter a valid email address",
-      
+
       "password_label": "Password",
       "password_placeholder": "Enter secure password",
       "password_help": "12-64 characters with mixed types (letters, numbers, symbols)",
       "password_error": "Password must be 12-64 characters with lowercase, uppercase, numbers, and special characters (!@#$%^&*)",
-      
+
       "password_confirm_label": "Confirm Password",
       "password_confirm_placeholder": "Confirm your password",
       "password_confirm_error": "Passwords must match"
     },
-    
+
     "review": {
       "title": "Review Configuration",
       "description": "Please review your configuration before generating the configuration files.",
@@ -402,7 +402,7 @@
       "generating": "Generating...",
       "generation_failed": "Configuration validation failed. Please check all fields and try again.",
       "generation_error": "Configuration generation failed. Please try again.",
-      
+
       "sections": {
         "database": "Database",
         "redis": "Redis",
@@ -413,7 +413,7 @@
         "application": "Application",
         "administrator": "Administrator"
       },
-      
+
       "fields": {
         "host": "Host",
         "database": "Database",
@@ -454,7 +454,7 @@
         "username": "Username",
         "email": "Email"
       },
-      
+
       "cors_configured": {
         "zero": "No CORS origins configured",
         "one": "{{count}} CORS origin configured",
@@ -464,12 +464,12 @@
       "jwt_auto_generate": "Auto Generate",
       "jwt_from_file": "From File"
     },
-    
+
     "config_complete": {
       "title": "Configuration Complete!",
       "description": "Your BakLab application has been successfully configured. You can now manually deploy using the generated configuration files.",
       "ready_notice": "Configuration files generated in <code>{{outputPath}}</code>",
-      "ready_description": "Manual deployment: <code>cd {{outputPath}} && docker compose -f docker-compose.production.yml --env-file .env.production up -d</code>",
+      "ready_description": "Manual deployment: <code>cd {{outputPath}} && docker compose -f {{composeFile}} --env-file {{envFile}} up -d</code>",
       "complete_button": "Complete Setup"
     },
 
@@ -477,11 +477,11 @@
       "title": "Setup Complete!",
       "description": "Your BakLab application has been successfully configured.",
       "congratulations": "Congratulations! Your BakLab instance is now ready for use. The setup service remains available for future configuration updates.",
-      
+
       "next_steps": "Next Steps",
       "steps_list": [
         "Access your application: Visit your domain to start using BakLab",
-        "Configuration updates: You can re-run setup anytime to update your configuration", 
+        "Configuration updates: You can re-run setup anytime to update your configuration",
         "Backups: Set up regular backups of your data and configuration",
         "Monitoring: Monitor your services with docker-compose ps",
         "Logs: Check logs with docker-compose logs -f"
@@ -489,9 +489,8 @@
 
       "run_again_button": "Run Setup Again"
     }
-
   },
-  
+
   "messages": {
     "setup_initialized": "Setup initialized successfully",
     "config_saved": "Configuration saved successfully",
