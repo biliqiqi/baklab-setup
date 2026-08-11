@@ -66,6 +66,7 @@
     "validation.redis.password_error": "Redis password must be 12-64 characters with at least 3 types: lowercase, uppercase, numbers, special characters (!@#$%^&*)",
     "validation.app.domain_error": "Please enter a valid domain name (e.g., example.com) or localhost",
     "validation.app.static_host_error": "Please enter a valid hostname or hostname:port format",
+    "validation.app.user_guide_host_error": "Please enter a valid user guide hostname",
     "validation.app.brand_error": "Brand name must be 2-50 characters and contain only letters, numbers, spaces, hyphens, and underscores",
     "validation.app.email_error": "Please enter a valid email address",
     "validation.app.cors_error": "Each line should be a valid HTTP/HTTPS URL",

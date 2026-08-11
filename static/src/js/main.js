@@ -56,6 +56,7 @@ class SetupApp {
       app: {
         domain_name: this.developmentMode ? "localhost" : "",
         static_host_name: this.developmentMode ? "localhost" : "",
+        user_guide_host_name: "",
         brand_name: "BakLab",
         default_lang: "en",
         version: "latest",

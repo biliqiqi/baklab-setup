@@ -35,7 +35,6 @@ var (
 
 	domainRegex = regexp.MustCompile(`^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$|^localhost$`)
 
-
 	usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]+[a-zA-Z0-9]$`)
 
 	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
@@ -708,6 +707,13 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 		}
 	}
 
+	if cfg.UserGuideHostName != "" && !domainRegex.MatchString(cfg.UserGuideHostName) {
+		errors = append(errors, model.ValidationError{
+			Field:   "app.user_guide_host_name",
+			Message: "key:validation.app.user_guide_host_error",
+		})
+	}
+
 	if cfg.BrandName == "" {
 		errors = append(errors, model.ValidationError{
 			Field:   "app.brand_name",
@@ -742,7 +748,6 @@ func (v *ValidatorService) validateAppConfig(cfg model.AppConfig) []model.Valida
 			Message: "key:validation.app.language_error",
 		})
 	}
-
 
 	return errors
 }
@@ -914,4 +919,3 @@ func (v *ValidatorService) validateFrontendConfig(cfg model.AppConfig) []model.V
 
 	return errors
 }
-

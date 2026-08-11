@@ -66,6 +66,7 @@
     "validation.redis.password_error": "Redis密码必须是12-64个字符，至少包含3种类型：小写字母、大写字母、数字、特殊字符（!@#$%^&*）",
     "validation.app.domain_error": "请输入有效的域名（例如：example.com）或 localhost",
     "validation.app.static_host_error": "请输入有效的主机名或主机名:端口格式",
+    "validation.app.user_guide_host_error": "请输入有效的用户手册主机名",
     "validation.app.brand_error": "品牌名称必须是2-50个字符，只能包含字母、数字、空格、连字符和下划线",
     "validation.app.email_error": "请输入有效的邮箱地址",
     "validation.app.cors_error": "每行都应该是有效的 HTTP/HTTPS URL",

@@ -23,9 +23,10 @@ func TestGenerateCaddyConfig(t *testing.T) {
 
 	cfg := &model.SetupConfig{
 		App: model.AppConfig{
-			DomainName:      "app.example.com",
-			RankingHostName: "ranking.example.com",
-			HandleWWW:       true,
+			DomainName:        "app.example.com",
+			RankingHostName:   "ranking.example.com",
+			UserGuideHostName: "docs.baklab.app",
+			HandleWWW:         true,
 		},
 		SSL: model.SSLConfig{
 			Enabled: false,
@@ -62,6 +63,32 @@ func TestGenerateCaddyConfig(t *testing.T) {
 
 	if !strings.Contains(contentStr, "ranking.example.com") {
 		t.Errorf("Generated Caddyfile should contain 'ranking.example.com'")
+	}
+
+	if !strings.Contains(contentStr, "docs.baklab.app") {
+		t.Errorf("Generated Caddyfile should contain 'docs.baklab.app'")
+	}
+
+	if !strings.Contains(contentStr, "reverse_proxy user-guide:80") {
+		t.Errorf("Generated Caddyfile should proxy the user guide service")
+	}
+
+	if err = g.GenerateNginxConfig(cfg); err != nil {
+		t.Fatalf("GenerateNginxConfig() failed: %v", err)
+	}
+
+	nginxPath := filepath.Join(tempDir, "nginx", "templates", "baklab.conf.template")
+	nginxContent, err := os.ReadFile(nginxPath)
+	if err != nil {
+		t.Fatalf("Failed to read generated Nginx config: %v", err)
+	}
+
+	if !strings.Contains(string(nginxContent), "server_name ${USER_GUIDE_HOST_NAME};") {
+		t.Errorf("Generated Nginx config should contain the user guide server")
+	}
+
+	if !strings.Contains(string(nginxContent), "proxy_pass http://user-guide:80;") {
+		t.Errorf("Generated Nginx config should proxy the user guide service")
 	}
 }
 
@@ -172,6 +199,9 @@ func TestGenerateDevelopmentConfig(t *testing.T) {
 	}
 	if strings.Contains(compose, "./ssl/") {
 		t.Error("Development compose file should not mount TLS certificates")
+	}
+	if strings.Contains(compose, "baklab-user-guide") {
+		t.Error("Compose file should omit the user guide service when its hostname is empty")
 	}
 
 	caddyContent, err := os.ReadFile(filepath.Join(tempDir, "caddy", "Caddyfile"))
@@ -298,10 +328,11 @@ func TestGenerateDockerConfigWithCaddyNativeACME(t *testing.T) {
 			AdminPassword: "Password123!",
 		},
 		App: model.AppConfig{
-			DomainName:     "app.example.com",
-			StaticHostName: "static.example.com",
-			BrandName:      "BakLab",
-			DefaultLang:    "en",
+			DomainName:        "app.example.com",
+			StaticHostName:    "static.example.com",
+			UserGuideHostName: "docs.baklab.app",
+			BrandName:         "BakLab",
+			DefaultLang:       "en",
 		},
 		SSL: model.SSLConfig{
 			Enabled:  true,
@@ -326,6 +357,9 @@ func TestGenerateDockerConfigWithCaddyNativeACME(t *testing.T) {
 	contentStr := string(content)
 	if strings.Contains(contentStr, "certbot:") {
 		t.Errorf("Generated docker compose should not contain certbot service in native Caddy ACME mode")
+	}
+	if !strings.Contains(contentStr, "ghcr.io/biliqiqi/baklab-user-guide:latest") {
+		t.Errorf("Generated docker compose should contain the user guide service")
 	}
 
 	sslCertPath := filepath.Join(tempDir, "ssl", "fullchain.pem")

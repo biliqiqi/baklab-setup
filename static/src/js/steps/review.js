@@ -35,6 +35,7 @@ function loadConfigReview(config, i18n) {
                 <h4 style="margin-top: 1.5rem;" data-i18n="setup.review.sections.application"></h4>
                 <p><strong data-i18n="setup.review.fields.domain"></strong>: ${configData.app.domain_name}</p>
                 <p><strong data-i18n="setup.review.fields.static_host"></strong>: ${configData.app.static_host_name}</p>
+                ${configData.app.user_guide_host_name ? `<p><strong data-i18n="setup.review.fields.user_guide_host"></strong>: ${configData.app.user_guide_host_name}</p>` : ''}
                 <p><strong data-i18n="setup.review.fields.brand"></strong>: ${configData.app.brand_name}</p>
                 <p><strong data-i18n="setup.review.fields.version"></strong>: ${configData.app.version || 'latest'}</p>
                 <p><strong data-i18n="setup.review.fields.language"></strong>: ${configData.app.default_lang}</p>

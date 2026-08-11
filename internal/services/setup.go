@@ -423,6 +423,10 @@ func (s *SetupService) ImportFromOutputDir(outputDir string) (*model.SetupConfig
 		cfg.App.RankingHostName = rankingHost
 	}
 
+	if userGuideHost := envVars["USER_GUIDE_HOST_NAME"]; userGuideHost != "" {
+		cfg.App.UserGuideHostName = userGuideHost
+	}
+
 	if dizkazDomain := envVars["DIZKAZ_DOMAIN_NAME"]; dizkazDomain != "" {
 		cfg.App.DizkazDomainName = dizkazDomain
 	}

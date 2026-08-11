@@ -57,6 +57,21 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
                 </div>
 
                 <div class="form-group">
+                    <label for="app-user-guide-host" data-i18n="setup.app.user_guide_host_label"></label>
+                    <input
+                        type="text"
+                        id="app-user-guide-host"
+                        name="user_guide_host"
+                        value="${appConfig.user_guide_host_name || ''}"
+                        data-i18n-placeholder="setup.app.user_guide_host_placeholder"
+                        pattern="^([a-zA-Z0-9]([a-zA-Z0-9\\-]*[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$|^localhost$"
+                        data-i18n-title="setup.app.user_guide_host_error"
+                    >
+                    <div class="form-help" data-i18n="setup.app.user_guide_host_help"></div>
+                    <div class="invalid-feedback" data-i18n="setup.app.user_guide_host_error"></div>
+                </div>
+
+                <div class="form-group">
                     <label for="app-static-host"><span data-i18n="setup.app.static_host_label"></span> <span data-i18n="common.required"></span></label>
                     <input
                         type="text"
@@ -251,6 +266,7 @@ export function render(container, { config, navigation, ui, apiClient, i18n }) {
                         ...appConfig,
                         domain_name: document.getElementById('app-domain').value,
                         static_host_name: document.getElementById('app-static-host').value,
+                        user_guide_host_name: document.getElementById('app-user-guide-host').value.trim(),
                         brand_name: document.getElementById('app-brand').value,
                         version: document.getElementById('app-version').value,
                         cors_allow_origins: corsOrigins,

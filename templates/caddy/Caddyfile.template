@@ -129,4 +129,17 @@ www.{{rootDomain .App.DomainName}} {
 }
 {{end}}
 
+{{if .App.UserGuideHostName}}
+# BakLab user guide
+{{.App.UserGuideHostName}} {
+
+	encode gzip zstd
+
+	reverse_proxy user-guide:80 {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+	}
+}
+{{end}}
+
 import /etc/caddy/optional/*.caddy

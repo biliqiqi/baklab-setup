@@ -305,6 +305,7 @@ NGINX_SSL_PORT=443
 # Service Configuration
 STATIC_HOST_NAME='{{ .App.StaticHostName }}'
 {{ if .App.RankingHostName }}RANKING_HOST_NAME='{{ .App.RankingHostName }}'{{ else }}RANKING_HOST_NAME=''{{ end }}
+{{ if .App.UserGuideHostName }}USER_GUIDE_HOST_NAME='{{ .App.UserGuideHostName }}'{{ else }}USER_GUIDE_HOST_NAME=''{{ end }}
 {{ if .App.DizkazDomainName }}DIZKAZ_DOMAIN_NAME='{{ .App.DizkazDomainName }}'{{ else }}DIZKAZ_DOMAIN_NAME=''{{ end }}
 {{ if .App.DizkazSitePath }}DIZKAZ_SITE_PATH='{{ .App.DizkazSitePath }}'{{ else }}DIZKAZ_SITE_PATH=''{{ end }}
 
@@ -797,6 +798,7 @@ services:
       - SERVER_DOMAIN_NAME=$SERVER_DOMAIN_NAME
       - ROOT_DOMAIN_NAME=$ROOT_DOMAIN_NAME
       - RANKING_HOST_NAME=$RANKING_HOST_NAME
+      - USER_GUIDE_HOST_NAME=$USER_GUIDE_HOST_NAME
     volumes:
       - static-data:/data/static
       - ./frontend_dist:/data/static/frontend:ro
@@ -832,6 +834,7 @@ services:
       - SERVER_DOMAIN_NAME=$SERVER_DOMAIN_NAME
       - ROOT_DOMAIN_NAME=$ROOT_DOMAIN_NAME
       - RANKING_HOST_NAME=$RANKING_HOST_NAME
+      - USER_GUIDE_HOST_NAME=$USER_GUIDE_HOST_NAME
       - DIZKAZ_DOMAIN_NAME=$DIZKAZ_DOMAIN_NAME
       - DIZKAZ_SITE_PATH=$DIZKAZ_SITE_PATH
     volumes:
@@ -952,6 +955,18 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+{{ if .App.UserGuideHostName }}
+  user-guide:
+    image: ghcr.io/biliqiqi/baklab-user-guide:latest
+    container_name: "baklab-user-guide"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+{{ end }}
 
 volumes:
   static-data:{{ if eq .Database.ServiceType "docker" }}

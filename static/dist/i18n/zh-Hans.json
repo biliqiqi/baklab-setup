@@ -209,6 +209,11 @@
       "static_host_help": "用于 CSP 安全策略的静态文件资源主机（例如：static.example.com、cdn.example.com）",
       "static_host_error": "请输入有效的主机名或主机名:端口格式",
 
+      "user_guide_host_label": "用户手册主机",
+      "user_guide_host_placeholder": "docs.baklab.app",
+      "user_guide_host_help": "可选，用于发布 BakLab 用户手册的主机名。",
+      "user_guide_host_error": "请输入有效的主机名",
+
       "brand_label": "品牌名称",
       "brand_placeholder": "BakLab",
 
@@ -433,6 +438,7 @@
         "goaccess_geo_file": "GeoIP 数据库文件",
         "domain": "域名",
         "static_host": "静态文件主机",
+        "user_guide_host": "用户手册主机",
         "brand": "品牌",
         "version": "版本",
         "language": "语言",
