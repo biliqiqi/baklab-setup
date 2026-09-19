@@ -673,7 +673,7 @@ services:
       {{- end }}
     {{- end }}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:$APP_PORT/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:$APP_PORT/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -815,7 +815,7 @@ services:
       app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -H 'Host: $SERVER_DOMAIN_NAME' -f http://localhost:80/health"]
+      test: ["CMD-SHELL", "curl -H 'Host: $SERVER_DOMAIN_NAME' -f http://127.0.0.1:80/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -869,7 +869,7 @@ services:
       app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider --header='Host: $$SERVER_DOMAIN_NAME' http://localhost:80/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider --header='Host: $$SERVER_DOMAIN_NAME' http://127.0.0.1:80/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -890,13 +890,17 @@ services:
     {{- else }}
     entrypoint: >
       sh -c '
-        SSL_CERT=$$(find /data/caddy/certificates -type f -path "*/$$SERVER_DOMAIN_NAME/$$SERVER_DOMAIN_NAME.crt" | head -n1) &&
-        SSL_KEY=$$(find /data/caddy/certificates -type f -path "*/$$SERVER_DOMAIN_NAME/$$SERVER_DOMAIN_NAME.key" | head -n1) &&
+        SSL_CERT=$$(find /data/caddy -type f -name "$$SERVER_DOMAIN_NAME.crt" | head -n1) &&
+        SSL_KEY=$$(find /data/caddy -type f -name "$$SERVER_DOMAIN_NAME.key" | head -n1) &&
         if [ -z "$$SSL_CERT" ] || [ -z "$$SSL_KEY" ]; then
-          echo "Failed to locate Caddy-managed certificate for $$SERVER_DOMAIN_NAME in /data/caddy/certificates" &&
+          echo "Failed to locate Caddy-managed certificate for $$SERVER_DOMAIN_NAME in /data/caddy" &&
           exit 1
         fi &&
-        /bin/goaccess /data/logs/access.log -o /data/static/report.html --real-time-html --port=9880 --ssl-cert=$$SSL_CERT --ssl-key=$$SSL_KEY --log-format=$$LOG_FORMAT
+        LOG_FILE="/data/logs/access.log" &&
+        if [ -f "/data/caddy/access.log" ]; then
+          LOG_FILE="/data/caddy/access.log"
+        fi &&
+        exec /bin/goaccess $$LOG_FILE -o /data/static/report.html --real-time-html --port=9880 --ssl-cert=$$SSL_CERT --ssl-key=$$SSL_KEY --log-format=$$LOG_FORMAT
       '
     environment:
       - LOG_FORMAT=CADDY
@@ -950,7 +954,7 @@ services:
       - API_PATH_PREFIX=
       - BAKLAB_WEB_HOST={{ if .SSL.Enabled }}https{{ else }}http{{ end }}://$SERVER_DOMAIN_NAME
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:80"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -961,7 +965,7 @@ services:
     container_name: "baklab-user-guide"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
       interval: 30s
       timeout: 10s
       retries: 3

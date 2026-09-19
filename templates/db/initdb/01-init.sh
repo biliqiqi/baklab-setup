@@ -24,6 +24,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres -f /tmp/cr
 # Grant permissions and setup database
 cat > /tmp/setup-permissions.sql << EOF
 GRANT CONNECT ON DATABASE ${APP_DB_NAME} TO ${APP_DB_USER};
+ALTER DATABASE ${APP_DB_NAME} SET idle_in_transaction_session_timeout = '30s';
+ALTER DATABASE ${APP_DB_NAME} SET statement_timeout = '60s';
 
 \c ${APP_DB_NAME}
 
