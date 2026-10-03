@@ -278,7 +278,8 @@ TEST=false
 APP_VERSION={{ if .App.Version }}{{ .App.Version }}{{ else }}latest{{ end }}
 
 # Go Runtime Configuration
-GOMAXPROCS=1
+# 0 lets Go use every CPU available to the container; set a number to cap it
+GOMAXPROCS=0
 
 # HTTPS Configuration
 # Set to true when using HTTPS (nginx SSL configuration)
@@ -686,6 +687,8 @@ services:
       dockerfile: ./Dockerfile.pg
     container_name: "baklab-db"
     restart: unless-stopped
+    # Docker's 64MB default /dev/shm makes parallel queries and VACUUM fail
+    shm_size: 256mb
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./db/initdb:/docker-entrypoint-initdb.d/
